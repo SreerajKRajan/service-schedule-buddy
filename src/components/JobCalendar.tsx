@@ -296,6 +296,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               eventPropGetter={eventStyleGetter}
               style={{ height: '100%' }}
               popup
+              toolbar={false}
             />
           </div>
         </CardContent>
