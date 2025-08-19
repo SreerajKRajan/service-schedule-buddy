@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { AuthPage } from "@/components/AuthPage";
 import { JobBoard } from "@/components/JobBoard";
 import { CreateJobForm } from "@/components/CreateJobForm";
 import { UserManagement } from "@/components/UserManagement";
@@ -10,33 +8,15 @@ import { Dashboard } from "@/components/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, BarChart3, Briefcase, Settings, LogOut } from "lucide-react";
+import { PlusCircle, Users, BarChart3, Briefcase, Settings } from "lucide-react";
 
 const Index = () => {
-  const { user, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     // Initialize any real-time subscriptions or data fetching here
   }, []);
-
-  // Show loading spinner while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show auth page if user is not logged in
-  if (!user) {
-    return <AuthPage onAuthSuccess={() => {}} />;
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,23 +26,13 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-foreground">Job Tracker</h1>
             <p className="text-muted-foreground mt-2">Manage your service jobs efficiently</p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2"
-            >
-              <PlusCircle className="h-4 w-4" />
-              New Job
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={signOut}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
+          <Button 
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            New Job
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
