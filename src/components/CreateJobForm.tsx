@@ -191,7 +191,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
             <SelectTrigger>
               <SelectValue placeholder="Select job type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border border-border z-50">
               {jobTypes.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
@@ -218,7 +218,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border border-border z-50">
               <SelectItem value="1">Low</SelectItem>
               <SelectItem value="2">Medium</SelectItem>
               <SelectItem value="3">High</SelectItem>
@@ -354,7 +354,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border border-border z-50">
                     <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>

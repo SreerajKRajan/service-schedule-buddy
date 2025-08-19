@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw } from "lucide-react";
+import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { EditJobDialog } from "./EditJobDialog";
 
 interface Job {
   id: string;
@@ -34,6 +35,7 @@ interface JobCardProps {
 
 export function JobCard({ job, onUpdate }: JobCardProps) {
   const [updating, setUpdating] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -178,7 +180,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           </div>
         )}
 
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
           <Select
             value={job.status}
             onValueChange={updateJobStatus}
@@ -187,15 +189,31 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Update status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border border-border z-50">
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowEditDialog(true)}
+            className="w-full flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit Job
+          </Button>
         </div>
       </CardContent>
+
+      <EditJobDialog
+        job={job}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={onUpdate}
+      />
     </Card>
   );
 }
