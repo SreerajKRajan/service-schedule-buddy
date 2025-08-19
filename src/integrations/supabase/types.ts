@@ -105,6 +105,7 @@ export type Database = {
           is_recurring: boolean | null
           job_type: string
           notes: string | null
+          price: number | null
           priority: number | null
           scheduled_date: string | null
           status: Database["public"]["Enums"]["job_status"] | null
@@ -124,6 +125,7 @@ export type Database = {
           is_recurring?: boolean | null
           job_type: string
           notes?: string | null
+          price?: number | null
           priority?: number | null
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -143,6 +145,7 @@ export type Database = {
           is_recurring?: boolean | null
           job_type?: string
           notes?: string | null
+          price?: number | null
           priority?: number | null
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -189,7 +192,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_next_due_date: {
+        Args: {
+          frequency_type: Database["public"]["Enums"]["frequency_type"]
+          interval_val?: number
+          last_date: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       frequency_type: "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
