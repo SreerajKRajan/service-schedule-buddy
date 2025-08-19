@@ -54,6 +54,7 @@ export function JobBoard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [dueDateFilter, setDueDateFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export function JobBoard() {
 
   useEffect(() => {
     filterJobs();
-  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, jobAssignments]);
+  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dueDateFilter, jobAssignments]);
 
   const fetchJobs = async () => {
     try {
@@ -139,10 +140,53 @@ export function JobBoard() {
       filtered = filtered.filter(job => assignedJobIds.includes(job.id));
     }
 
+    if (dueDateFilter !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      const nextMonth = new Date(today);
+      nextMonth.setMonth(today.getMonth() + 1);
+
+      filtered = filtered.filter(job => {
+        if (!job.scheduled_date) return dueDateFilter === "no_date";
+        
+        const scheduledDate = new Date(job.scheduled_date);
+        const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+
+        switch (dueDateFilter) {
+          case "overdue":
+            return scheduledDateOnly < today && job.status !== 'completed';
+          case "today":
+            return scheduledDateOnly.getTime() === today.getTime();
+          case "tomorrow":
+            return scheduledDateOnly.getTime() === tomorrow.getTime();
+          case "this_week":
+            return scheduledDateOnly >= today && scheduledDateOnly < nextWeek;
+          case "this_month":
+            return scheduledDateOnly >= today && scheduledDateOnly < nextMonth;
+          case "no_date":
+            return false; // Already handled above
+          default:
+            return true;
+        }
+      });
+    }
+
     setFilteredJobs(filtered);
   };
 
   const jobTypes = [...new Set(jobs.map(job => job.job_type))];
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setAssigneeFilter("all");
+    setDueDateFilter("all");
+  };
 
   const refreshData = () => {
     fetchJobs();
@@ -201,7 +245,10 @@ export function JobBoard() {
       </div>
 
       {viewMode === "calendar" ? (
-        <JobCalendar onRefresh={refreshData} />
+        <JobCalendar 
+          jobs={filteredJobs} 
+          onRefresh={refreshData} 
+        />
       ) : (
         <>
           <Card>
@@ -258,6 +305,31 @@ export function JobBoard() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select value={dueDateFilter} onValueChange={setDueDateFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Filter by due date" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    <SelectItem value="all">All Due Dates</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="today">Due Today</SelectItem>
+                    <SelectItem value="tomorrow">Due Tomorrow</SelectItem>
+                    <SelectItem value="this_week">Due This Week</SelectItem>
+                    <SelectItem value="this_month">Due This Month</SelectItem>
+                    <SelectItem value="no_date">No Due Date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearFilters}
+                  className="text-muted-foreground"
+                >
+                  Clear Filters
+                </Button>
               </div>
             </CardContent>
           </Card>

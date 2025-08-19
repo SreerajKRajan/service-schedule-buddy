@@ -52,61 +52,27 @@ interface CalendarEvent {
 }
 
 interface JobCalendarProps {
+  jobs: Job[];
   onRefresh: () => void;
 }
 
-export function JobCalendar({ onRefresh }: JobCalendarProps) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [jobSchedules, setJobSchedules] = useState<JobSchedule[]>([]);
+export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [view, setView] = useState<View>("month");
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
 
   useEffect(() => {
     convertJobsToEvents();
   }, [jobs]);
-
-  const fetchJobs = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .not('scheduled_date', 'is', null)
-        .order('scheduled_date', { ascending: true });
-
-      if (error) throw error;
-      setJobs(data || []);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchJobSchedules = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('job_schedules')
-        .select('*')
-        .eq('is_active', true);
-
-      if (error) throw error;
-      setJobSchedules(data || []);
-    } catch (error) {
-      console.error('Error fetching job schedules:', error);
-    }
-  };
 
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
 
     // Add all jobs (including recurring instances)
     jobs.forEach(job => {
+      if (!job.scheduled_date) return;
+      
       const startDate = new Date(job.scheduled_date);
       const endDate = new Date(startDate);
       
@@ -260,7 +226,6 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
             <JobCard 
               job={selectedJob} 
               onUpdate={() => {
-                fetchJobs();
                 onRefresh();
                 setSelectedJob(null);
               }} 
