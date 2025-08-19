@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw, Edit, DollarSign, UserCheck } from "lucide-react";
+import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw, Edit, DollarSign, UserCheck, Trash2 } from "lucide-react";
 import React from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EditJobDialog } from "./EditJobDialog";
 
@@ -55,6 +56,7 @@ interface JobCardProps {
 
 export function JobCard({ job, onUpdate }: JobCardProps) {
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [jobSchedule, setJobSchedule] = useState<JobSchedule | null>(null);
@@ -111,6 +113,52 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const deleteJob = async () => {
+    setDeleting(true);
+    try {
+      // First delete job assignments
+      const { error: assignmentError } = await supabase
+        .from('job_assignments')
+        .delete()
+        .eq('job_id', job.id);
+
+      if (assignmentError) throw assignmentError;
+
+      // Delete job schedules if recurring
+      if (job.is_recurring) {
+        const { error: scheduleError } = await supabase
+          .from('job_schedules')
+          .delete()
+          .eq('job_id', job.id);
+
+        if (scheduleError) throw scheduleError;
+      }
+
+      // Finally delete the job
+      const { error: jobError } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', job.id);
+
+      if (jobError) throw jobError;
+
+      toast({
+        title: "Success",
+        description: "Job deleted successfully",
+      });
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -284,7 +332,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           <Select
             value={job.status}
             onValueChange={updateJobStatus}
-            disabled={updating}
+            disabled={updating || deleting}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Update status" />
@@ -297,14 +345,48 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             </SelectContent>
           </Select>
 
-          <Button
-            variant="outline"
-            onClick={() => setShowEditDialog(true)}
-            className="w-full flex items-center gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Edit Job
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditDialog(true)}
+              className="flex-1 flex items-center gap-2"
+              disabled={deleting}
+            >
+              <Edit className="h-4 w-4" />
+              Edit Job
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="px-3 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  disabled={deleting}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Job</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{job.title}"? This action cannot be undone.
+                    {job.is_recurring && " This will also delete all recurring schedules."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={deleteJob}
+                    className="bg-red-600 hover:bg-red-700"
+                    disabled={deleting}
+                  >
+                    {deleting ? "Deleting..." : "Delete Job"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardContent>
 
