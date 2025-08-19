@@ -65,12 +65,11 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
 
   useEffect(() => {
     fetchJobs();
-    fetchJobSchedules();
   }, []);
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, jobSchedules]);
+  }, [jobs]);
 
   const fetchJobs = async () => {
     try {
@@ -106,7 +105,7 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
 
-    // Add scheduled jobs
+    // Add all jobs (including recurring instances)
     jobs.forEach(job => {
       const startDate = new Date(job.scheduled_date);
       const endDate = new Date(startDate);
@@ -122,27 +121,6 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
         end: endDate,
         resource: job,
       });
-    });
-
-    // Add recurring job due dates
-    jobSchedules.forEach(schedule => {
-      const job = jobs.find(j => j.id === schedule.job_id);
-      if (job && job.is_recurring && schedule.next_due_date) {
-        const startDate = new Date(schedule.next_due_date);
-        const endDate = new Date(startDate);
-        
-        // Add estimated duration or default to 2 hours
-        const duration = job.estimated_duration || 2;
-        endDate.setHours(startDate.getHours() + duration);
-
-        calendarEvents.push({
-          id: `${job.id}-recurring`,
-          title: `${job.title} (Due) - ${job.customer_name || 'Customer'}`,
-          start: startDate,
-          end: endDate,
-          resource: { ...job, status: 'pending' }, // Show as pending for due dates
-        });
-      }
     });
 
     setEvents(calendarEvents);
@@ -283,7 +261,6 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
               job={selectedJob} 
               onUpdate={() => {
                 fetchJobs();
-                fetchJobSchedules();
                 onRefresh();
                 setSelectedJob(null);
               }} 

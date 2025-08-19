@@ -201,7 +201,7 @@ export function JobBoard() {
       </div>
 
       {viewMode === "calendar" ? (
-        <JobCalendar onRefresh={() => { refreshData(); fetchJobs(); }} />
+        <JobCalendar onRefresh={refreshData} />
       ) : (
         <>
           <Card>
