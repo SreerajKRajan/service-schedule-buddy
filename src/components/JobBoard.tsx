@@ -131,6 +131,11 @@ export function JobBoard() {
       filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.job_type.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
