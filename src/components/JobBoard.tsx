@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { JobCard } from "./JobCard";
 import { JobCalendar } from "./JobCalendar";
-import { Search, Filter, Calendar, Grid } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, Grid, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 interface User {
   id: string;
@@ -54,7 +59,7 @@ export function JobBoard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
-  const [dueDateFilter, setDueDateFilter] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
@@ -65,7 +70,7 @@ export function JobBoard() {
 
   useEffect(() => {
     filterJobs();
-  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dueDateFilter, jobAssignments]);
+  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments]);
 
   const fetchJobs = async () => {
     try {
@@ -140,38 +145,26 @@ export function JobBoard() {
       filtered = filtered.filter(job => assignedJobIds.includes(job.id));
     }
 
-    if (dueDateFilter !== "all") {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      const nextWeek = new Date(today);
-      nextWeek.setDate(today.getDate() + 7);
-      const nextMonth = new Date(today);
-      nextMonth.setMonth(today.getMonth() + 1);
-
+    if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter(job => {
-        if (!job.scheduled_date) return dueDateFilter === "no_date";
+        if (!job.scheduled_date) return false;
         
         const scheduledDate = new Date(job.scheduled_date);
         const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
 
-        switch (dueDateFilter) {
-          case "overdue":
-            return scheduledDateOnly < today && job.status !== 'completed';
-          case "today":
-            return scheduledDateOnly.getTime() === today.getTime();
-          case "tomorrow":
-            return scheduledDateOnly.getTime() === tomorrow.getTime();
-          case "this_week":
-            return scheduledDateOnly >= today && scheduledDateOnly < nextWeek;
-          case "this_month":
-            return scheduledDateOnly >= today && scheduledDateOnly < nextMonth;
-          case "no_date":
-            return false; // Already handled above
-          default:
-            return true;
+        if (dateRange.from && dateRange.to) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly >= fromDate && scheduledDateOnly <= toDate;
+        } else if (dateRange.from) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          return scheduledDateOnly >= fromDate;
+        } else if (dateRange.to) {
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly <= toDate;
         }
+        
+        return true;
       });
     }
 
@@ -185,7 +178,7 @@ export function JobBoard() {
     setStatusFilter("all");
     setTypeFilter("all");
     setAssigneeFilter("all");
-    setDueDateFilter("all");
+    setDateRange(undefined);
   };
 
   const refreshData = () => {
@@ -238,7 +231,7 @@ export function JobBoard() {
             size="sm"
             onClick={() => setViewMode("calendar")}
           >
-            <Calendar className="h-4 w-4 mr-2" />
+            <CalendarIcon className="h-4 w-4 mr-2" />
             Calendar
           </Button>
         </div>
@@ -271,54 +264,91 @@ export function JobBoard() {
                     />
                   </div>
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="all">All Types</SelectItem>
-                    {jobTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Filter by assignee" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="all">All Assignees</SelectItem>
-                    {users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={dueDateFilter} onValueChange={setDueDateFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="Filter by due date" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="all">All Due Dates</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="today">Due Today</SelectItem>
-                    <SelectItem value="tomorrow">Due Tomorrow</SelectItem>
-                    <SelectItem value="this_week">Due This Week</SelectItem>
-                    <SelectItem value="this_month">Due This Month</SelectItem>
-                    <SelectItem value="no_date">No Due Date</SelectItem>
-                  </SelectContent>
-                </Select>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="all">All Types</SelectItem>
+                      {jobTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Filter by assignee" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="all">All Assignees</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateRange?.from && !dateRange?.to && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "LLL dd, y")} -{" "}
+                              {format(dateRange.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Date range</span>
+                        )}
+                        {(dateRange?.from || dateRange?.to) && (
+                          <X 
+                            className="ml-auto h-4 w-4 opacity-50 hover:opacity-100" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDateRange(undefined);
+                            }}
+                          />
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               
               <div className="flex gap-2">
