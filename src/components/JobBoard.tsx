@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { JobCard } from "./JobCard";
 import { JobCalendar } from "./JobCalendar";
+import { LocationCard } from "./LocationCard";
 import { Search, Filter, Calendar as CalendarIcon, Grid, X, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
@@ -399,22 +400,14 @@ export function JobBoard() {
           </div>
 
           {groupByLocation ? (
-            <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {Object.entries(groupJobsByLocation(filteredJobs)).map(([location, jobs]) => (
-                <div key={location} className="space-y-4">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">{location}</h3>
-                    <Badge variant="outline" className="ml-auto">
-                      {jobs.length} job{jobs.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {jobs.map((job) => (
-                      <JobCard key={job.id} job={job} onUpdate={refreshData} />
-                    ))}
-                  </div>
-                </div>
+                <LocationCard
+                  key={location}
+                  location={location}
+                  jobs={jobs}
+                  onUpdate={refreshData}
+                />
               ))}
             </div>
           ) : (
