@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { JobBoard } from "@/components/JobBoard";
 import { CreateJobForm } from "@/components/CreateJobForm";
 import { UserManagement } from "@/components/UserManagement";
+import { ServicesManagement } from "@/components/ServicesManagement";
 import { Dashboard } from "@/components/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, BarChart3, Briefcase } from "lucide-react";
+import { PlusCircle, Users, BarChart3, Briefcase, Settings } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -35,7 +36,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -47,6 +48,10 @@ const Index = () => {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Team
+            </TabsTrigger>
+            <TabsTrigger value="services" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Services
             </TabsTrigger>
             <TabsTrigger value="create" className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
@@ -64,6 +69,10 @@ const Index = () => {
 
           <TabsContent value="users" className="space-y-6">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="services" className="space-y-6">
+            <ServicesManagement />
           </TabsContent>
 
           <TabsContent value="create" className="space-y-6">

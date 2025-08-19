@@ -17,6 +17,15 @@ interface User {
   role: string;
 }
 
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  default_duration: number | null;
+  default_price: number | null;
+  active: boolean;
+}
+
 interface CreateJobFormProps {
   onSuccess: () => void;
   onCancel?: () => void;
@@ -24,6 +33,7 @@ interface CreateJobFormProps {
 
 export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
   const [users, setUsers] = useState<User[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -48,6 +58,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
 
   useEffect(() => {
     fetchUsers();
+    fetchServices();
   }, []);
 
   const fetchUsers = async () => {
@@ -63,7 +74,32 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
       console.error('Error fetching users:', error);
     }
   };
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('active', true)
+        .order('name');
 
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    const selectedService = services.find(s => s.id === serviceId);
+    if (selectedService) {
+      setFormData(prev => ({
+        ...prev,
+        job_type: selectedService.name,
+        estimated_duration: selectedService.default_duration?.toString() || prev.estimated_duration,
+        price: selectedService.default_price?.toString() || prev.price,
+      }));
+    }
+  };
   const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
     const jobs = [];
     let currentDate = new Date(startDate);
@@ -286,14 +322,25 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="job_type">Job Type</Label>
-          <Select value={formData.job_type} onValueChange={(value) => setFormData(prev => ({ ...prev, job_type: value }))}>
+          <Label htmlFor="job_type">Service Type *</Label>
+          <Select
+            value={services.find(s => s.name === formData.job_type)?.id || ""}
+            onValueChange={handleServiceChange}
+            required
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Select job type" />
+              <SelectValue placeholder="Select a service type" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border border-border z-50">
-              {jobTypes.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
+            <SelectContent>
+              {services.map((service) => (
+                <SelectItem key={service.id} value={service.id}>
+                  {service.name}
+                  {service.description && (
+                    <span className="text-muted-foreground ml-2">
+                      - {service.description}
+                    </span>
+                  )}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
