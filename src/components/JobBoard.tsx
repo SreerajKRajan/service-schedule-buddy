@@ -11,9 +11,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { JobCard } from "./JobCard";
 import { JobCalendar } from "./JobCalendar";
-import { Search, Filter, Calendar as CalendarIcon, Grid, X } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, Grid, X, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface User {
   id: string;
@@ -60,6 +62,7 @@ export function JobBoard() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [groupByLocation, setGroupByLocation] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
@@ -179,12 +182,26 @@ export function JobBoard() {
     setTypeFilter("all");
     setAssigneeFilter("all");
     setDateRange(undefined);
+    setGroupByLocation(false);
   };
 
   const refreshData = () => {
     fetchJobs();
     fetchUsers();
     fetchJobAssignments();
+  };
+
+  const groupJobsByLocation = (jobs: Job[]) => {
+    const grouped = jobs.reduce((acc, job) => {
+      const location = job.customer_address || 'No Address';
+      if (!acc[location]) {
+        acc[location] = [];
+      }
+      acc[location].push(job);
+      return acc;
+    }, {} as Record<string, Job[]>);
+
+    return grouped;
   };
 
   if (loading) {
@@ -345,6 +362,17 @@ export function JobBoard() {
           </div>
           
           <div className="flex gap-2">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="group-by-location" 
+                checked={groupByLocation}
+                onCheckedChange={setGroupByLocation}
+              />
+              <Label htmlFor="group-by-location" className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4" />
+                Group by Location
+              </Label>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
@@ -370,11 +398,32 @@ export function JobBoard() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredJobs.map((job) => (
-              <JobCard key={job.id} job={job} onUpdate={refreshData} />
-            ))}
-          </div>
+          {groupByLocation ? (
+            <div className="space-y-6">
+              {Object.entries(groupJobsByLocation(filteredJobs)).map(([location, jobs]) => (
+                <div key={location} className="space-y-4">
+                  <div className="flex items-center gap-2 border-b border-border pb-2">
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">{location}</h3>
+                    <Badge variant="outline" className="ml-auto">
+                      {jobs.length} job{jobs.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {jobs.map((job) => (
+                      <JobCard key={job.id} job={job} onUpdate={refreshData} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredJobs.map((job) => (
+                <JobCard key={job.id} job={job} onUpdate={refreshData} />
+              ))}
+            </div>
+          )}
 
           {filteredJobs.length === 0 && (
             <Card>
