@@ -74,6 +74,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     status: "",
     price: "",
     is_recurring: false,
+    first_time: false,
     frequency: "weekly",
     interval_value: 1,
     next_due_date: "",
@@ -111,6 +112,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       status: job.status || "",
       price: job.price?.toString() || "",
       is_recurring: job.is_recurring || false,
+      first_time: job.first_time || false,
       frequency: "weekly",
       interval_value: 1,
       next_due_date: "",
@@ -210,6 +212,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         status: formData.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
         price: formData.price ? parseFloat(formData.price) : null,
         is_recurring: formData.is_recurring,
+        first_time: formData.first_time,
       };
 
       const { error: jobError } = await supabase
@@ -431,6 +434,22 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               />
             </div>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Job Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="first_time"
+                  checked={formData.first_time}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, first_time: checked as boolean }))}
+                />
+                <Label htmlFor="first_time">First time customer</Label>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
