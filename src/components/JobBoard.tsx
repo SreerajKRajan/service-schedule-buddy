@@ -41,6 +41,7 @@ interface Job {
   is_recurring: boolean;
   created_at: string;
   updated_at: string;
+  price: number;
 }
 
 export function JobBoard() {
@@ -200,7 +201,7 @@ export function JobBoard() {
       </div>
 
       {viewMode === "calendar" ? (
-        <JobCalendar onRefresh={refreshData} />
+        <JobCalendar onRefresh={() => { refreshData(); fetchJobs(); }} />
       ) : (
         <>
           <Card>

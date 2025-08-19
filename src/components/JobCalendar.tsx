@@ -30,6 +30,17 @@ interface Job {
   is_recurring: boolean;
   created_at: string;
   updated_at: string;
+  price: number;
+}
+
+interface JobSchedule {
+  id: string;
+  job_id: string;
+  frequency: string;
+  interval_value: number;
+  next_due_date: string;
+  end_date: string;
+  is_active: boolean;
 }
 
 interface CalendarEvent {
@@ -46,6 +57,7 @@ interface JobCalendarProps {
 
 export function JobCalendar({ onRefresh }: JobCalendarProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobSchedules, setJobSchedules] = useState<JobSchedule[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,11 +65,12 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
 
   useEffect(() => {
     fetchJobs();
+    fetchJobSchedules();
   }, []);
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs]);
+  }, [jobs, jobSchedules]);
 
   const fetchJobs = async () => {
     try {
@@ -76,8 +89,25 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
     }
   };
 
+  const fetchJobSchedules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_schedules')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setJobSchedules(data || []);
+    } catch (error) {
+      console.error('Error fetching job schedules:', error);
+    }
+  };
+
   const convertJobsToEvents = () => {
-    const calendarEvents: CalendarEvent[] = jobs.map(job => {
+    const calendarEvents: CalendarEvent[] = [];
+
+    // Add scheduled jobs
+    jobs.forEach(job => {
       const startDate = new Date(job.scheduled_date);
       const endDate = new Date(startDate);
       
@@ -85,13 +115,34 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
       const duration = job.estimated_duration || 2;
       endDate.setHours(startDate.getHours() + duration);
 
-      return {
+      calendarEvents.push({
         id: job.id,
         title: `${job.title} - ${job.customer_name || 'Customer'}`,
         start: startDate,
         end: endDate,
         resource: job,
-      };
+      });
+    });
+
+    // Add recurring job due dates
+    jobSchedules.forEach(schedule => {
+      const job = jobs.find(j => j.id === schedule.job_id);
+      if (job && job.is_recurring && schedule.next_due_date) {
+        const startDate = new Date(schedule.next_due_date);
+        const endDate = new Date(startDate);
+        
+        // Add estimated duration or default to 2 hours
+        const duration = job.estimated_duration || 2;
+        endDate.setHours(startDate.getHours() + duration);
+
+        calendarEvents.push({
+          id: `${job.id}-recurring`,
+          title: `${job.title} (Due) - ${job.customer_name || 'Customer'}`,
+          start: startDate,
+          end: endDate,
+          resource: { ...job, status: 'pending' }, // Show as pending for due dates
+        });
+      }
     });
 
     setEvents(calendarEvents);

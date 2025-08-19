@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw, Edit } from "lucide-react";
+import { Calendar, Clock, MapPin, Phone, Mail, Users, RotateCcw, Edit, DollarSign, UserCheck } from "lucide-react";
+import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EditJobDialog } from "./EditJobDialog";
 
@@ -26,6 +27,25 @@ interface Job {
   is_recurring: boolean;
   created_at: string;
   updated_at: string;
+  price: number;
+}
+
+interface JobAssignment {
+  user_id: string;
+  job_id: string;
+  users: {
+    name: string;
+  };
+}
+
+interface JobSchedule {
+  id: string;
+  job_id: string;
+  frequency: string;
+  interval_value: number;
+  next_due_date: string;
+  end_date: string;
+  is_active: boolean;
 }
 
 interface JobCardProps {
@@ -36,6 +56,8 @@ interface JobCardProps {
 export function JobCard({ job, onUpdate }: JobCardProps) {
   const [updating, setUpdating] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
+  const [jobSchedule, setJobSchedule] = useState<JobSchedule | null>(null);
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -92,6 +114,47 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
     }
   };
 
+  const fetchJobAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_assignments')
+        .select(`
+          user_id,
+          job_id,
+          users (name)
+        `)
+        .eq('job_id', job.id);
+
+      if (error) throw error;
+      setJobAssignments(data || []);
+    } catch (error) {
+      console.error('Error fetching job assignments:', error);
+    }
+  };
+
+  const fetchJobSchedule = async () => {
+    if (!job.is_recurring) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('job_schedules')
+        .select('*')
+        .eq('job_id', job.id)
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setJobSchedule(data);
+    } catch (error) {
+      console.error('Error fetching job schedule:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchJobAssignments();
+    fetchJobSchedule();
+  }, [job.id, job.is_recurring]);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not scheduled';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -101,6 +164,14 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatPrice = (price: number) => {
+    if (!price) return null;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
   };
 
   return (
@@ -160,11 +231,40 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
               <span className="line-clamp-1">{job.customer_email}</span>
             </div>
           )}
+
+          {jobAssignments.length > 0 && (
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <span className="line-clamp-1">
+                {jobAssignments.map(assignment => assignment.users.name).join(', ')}
+              </span>
+            </div>
+          )}
+
+          {job.price && (
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-green-600">{formatPrice(job.price)}</span>
+            </div>
+          )}
           
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>{formatDate(job.scheduled_date)}</span>
           </div>
+
+          {job.is_recurring && jobSchedule && (
+            <div className="bg-blue-50 p-2 rounded text-xs">
+              <div className="font-medium text-blue-800 mb-1">Recurring Schedule</div>
+              <div className="text-blue-600">
+                Every {jobSchedule.interval_value} {jobSchedule.frequency.replace('ly', '')}
+                {jobSchedule.interval_value > 1 ? 's' : ''}
+              </div>
+              <div className="text-blue-600">
+                Next due: {formatDate(jobSchedule.next_due_date)}
+              </div>
+            </div>
+          )}
           
           {job.estimated_duration && (
             <div className="flex items-center gap-2">
