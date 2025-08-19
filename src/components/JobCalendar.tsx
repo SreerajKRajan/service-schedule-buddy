@@ -278,16 +278,17 @@ export function JobCalendar({ onRefresh }: JobCalendarProps) {
               View and manage job information
             </DialogDescription>
           </DialogHeader>
-          {selectedJob && (
+           {selectedJob && (
             <JobCard 
               job={selectedJob} 
               onUpdate={() => {
                 fetchJobs();
+                fetchJobSchedules();
                 onRefresh();
                 setSelectedJob(null);
               }} 
             />
-          )}
+           )}
         </DialogContent>
       </Dialog>
     </div>
