@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer, View } from "react-big-calendar";
+import { Calendar as BigCalendar, momentLocalizer, View } from "react-big-calendar";
 import moment from "moment";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarDays, Grid, List } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarDays, Grid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { JobCard } from "./JobCard";
+import { Calendar as DatePicker } from "@/components/ui/calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
@@ -61,6 +65,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<View>("month");
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     convertJobsToEvents();
@@ -94,6 +99,63 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
 
   const handleSelectEvent = (event: CalendarEvent) => {
     setSelectedJob(event.resource);
+  };
+
+  const handleNavigate = (newDate: Date) => {
+    setCurrentDate(newDate);
+  };
+
+  const navigateToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const navigateBack = () => {
+    const newDate = new Date(currentDate);
+    switch (view) {
+      case 'month':
+        newDate.setMonth(newDate.getMonth() - 1);
+        break;
+      case 'week':
+        newDate.setDate(newDate.getDate() - 7);
+        break;
+      case 'day':
+        newDate.setDate(newDate.getDate() - 1);
+        break;
+    }
+    setCurrentDate(newDate);
+  };
+
+  const navigateNext = () => {
+    const newDate = new Date(currentDate);
+    switch (view) {
+      case 'month':
+        newDate.setMonth(newDate.getMonth() + 1);
+        break;
+      case 'week':
+        newDate.setDate(newDate.getDate() + 7);
+        break;
+      case 'day':
+        newDate.setDate(newDate.getDate() + 1);
+        break;
+    }
+    setCurrentDate(newDate);
+  };
+
+  const getDateTitle = () => {
+    switch (view) {
+      case 'month':
+        return format(currentDate, "MMMM yyyy");
+      case 'week':
+        const weekStart = new Date(currentDate);
+        weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+      case 'day':
+        return format(currentDate, "MMMM d, yyyy");
+      default:
+        return format(currentDate, "MMMM yyyy");
+    }
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
@@ -176,16 +238,60 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               </Button>
             </div>
           </div>
+          
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={navigateToday}>
+                Today
+              </Button>
+              <Button variant="outline" size="sm" onClick={navigateBack}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={navigateNext}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "min-w-[200px] justify-center text-center font-medium"
+                  )}
+                >
+                  {getDateTitle()}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <DatePicker
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setCurrentDate(date);
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <div></div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-96 md:h-[600px]">
-            <Calendar
+            <BigCalendar
               localizer={localizer}
               events={events}
               startAccessor="start"
               endAccessor="end"
               view={view}
               onView={setView}
+              date={currentDate}
+              onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               style={{ height: '100%' }}
