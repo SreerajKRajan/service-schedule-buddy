@@ -19,6 +19,7 @@ interface Job {
   customer_email: string;
   notes: string;
   is_recurring: boolean;
+  first_time: boolean;
   created_at: string;
   updated_at: string;
   price: number;

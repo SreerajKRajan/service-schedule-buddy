@@ -101,6 +101,7 @@ export type Database = {
           customer_phone: string | null
           description: string | null
           estimated_duration: number | null
+          first_time: boolean | null
           id: string
           is_recurring: boolean | null
           job_type: string
@@ -121,6 +122,7 @@ export type Database = {
           customer_phone?: string | null
           description?: string | null
           estimated_duration?: number | null
+          first_time?: boolean | null
           id?: string
           is_recurring?: boolean | null
           job_type: string
@@ -141,6 +143,7 @@ export type Database = {
           customer_phone?: string | null
           description?: string | null
           estimated_duration?: number | null
+          first_time?: boolean | null
           id?: string
           is_recurring?: boolean | null
           job_type?: string

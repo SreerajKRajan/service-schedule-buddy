@@ -26,6 +26,7 @@ interface Job {
   customer_email: string;
   notes: string;
   is_recurring: boolean;
+  first_time: boolean;
   created_at: string;
   updated_at: string;
   price: number;
@@ -247,6 +248,11 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           <Badge variant="outline">
             {job.job_type}
           </Badge>
+          {job.first_time && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              First Time
+            </Badge>
+          )}
         </div>
       </CardHeader>
       

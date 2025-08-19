@@ -42,6 +42,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
     frequency: "daily",
     recurrence_count: 1,
     assigned_users: [] as string[],
+    first_time: false,
   });
   const { toast } = useToast();
 
@@ -121,6 +122,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
           notes: formData.notes || null,
           price: formData.price ? parseFloat(formData.price) : null,
           is_recurring: index === 0, // Only mark the first job as the parent recurring job
+          first_time: formData.first_time && index === 0, // Only mark the first job as first time
           status: 'pending' as const,
         }));
 
@@ -183,6 +185,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
           notes: formData.notes || null,
           price: formData.price ? parseFloat(formData.price) : null,
           is_recurring: false,
+          first_time: formData.first_time,
           status: 'pending' as const,
         };
 
@@ -232,6 +235,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         frequency: "daily",
         recurrence_count: 1,
         assigned_users: [],
+        first_time: false,
       });
 
       onSuccess();
@@ -442,10 +446,19 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RotateCcw className="h-5 w-5" />
-            Recurring Job Settings
+            Job Settings
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="first_time"
+              checked={formData.first_time}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, first_time: checked as boolean }))}
+            />
+            <Label htmlFor="first_time">This is a first time job</Label>
+          </div>
+          
           <div className="flex items-center space-x-2">
             <Checkbox
               id="is_recurring"
