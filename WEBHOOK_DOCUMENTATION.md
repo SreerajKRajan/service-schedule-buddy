@@ -18,6 +18,7 @@ Send a POST request with JSON payload:
   "customer_email": "john@example.com", 
   "customer_address": "123 Main St, City, State",
   "quoted_by": "John Smith",
+  "scheduled_date": "2025-08-21T14:00:00Z",
   "jobs_selected": [
     {
       "title": "House Cleaning",
@@ -40,6 +41,7 @@ Send a POST request with JSON payload:
 - `customer_email` (string): Customer's email address
 - `customer_address` (string): Customer's full address
 - `quoted_by` (string): Name of team member who provided the quote (e.g., "John Smith"). The system will automatically look up the corresponding user ID.
+- `scheduled_date` (string): ISO 8601 formatted date and time for when the job should be scheduled (e.g., "2025-08-21T14:00:00Z")
 - `first_time` (boolean): Whether this is the customer's first time (defaults to false)
 
 ## Response Format
@@ -76,6 +78,7 @@ curl -X POST https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/quote-webhook
     "customer_name": "Test Customer",
     "customer_email": "test@example.com",
     "quoted_by": "Sarah Johnson",
+    "scheduled_date": "2025-08-21T14:00:00Z",
     "jobs_selected": [
       {
         "title": "Test Service",

@@ -25,6 +25,7 @@ export type Database = {
           id: string
           jobs_selected: Json
           quoted_by: string | null
+          scheduled_date: string | null
           status: string | null
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           id?: string
           jobs_selected: Json
           quoted_by?: string | null
+          scheduled_date?: string | null
           status?: string | null
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           jobs_selected?: Json
           quoted_by?: string | null
+          scheduled_date?: string | null
           status?: string | null
           updated_at?: string
         }
