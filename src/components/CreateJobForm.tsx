@@ -417,11 +417,6 @@ export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFor
                       >
                         {service.name}
                       </Label>
-                      {service.description && (
-                        <p className="text-xs text-muted-foreground">
-                          {service.description}
-                        </p>
-                      )}
                       <div className="text-xs text-muted-foreground">
                         {service.default_duration && `${service.default_duration}h`}
                         {service.default_duration && service.default_price && " • "}
