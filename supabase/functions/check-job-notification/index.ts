@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/b8qvo7VooP3JD3dIZU42/webhook-trigger/db146d63-70c7-4176-aa0d-54242066c70a';
+const WEBHOOK_URL = 'https://webhook.site/c78f6ac6-0b0b-4af4-8f92-f5ba89c7aa9f';
 
 serve(async (req) => {
   // Handle CORS preflight requests
