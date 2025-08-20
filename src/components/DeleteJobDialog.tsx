@@ -80,47 +80,48 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
   const deleteRecurringSequence = async () => {
     setDeleting(true);
     try {
-      // First, find the job schedule for this job
-      const { data: schedule, error: scheduleError } = await supabase
-        .from('job_schedules')
-        .select('id')
-        .eq('job_id', job.id)
-        .eq('is_active', true)
-        .maybeSingle();
+      // Group by batch creation time (NOT scheduled_date) plus customer and job type
+      // Ensure we have created_at and quoted_by for the current job
+      let baseCreatedAt = job.created_at;
+      let baseQuotedBy = job.quoted_by;
 
-      if (scheduleError) throw scheduleError;
+      if (!baseCreatedAt || !baseQuotedBy) {
+        const { data: currentJob, error: currentJobError } = await supabase
+          .from('jobs')
+          .select('created_at, quoted_by')
+          .eq('id', job.id)
+          .maybeSingle();
+        if (currentJobError) throw currentJobError;
+        baseCreatedAt = baseCreatedAt || currentJob?.created_at;
+        baseQuotedBy = baseQuotedBy || currentJob?.quoted_by;
+      }
 
       let jobIds: string[] = [job.id]; // Always include the current job
 
-      if (schedule) {
-        // Find all jobs that share the same schedule
-        const { data: relatedJobs, error: fetchError } = await supabase
-          .from('job_schedules')
-          .select('job_id')
-          .eq('id', schedule.id);
+      if (baseCreatedAt) {
+        const createdAtDate = new Date(baseCreatedAt);
+        // 10-minute window to reliably capture the batch
+        const windowMs = 10 * 60 * 1000;
+        const startIso = new Date(createdAtDate.getTime() - windowMs).toISOString();
+        const endIso = new Date(createdAtDate.getTime() + windowMs).toISOString();
 
-        if (fetchError) throw fetchError;
-        
-        if (relatedJobs && relatedJobs.length > 0) {
-          jobIds = relatedJobs.map(s => s.job_id);
-        }
-      } else {
-        // If no schedule found, try to find jobs created as part of the same recurring batch
-        // This handles cases where jobs were created together but might not have active schedules
-        const { data: relatedJobs, error: fetchError } = await supabase
+        let query = supabase
           .from('jobs')
           .select('id')
           .eq('job_type', job.job_type)
           .eq('customer_name', job.customer_name || '')
-          .eq('is_recurring', true)
-          .eq('quoted_by', job.quoted_by || '')
-          .gte('created_at', new Date(new Date(job.scheduled_date || job.created_at).getTime() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours of each other
-          .lte('created_at', new Date(new Date(job.scheduled_date || job.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString());
+          .gte('created_at', startIso)
+          .lte('created_at', endIso);
 
+        if (baseQuotedBy) {
+          query = query.eq('quoted_by', baseQuotedBy);
+        }
+
+        const { data: relatedJobs, error: fetchError } = await query;
         if (fetchError) throw fetchError;
         
         if (relatedJobs && relatedJobs.length > 0) {
-          jobIds = relatedJobs.map(j => j.id);
+          jobIds = Array.from(new Set([...jobIds, ...relatedJobs.map(j => j.id)]));
         }
       }
 
