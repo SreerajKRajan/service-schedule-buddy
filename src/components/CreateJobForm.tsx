@@ -36,6 +36,7 @@ interface CreateJobFormProps {
     customer_email?: string;
     customer_address?: string;
     quoted_by?: string;
+    scheduled_date?: string;
     first_time?: boolean;
     jobs_selected?: any[];
   };
@@ -95,6 +96,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         customer_phone: initialData.customer_phone || "",
         customer_email: initialData.customer_email || "",
         customer_address: initialData.customer_address || "",
+        scheduled_date: initialData.scheduled_date ? new Date(initialData.scheduled_date).toISOString().slice(0, 16) : "",
         first_time: initialData.first_time || false,
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
         job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,
