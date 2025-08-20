@@ -39,6 +39,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
     title: "",
     description: "",
     job_type: "",
+    selected_services: [] as string[],
     priority: 1,
     estimated_duration: "",
     scheduled_date: "",
@@ -89,16 +90,33 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
     }
   };
 
-  const handleServiceChange = (serviceId: string) => {
-    const selectedService = services.find(s => s.id === serviceId);
-    if (selectedService) {
-      setFormData(prev => ({
+  const handleServiceChange = (serviceId: string, checked: boolean) => {
+    setFormData(prev => {
+      const newSelectedServices = checked
+        ? [...prev.selected_services, serviceId]
+        : prev.selected_services.filter(id => id !== serviceId);
+      
+      // Update job_type to be a comma-separated list of service names
+      const selectedServiceNames = services
+        .filter(s => newSelectedServices.includes(s.id))
+        .map(s => s.name)
+        .join(", ");
+      
+      // Calculate combined duration and price
+      const selectedServicesData = services.filter(s => newSelectedServices.includes(s.id));
+      const totalDuration = selectedServicesData.reduce((sum, service) => 
+        sum + (service.default_duration || 0), 0);
+      const totalPrice = selectedServicesData.reduce((sum, service) => 
+        sum + (service.default_price || 0), 0);
+      
+      return {
         ...prev,
-        job_type: selectedService.name,
-        estimated_duration: selectedService.default_duration?.toString() || prev.estimated_duration,
-        price: selectedService.default_price?.toString() || prev.price,
-      }));
-    }
+        selected_services: newSelectedServices,
+        job_type: selectedServiceNames,
+        estimated_duration: totalDuration > 0 ? totalDuration.toString() : prev.estimated_duration,
+        price: totalPrice > 0 ? totalPrice.toString() : prev.price,
+      };
+    });
   };
   const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
     const jobs = [];
@@ -132,6 +150,15 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
       toast({
         title: "Error",
         description: "Job title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.selected_services.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one service",
         variant: "destructive",
       });
       return;
@@ -258,6 +285,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         title: "",
         description: "",
         job_type: "",
+        selected_services: [],
         priority: 1,
         estimated_duration: "",
         scheduled_date: "",
@@ -322,28 +350,43 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="job_type">Service Type *</Label>
-          <Select
-            value={services.find(s => s.name === formData.job_type)?.id || ""}
-            onValueChange={handleServiceChange}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a service type" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name}
-                  {service.description && (
-                    <span className="text-muted-foreground ml-2">
-                      - {service.description}
-                    </span>
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="services">Services *</Label>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                {services.map(service => (
+                  <div key={service.id} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`service-${service.id}`}
+                      checked={formData.selected_services.includes(service.id)}
+                      onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                    />
+                    <div className="grid gap-1 leading-none">
+                      <Label 
+                        htmlFor={`service-${service.id}`} 
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {service.name}
+                      </Label>
+                      {service.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {service.description}
+                        </p>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        {service.default_duration && `${service.default_duration}h`}
+                        {service.default_duration && service.default_price && " • "}
+                        {service.default_price && `$${service.default_price}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {formData.selected_services.length === 0 && (
+                <p className="text-sm text-destructive mt-2">Please select at least one service</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
