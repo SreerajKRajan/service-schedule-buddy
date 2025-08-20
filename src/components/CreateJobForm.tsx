@@ -318,7 +318,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           customer_email: formData.customer_email || null,
           notes: formData.notes || null,
           price: formData.price ? parseFloat(formData.price) : null,
-          is_recurring: index === 0, // Only mark the first job as the parent recurring job
+          is_recurring: true, // Mark ALL recurring jobs as recurring
           first_time: formData.first_time && index === 0, // Only mark the first job as first time
           status: 'pending' as const,
           quoted_by: formData.quoted_by || null,

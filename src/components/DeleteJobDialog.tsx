@@ -80,86 +80,63 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
   const deleteRecurringSequence = async () => {
     setDeleting(true);
     try {
-      // Group by batch creation time (NOT scheduled_date) plus customer and job type
-      // Ensure we have created_at and quoted_by for the current job
-      let baseCreatedAt = job.created_at;
-      let baseQuotedBy = job.quoted_by;
+      // Find all recurring jobs with the same customer, job type, and quoted_by
+      // that are part of the same recurring sequence
+      const { data: relatedJobs, error: fetchError } = await supabase
+        .from('jobs')
+        .select('id, title, scheduled_date')
+        .eq('job_type', job.job_type)
+        .eq('customer_name', job.customer_name || '')
+        .eq('is_recurring', true)
+        .eq('quoted_by', job.quoted_by || '');
 
-      if (!baseCreatedAt || !baseQuotedBy) {
-        const { data: currentJob, error: currentJobError } = await supabase
-          .from('jobs')
-          .select('created_at, quoted_by')
-          .eq('id', job.id)
-          .maybeSingle();
-        if (currentJobError) throw currentJobError;
-        baseCreatedAt = baseCreatedAt || currentJob?.created_at;
-        baseQuotedBy = baseQuotedBy || currentJob?.quoted_by;
-      }
+      if (fetchError) throw fetchError;
 
       let jobIds: string[] = [job.id]; // Always include the current job
-
-      if (baseCreatedAt) {
-        const createdAtDate = new Date(baseCreatedAt);
-        // 10-minute window to reliably capture the batch
-        const windowMs = 10 * 60 * 1000;
-        const startIso = new Date(createdAtDate.getTime() - windowMs).toISOString();
-        const endIso = new Date(createdAtDate.getTime() + windowMs).toISOString();
-
-        let query = supabase
-          .from('jobs')
-          .select('id')
-          .eq('job_type', job.job_type)
-          .eq('customer_name', job.customer_name || '')
-          .gte('created_at', startIso)
-          .lte('created_at', endIso);
-
-        if (baseQuotedBy) {
-          query = query.eq('quoted_by', baseQuotedBy);
-        }
-
-        const { data: relatedJobs, error: fetchError } = await query;
-        if (fetchError) throw fetchError;
-        
-        if (relatedJobs && relatedJobs.length > 0) {
-          jobIds = Array.from(new Set([...jobIds, ...relatedJobs.map(j => j.id)]));
-        }
+      
+      if (relatedJobs && relatedJobs.length > 1) {
+        // Use all related recurring jobs
+        jobIds = relatedJobs.map(j => j.id);
       }
 
-      // Delete all job assignments for related jobs
-      const { error: assignmentError } = await supabase
+      console.log(`Deleting ${jobIds.length} recurring jobs`);
+
+      // Delete all job assignments first
+      const { error: assignmentsError } = await supabase
         .from('job_assignments')
         .delete()
         .in('job_id', jobIds);
 
-      if (assignmentError) throw assignmentError;
+      if (assignmentsError) throw assignmentsError;
 
-      // Delete all job schedules for related jobs
-      const { error: scheduleDeleteError } = await supabase
+      // Delete job schedules
+      const { error: schedulesError } = await supabase
         .from('job_schedules')
         .delete()
         .in('job_id', jobIds);
 
-      if (scheduleDeleteError) throw scheduleDeleteError;
+      if (schedulesError) throw schedulesError;
 
-      // Finally delete all related jobs
-      const { error: jobError } = await supabase
+      // Finally, delete all the jobs
+      const { error: jobsError } = await supabase
         .from('jobs')
         .delete()
         .in('id', jobIds);
 
-      if (jobError) throw jobError;
+      if (jobsError) throw jobsError;
 
       toast({
         title: "Success",
-        description: `Deleted ${jobIds.length} job${jobIds.length > 1 ? 's' : ''} from the recurring sequence`,
+        description: `Deleted ${jobIds.length} recurring job${jobIds.length > 1 ? 's' : ''} successfully`,
       });
+
       onUpdate();
       setIsOpen(false);
     } catch (error) {
-      console.error('Error deleting recurring sequence:', error);
+      console.error('Error deleting recurring jobs:', error);
       toast({
         title: "Error",
-        description: "Failed to delete recurring sequence",
+        description: "Failed to delete recurring jobs",
         variant: "destructive",
       });
     } finally {
@@ -181,9 +158,9 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
     }
 
     if (deleteOption === "single") {
-      return `Are you sure you want to delete this instance of "${job.title}"? The recurring schedule will remain active for future occurrences.`;
+      return `Are you sure you want to delete this single occurrence of "${job.title}"? Other recurring appointments will remain scheduled.`;
     } else {
-      return `Are you sure you want to delete the entire recurring sequence for "${job.title}"? This will delete all related recurring jobs and schedules. This action cannot be undone.`;
+      return `Are you sure you want to delete ALL recurring appointments for "${job.title}"? This will delete the entire recurring sequence. This action cannot be undone.`;
     }
   };
 
