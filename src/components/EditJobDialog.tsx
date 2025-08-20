@@ -89,14 +89,8 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     notes: "",
     status: "",
     price: "",
-    is_recurring: false,
-    first_time: false,
-    frequency: "weekly",
-    interval_value: 1,
-    next_due_date: "",
-    end_date: "",
-    recurrence_count: 1,
     assigned_users: [] as string[],
+    first_time: false,
     quoted_by: "",
   });
   const { toast } = useToast();
@@ -106,7 +100,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       fetchUsers();
       fetchServices();
       fetchJobAssignments();
-      fetchJobSchedule();
     }
   }, [open, job]);
 
@@ -151,13 +144,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       notes: job.notes || "",
       status: job.status || "",
       price: job.price?.toString() || "",
-      is_recurring: job.is_recurring || false,
       first_time: job.first_time || false,
-      frequency: "weekly",
-      interval_value: 1,
-      next_due_date: "",
-      end_date: "",
-      recurrence_count: 1,
       assigned_users: [],
       quoted_by: job.quoted_by || "",
     });
@@ -254,58 +241,9 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   };
 
   const fetchJobSchedule = async () => {
-    if (!job.is_recurring) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('job_schedules')
-        .select('*')
-        .eq('job_id', job.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (data) {
-        setJobSchedule(data);
-        setFormData(prev => ({
-          ...prev,
-          frequency: data.frequency,
-          interval_value: data.interval_value,
-          next_due_date: data.next_due_date ? new Date(data.next_due_date).toISOString().slice(0, 16) : "",
-          end_date: data.end_date ? new Date(data.end_date).toISOString().slice(0, 16) : "",
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching job schedule:', error);
-    }
+    // Removed recurring schedule functionality
   };
 
-  const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
-    const jobs = [];
-    let currentDate = new Date(startDate);
-
-    for (let i = 0; i < occurrences; i++) {
-      jobs.push(new Date(currentDate));
-      
-      switch (frequency) {
-        case 'daily':
-          currentDate.setDate(currentDate.getDate() + 1);
-          break;
-        case 'weekly':
-          currentDate.setDate(currentDate.getDate() + 7);
-          break;
-        case 'monthly':
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          break;
-        case 'yearly':
-          currentDate.setFullYear(currentDate.getFullYear() + 1);
-          break;
-      }
-    }
-    
-    return jobs;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,7 +282,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         notes: formData.notes || null,
         status: formData.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
         price: formData.price ? parseFloat(formData.price) : null,
-        is_recurring: formData.is_recurring,
         first_time: formData.first_time,
         quoted_by: formData.quoted_by || null,
       };
@@ -355,94 +292,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         .eq('id', job.id);
 
       if (jobError) throw jobError;
-
-      // Handle recurring schedule
-      if (formData.is_recurring) {
-        const scheduleData = {
-          job_id: job.id,
-          frequency: formData.frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
-          interval_value: formData.interval_value,
-          next_due_date: formData.next_due_date || null,
-          end_date: formData.end_date || null,
-          is_active: true,
-        };
-
-        if (jobSchedule) {
-          // Update existing schedule
-          const { error: scheduleError } = await supabase
-            .from('job_schedules')
-            .update(scheduleData)
-            .eq('id', jobSchedule.id);
-
-          if (scheduleError) throw scheduleError;
-        } else {
-          // Create new schedule
-          const { error: scheduleError } = await supabase
-            .from('job_schedules')
-            .insert(scheduleData);
-
-          if (scheduleError) throw scheduleError;
-        }
-
-        // If this job was previously non-recurring and now marked recurring, create additional jobs
-        if (!job.is_recurring && formData.scheduled_date && formData.recurrence_count > 1) {
-          const startDate = new Date(formData.scheduled_date);
-          const jobDates = generateRecurringJobs(startDate, formData.frequency, formData.recurrence_count);
-          
-          // Create additional jobs (skip the first one as it's the current job)
-          const additionalJobs = jobDates.slice(1).map((date, index) => ({
-            title: `${formData.title} (${index + 2})`,
-            description: formData.description || null,
-            job_type: formData.job_type,
-            priority: formData.priority,
-            estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
-            scheduled_date: date.toISOString(),
-            customer_name: formData.customer_name || null,
-            customer_address: formData.customer_address || null,
-            customer_phone: formData.customer_phone || null,
-            customer_email: formData.customer_email || null,
-            notes: formData.notes || null,
-            price: formData.price ? parseFloat(formData.price) : null,
-            is_recurring: false, // Only the parent job is marked as recurring
-            first_time: false,
-            status: 'pending' as const,
-            quoted_by: formData.quoted_by || null,
-          }));
-
-          if (additionalJobs.length > 0) {
-            const { data: createdJobs, error: additionalJobsError } = await supabase
-              .from('jobs')
-              .insert(additionalJobs)
-              .select();
-
-            if (additionalJobsError) throw additionalJobsError;
-
-            // Create assignments for the additional jobs
-            if (formData.assigned_users.length > 0 && createdJobs) {
-              const additionalAssignments = createdJobs.flatMap(job => 
-                formData.assigned_users.map(userId => ({
-                  job_id: job.id,
-                  user_id: userId,
-                }))
-              );
-
-              const { error: additionalAssignError } = await supabase
-                .from('job_assignments')
-                .insert(additionalAssignments);
-
-              if (additionalAssignError) throw additionalAssignError;
-            }
-          }
-        }
-      } else {
-        // If not recurring, deactivate any existing schedules
-        const { error: deactivateError } = await supabase
-          .from('job_schedules')
-          .update({ is_active: false })
-          .eq('job_id', job.id);
-
-        if (deactivateError) throw deactivateError;
-      }
 
       // Update assignments
       // First, remove all existing assignments
@@ -796,92 +645,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                 />
                 <Label htmlFor="first_time">First time customer</Label>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <RotateCcw className="h-5 w-5" />
-                Recurring Schedule
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_recurring"
-                  checked={formData.is_recurring}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_recurring: checked as boolean }))}
-                />
-                <Label htmlFor="is_recurring">This is a recurring job</Label>
-              </div>
-
-              {formData.is_recurring && (
-                <div className="space-y-4 pl-6 border-l-2 border-muted">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="frequency">Frequency</Label>
-                      <Select value={formData.frequency} onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border border-border z-50">
-                          <SelectItem value="daily">Daily</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                          <SelectItem value="yearly">Yearly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="interval_value">Repeat every</Label>
-                      <Input
-                        id="interval_value"
-                        type="number"
-                        min="1"
-                        value={formData.interval_value}
-                        onChange={(e) => setFormData(prev => ({ ...prev, interval_value: parseInt(e.target.value) || 1 }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="recurrence_count">Number of occurrences</Label>
-                    <Input
-                      id="recurrence_count"
-                      type="number"
-                      value={formData.recurrence_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, recurrence_count: parseInt(e.target.value) || 1 }))}
-                      min="1"
-                      placeholder="1"
-                      className="bg-background border-border"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="next_due_date">Next Due Date</Label>
-                      <Input
-                        id="next_due_date"
-                        type="datetime-local"
-                        value={formData.next_due_date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, next_due_date: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="end_date">End Date (Optional)</Label>
-                      <Input
-                        id="end_date"
-                        type="datetime-local"
-                        value={formData.end_date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
