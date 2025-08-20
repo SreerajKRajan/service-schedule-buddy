@@ -91,20 +91,40 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       fetchServices();
       fetchJobAssignments();
       fetchJobSchedule();
-      populateFormData();
     }
   }, [open, job]);
+
+  // Separate useEffect to populate form data after services are loaded
+  useEffect(() => {
+    if (open && job && services.length > 0) {
+      populateFormData();
+    }
+  }, [open, job, services]);
 
   const populateFormData = () => {
     const scheduledDate = job.scheduled_date 
       ? new Date(job.scheduled_date).toISOString().slice(0, 16)
       : "";
 
+    // Try to match job_type back to service IDs
+    const selectedServiceIds: string[] = [];
+    if (job.job_type && services.length > 0) {
+      const jobTypeNames = job.job_type.split(', ').map(name => name.trim());
+      jobTypeNames.forEach(jobTypeName => {
+        const matchingService = services.find(service => 
+          service.name.toLowerCase() === jobTypeName.toLowerCase()
+        );
+        if (matchingService) {
+          selectedServiceIds.push(matchingService.id);
+        }
+      });
+    }
+
     setFormData({
       title: job.title || "",
       description: job.description || "",
       job_type: job.job_type || "",
-      selected_services: [],
+      selected_services: selectedServiceIds,
       priority: job.priority || 1,
       estimated_duration: job.estimated_duration?.toString() || "",
       scheduled_date: scheduledDate,
@@ -183,9 +203,9 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         .select('*')
         .eq('job_id', job.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data) {
         setJobSchedule(data);
