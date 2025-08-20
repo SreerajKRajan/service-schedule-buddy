@@ -95,6 +95,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     interval_value: 1,
     next_due_date: "",
     end_date: "",
+    recurrence_count: 1,
     assigned_users: [] as string[],
     quoted_by: "",
   });
@@ -156,6 +157,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       interval_value: 1,
       next_due_date: "",
       end_date: "",
+      recurrence_count: 1,
       assigned_users: [],
       quoted_by: job.quoted_by || "",
     });
@@ -279,6 +281,32 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     }
   };
 
+  const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
+    const jobs = [];
+    let currentDate = new Date(startDate);
+
+    for (let i = 0; i < occurrences; i++) {
+      jobs.push(new Date(currentDate));
+      
+      switch (frequency) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+        case 'yearly':
+          currentDate.setFullYear(currentDate.getFullYear() + 1);
+          break;
+      }
+    }
+    
+    return jobs;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -348,12 +376,63 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
 
           if (scheduleError) throw scheduleError;
         } else {
-          // Create new schedule
+          // Create new schedule and additional recurring jobs
           const { error: scheduleError } = await supabase
             .from('job_schedules')
             .insert(scheduleData);
 
           if (scheduleError) throw scheduleError;
+
+          // If this wasn't previously recurring and we have a scheduled date, create additional jobs
+          if (!job.is_recurring && formData.scheduled_date && formData.recurrence_count > 1) {
+            const startDate = new Date(formData.scheduled_date);
+            const jobDates = generateRecurringJobs(startDate, formData.frequency, formData.recurrence_count);
+            
+            // Create additional jobs (skip the first one as it's the current job being updated)
+            const additionalJobs = jobDates.slice(1).map((date, index) => ({
+              title: `${formData.title} (${index + 2})`,
+              description: formData.description || null,
+              job_type: formData.job_type,
+              priority: formData.priority,
+              estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
+              scheduled_date: date.toISOString(),
+              customer_name: formData.customer_name || null,
+              customer_address: formData.customer_address || null,
+              customer_phone: formData.customer_phone || null,
+              customer_email: formData.customer_email || null,
+              notes: formData.notes || null,
+              price: formData.price ? parseFloat(formData.price) : null,
+              is_recurring: false, // Only the parent job is marked as recurring
+              first_time: false,
+              status: 'pending' as const,
+              quoted_by: formData.quoted_by || null,
+            }));
+
+            if (additionalJobs.length > 0) {
+              const { data: createdJobs, error: additionalJobsError } = await supabase
+                .from('jobs')
+                .insert(additionalJobs)
+                .select();
+
+              if (additionalJobsError) throw additionalJobsError;
+
+              // Create assignments for the additional jobs
+              if (formData.assigned_users.length > 0 && createdJobs) {
+                const additionalAssignments = createdJobs.flatMap(job => 
+                  formData.assigned_users.map(userId => ({
+                    job_id: job.id,
+                    user_id: userId,
+                  }))
+                );
+
+                const { error: additionalAssignError } = await supabase
+                  .from('job_assignments')
+                  .insert(additionalAssignments);
+
+                if (additionalAssignError) throw additionalAssignError;
+              }
+            }
+          }
         }
       } else {
         // If not recurring, deactivate any existing schedules
@@ -765,6 +844,19 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                         onChange={(e) => setFormData(prev => ({ ...prev, interval_value: parseInt(e.target.value) || 1 }))}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="recurrence_count">Number of occurrences</Label>
+                    <Input
+                      id="recurrence_count"
+                      type="number"
+                      value={formData.recurrence_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, recurrence_count: parseInt(e.target.value) || 1 }))}
+                      min="1"
+                      placeholder="1"
+                      className="bg-background border-border"
+                    />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
