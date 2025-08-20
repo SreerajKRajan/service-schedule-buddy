@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Mail, Phone, Users, UserCheck, UserX } from "lucide-react";
+import { PlusCircle, Mail, Phone, Users, UserCheck, UserX, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface User {
   id: string;
@@ -142,6 +143,40 @@ export function UserManagement() {
       toast({
         title: "Error",
         description: "Failed to update user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      // First delete job assignments
+      const { error: assignmentError } = await supabase
+        .from('job_assignments')
+        .delete()
+        .eq('user_id', userId);
+
+      if (assignmentError) throw assignmentError;
+
+      // Then delete the user
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (userError) throw userError;
+
+      toast({
+        title: "Success",
+        description: "Team member deleted successfully",
+      });
+      fetchUsers();
+      fetchAssignments();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete team member",
         variant: "destructive",
       });
     }
@@ -286,10 +321,37 @@ export function UserManagement() {
                       </Badge>
                     </CardDescription>
                   </div>
-                  <Switch
-                    checked={user.active}
-                    onCheckedChange={(checked) => toggleUserActive(user.id, checked)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={user.active}
+                      onCheckedChange={(checked) => toggleUserActive(user.id, checked)}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Team Member</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{user.name}"? This action cannot be undone. 
+                            All job assignments for this team member will also be removed.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteUser(user.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardHeader>
 
