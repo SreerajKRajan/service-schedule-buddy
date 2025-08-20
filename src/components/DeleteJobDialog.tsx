@@ -14,6 +14,8 @@ interface Job {
   job_type: string;
   customer_name?: string;
   scheduled_date?: string;
+  created_at?: string;
+  quoted_by?: string;
 }
 
 interface DeleteJobDialogProps {
@@ -78,17 +80,49 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
   const deleteRecurringSequence = async () => {
     setDeleting(true);
     try {
-      // Find all jobs with the same job_type, customer, and recurring pattern
-      const { data: relatedJobs, error: fetchError } = await supabase
-        .from('jobs')
+      // First, find the job schedule for this job
+      const { data: schedule, error: scheduleError } = await supabase
+        .from('job_schedules')
         .select('id')
-        .eq('job_type', job.job_type)
-        .eq('customer_name', job.customer_name || '')
-        .eq('is_recurring', true);
+        .eq('job_id', job.id)
+        .eq('is_active', true)
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (scheduleError) throw scheduleError;
 
-      const jobIds = relatedJobs?.map(j => j.id) || [job.id];
+      let jobIds: string[] = [job.id]; // Always include the current job
+
+      if (schedule) {
+        // Find all jobs that share the same schedule
+        const { data: relatedJobs, error: fetchError } = await supabase
+          .from('job_schedules')
+          .select('job_id')
+          .eq('id', schedule.id);
+
+        if (fetchError) throw fetchError;
+        
+        if (relatedJobs && relatedJobs.length > 0) {
+          jobIds = relatedJobs.map(s => s.job_id);
+        }
+      } else {
+        // If no schedule found, try to find jobs created as part of the same recurring batch
+        // This handles cases where jobs were created together but might not have active schedules
+        const { data: relatedJobs, error: fetchError } = await supabase
+          .from('jobs')
+          .select('id')
+          .eq('job_type', job.job_type)
+          .eq('customer_name', job.customer_name || '')
+          .eq('is_recurring', true)
+          .eq('quoted_by', job.quoted_by || '')
+          .gte('created_at', new Date(new Date(job.scheduled_date || job.created_at).getTime() - 24 * 60 * 60 * 1000).toISOString()) // Within 24 hours of each other
+          .lte('created_at', new Date(new Date(job.scheduled_date || job.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString());
+
+        if (fetchError) throw fetchError;
+        
+        if (relatedJobs && relatedJobs.length > 0) {
+          jobIds = relatedJobs.map(j => j.id);
+        }
+      }
 
       // Delete all job assignments for related jobs
       const { error: assignmentError } = await supabase
@@ -99,12 +133,12 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
       if (assignmentError) throw assignmentError;
 
       // Delete all job schedules for related jobs
-      const { error: scheduleError } = await supabase
+      const { error: scheduleDeleteError } = await supabase
         .from('job_schedules')
         .delete()
         .in('job_id', jobIds);
 
-      if (scheduleError) throw scheduleError;
+      if (scheduleDeleteError) throw scheduleDeleteError;
 
       // Finally delete all related jobs
       const { error: jobError } = await supabase
