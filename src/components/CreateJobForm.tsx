@@ -384,25 +384,6 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           if (scheduleError) throw scheduleError;
         }
 
-        // Check for immediate webhook notifications for all created jobs
-        if (jobs && jobs.length > 0) {
-          for (const job of jobs) {
-            try {
-              const { error: webhookError } = await supabase.functions.invoke('check-job-notification', {
-                body: { jobId: job.id }
-              });
-              
-              if (webhookError) {
-                console.error(`Webhook notification error for job ${job.id}:`, webhookError);
-                // Don't throw error - job creation was successful
-              }
-            } catch (webhookError) {
-              console.error(`Failed to trigger webhook notification for job ${job.id}:`, webhookError);
-              // Don't throw error - job creation was successful
-            }
-          }
-        }
-
         toast({
           title: "Success",
           description: `Created ${jobsToCreate.length} recurring jobs successfully`,
@@ -448,21 +429,6 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             .insert(assignments);
 
           if (assignError) throw assignError;
-        }
-
-        // Check for immediate webhook notification
-        try {
-          const { error: webhookError } = await supabase.functions.invoke('check-job-notification', {
-            body: { jobId: job.id }
-          });
-          
-          if (webhookError) {
-            console.error('Webhook notification error:', webhookError);
-            // Don't throw error - job creation was successful
-          }
-        } catch (webhookError) {
-          console.error('Failed to trigger webhook notification:', webhookError);
-          // Don't throw error - job creation was successful
         }
 
         toast({

@@ -2,12 +2,3 @@ project_id = "spelxsmrpbswmmahwzyg"
 
 [functions.quote-webhook]
 verify_jwt = false
-
-[functions.job-webhook-notifications]
-verify_jwt = false
-
-[functions.check-job-notification]
-verify_jwt = false
-
-[functions.test-webhook]
-verify_jwt = false

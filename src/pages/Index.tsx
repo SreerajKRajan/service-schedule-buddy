@@ -5,11 +5,10 @@ import { UserManagement } from "@/components/UserManagement";
 import { ServicesManagement } from "@/components/ServicesManagement";
 import { Dashboard } from "@/components/Dashboard";
 import AcceptedQuotes from "@/components/AcceptedQuotes";
-import { WebhookTester } from "@/components/WebhookTester";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck, Webhook } from "lucide-react";
+import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -32,7 +31,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -52,10 +51,6 @@ const Index = () => {
             <TabsTrigger value="services" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Services
-            </TabsTrigger>
-            <TabsTrigger value="webhook" className="flex items-center gap-2">
-              <Webhook className="h-4 w-4" />
-              Test Webhooks
             </TabsTrigger>
             <TabsTrigger value="create" className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
@@ -96,12 +91,6 @@ const Index = () => {
 
           <TabsContent value="services" className="space-y-6">
             <ServicesManagement />
-          </TabsContent>
-
-          <TabsContent value="webhook" className="space-y-6">
-            <div className="flex justify-center">
-              <WebhookTester />
-            </div>
           </TabsContent>
 
           <TabsContent value="create" className="space-y-6">

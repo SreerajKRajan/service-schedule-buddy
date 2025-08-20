@@ -166,7 +166,6 @@ export type Database = {
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at: string
-          webhook_sent_at: string | null
         }
         Insert: {
           completed_date?: string | null
@@ -189,7 +188,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at?: string
-          webhook_sent_at?: string | null
         }
         Update: {
           completed_date?: string | null
@@ -212,7 +210,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string
-          webhook_sent_at?: string | null
         }
         Relationships: [
           {
