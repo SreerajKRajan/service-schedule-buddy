@@ -376,61 +376,61 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
 
           if (scheduleError) throw scheduleError;
         } else {
-          // Create new schedule and additional recurring jobs
+          // Create new schedule
           const { error: scheduleError } = await supabase
             .from('job_schedules')
             .insert(scheduleData);
 
           if (scheduleError) throw scheduleError;
+        }
 
-          // If this wasn't previously recurring and we have a scheduled date, create additional jobs
-          if (!job.is_recurring && formData.scheduled_date && formData.recurrence_count > 1) {
-            const startDate = new Date(formData.scheduled_date);
-            const jobDates = generateRecurringJobs(startDate, formData.frequency, formData.recurrence_count);
-            
-            // Create additional jobs (skip the first one as it's the current job being updated)
-            const additionalJobs = jobDates.slice(1).map((date, index) => ({
-              title: `${formData.title} (${index + 2})`,
-              description: formData.description || null,
-              job_type: formData.job_type,
-              priority: formData.priority,
-              estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
-              scheduled_date: date.toISOString(),
-              customer_name: formData.customer_name || null,
-              customer_address: formData.customer_address || null,
-              customer_phone: formData.customer_phone || null,
-              customer_email: formData.customer_email || null,
-              notes: formData.notes || null,
-              price: formData.price ? parseFloat(formData.price) : null,
-              is_recurring: false, // Only the parent job is marked as recurring
-              first_time: false,
-              status: 'pending' as const,
-              quoted_by: formData.quoted_by || null,
-            }));
+        // If this job was previously non-recurring and now marked recurring, create additional jobs
+        if (!job.is_recurring && formData.scheduled_date && formData.recurrence_count > 1) {
+          const startDate = new Date(formData.scheduled_date);
+          const jobDates = generateRecurringJobs(startDate, formData.frequency, formData.recurrence_count);
+          
+          // Create additional jobs (skip the first one as it's the current job)
+          const additionalJobs = jobDates.slice(1).map((date, index) => ({
+            title: `${formData.title} (${index + 2})`,
+            description: formData.description || null,
+            job_type: formData.job_type,
+            priority: formData.priority,
+            estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
+            scheduled_date: date.toISOString(),
+            customer_name: formData.customer_name || null,
+            customer_address: formData.customer_address || null,
+            customer_phone: formData.customer_phone || null,
+            customer_email: formData.customer_email || null,
+            notes: formData.notes || null,
+            price: formData.price ? parseFloat(formData.price) : null,
+            is_recurring: false, // Only the parent job is marked as recurring
+            first_time: false,
+            status: 'pending' as const,
+            quoted_by: formData.quoted_by || null,
+          }));
 
-            if (additionalJobs.length > 0) {
-              const { data: createdJobs, error: additionalJobsError } = await supabase
-                .from('jobs')
-                .insert(additionalJobs)
-                .select();
+          if (additionalJobs.length > 0) {
+            const { data: createdJobs, error: additionalJobsError } = await supabase
+              .from('jobs')
+              .insert(additionalJobs)
+              .select();
 
-              if (additionalJobsError) throw additionalJobsError;
+            if (additionalJobsError) throw additionalJobsError;
 
-              // Create assignments for the additional jobs
-              if (formData.assigned_users.length > 0 && createdJobs) {
-                const additionalAssignments = createdJobs.flatMap(job => 
-                  formData.assigned_users.map(userId => ({
-                    job_id: job.id,
-                    user_id: userId,
-                  }))
-                );
+            // Create assignments for the additional jobs
+            if (formData.assigned_users.length > 0 && createdJobs) {
+              const additionalAssignments = createdJobs.flatMap(job => 
+                formData.assigned_users.map(userId => ({
+                  job_id: job.id,
+                  user_id: userId,
+                }))
+              );
 
-                const { error: additionalAssignError } = await supabase
-                  .from('job_assignments')
-                  .insert(additionalAssignments);
+              const { error: additionalAssignError } = await supabase
+                .from('job_assignments')
+                .insert(additionalAssignments);
 
-                if (additionalAssignError) throw additionalAssignError;
-              }
+              if (additionalAssignError) throw additionalAssignError;
             }
           }
         }

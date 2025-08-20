@@ -87,6 +87,25 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
   }, []);
 
   useEffect(() => {
+    // Apply basic fields immediately (avoid waiting for services)
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        customer_name: initialData.customer_name || "",
+        customer_phone: initialData.customer_phone || "",
+        customer_email: initialData.customer_email || "",
+        customer_address: initialData.customer_address || "",
+        quoted_by: initialData.quoted_by || "",
+        first_time: initialData.first_time || false,
+        title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
+        job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,
+        estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration ? Math.round(job.duration / 60) : 0), 0).toString() || prev.estimated_duration,
+        price: initialData.jobs_selected?.reduce((sum, job) => sum + (job.price || 0), 0).toString() || prev.price,
+      }));
+    }
+  }, [initialData]);
+
+  useEffect(() => {
     if (initialData && services.length > 0) {
       // Match services from webhook data to database services
       const matchedServiceIds: string[] = [];
@@ -119,17 +138,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       setCustomServices(unmatchedServices);
       setFormData(prev => ({
         ...prev,
-        customer_name: initialData.customer_name || "",
-        customer_phone: initialData.customer_phone || "",
-        customer_email: initialData.customer_email || "",
-        customer_address: initialData.customer_address || "",
-        quoted_by: initialData.quoted_by || "",
-        first_time: initialData.first_time || false,
         selected_services: matchedServiceIds,
-        title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || "",
-        job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || "",
-        estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration ? Math.round(job.duration / 60) : 0), 0).toString() || "",
-        price: initialData.jobs_selected?.reduce((sum, job) => sum + (job.price || 0), 0).toString() || "",
       }));
     }
   }, [initialData, services]);
