@@ -54,6 +54,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
     recurrence_count: 1,
     assigned_users: [] as string[],
     first_time: false,
+    quoted_by: "",
   });
   const { toast } = useToast();
 
@@ -187,6 +188,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
           is_recurring: index === 0, // Only mark the first job as the parent recurring job
           first_time: formData.first_time && index === 0, // Only mark the first job as first time
           status: 'pending' as const,
+          quoted_by: formData.quoted_by || null,
         }));
 
         // Insert all jobs
@@ -250,6 +252,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
           is_recurring: false,
           first_time: formData.first_time,
           status: 'pending' as const,
+          quoted_by: formData.quoted_by || null,
         };
 
         const { data: job, error: jobError } = await supabase
@@ -300,6 +303,7 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         recurrence_count: 1,
         assigned_users: [],
         first_time: false,
+        quoted_by: "",
       });
 
       onSuccess();
@@ -511,23 +515,42 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Assign Team Members
+            Team Assignment
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
-            {users.map(user => (
-              <div key={user.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`user-${user.id}`}
-                  checked={formData.assigned_users.includes(user.id)}
-                  onCheckedChange={(checked) => handleUserAssignment(user.id, checked as boolean)}
-                />
-                <Label htmlFor={`user-${user.id}`} className="flex-1">
-                  {user.name} ({user.role})
-                </Label>
-              </div>
-            ))}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="quoted_by">Quoted By</Label>
+            <Select value={formData.quoted_by} onValueChange={(value) => setFormData(prev => ({ ...prev, quoted_by: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select team member who quoted this job" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border z-50">
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} ({user.role})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Assign Team Members</Label>
+            <div className="grid gap-3 md:grid-cols-2">
+              {users.map(user => (
+                <div key={user.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`user-${user.id}`}
+                    checked={formData.assigned_users.includes(user.id)}
+                    onCheckedChange={(checked) => handleUserAssignment(user.id, checked as boolean)}
+                  />
+                  <Label htmlFor={`user-${user.id}`} className="flex-1">
+                    {user.name} ({user.role})
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

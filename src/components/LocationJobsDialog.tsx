@@ -23,6 +23,7 @@ interface Job {
   created_at: string;
   updated_at: string;
   price: number;
+  quoted_by?: string;
 }
 
 interface LocationJobsDialogProps {

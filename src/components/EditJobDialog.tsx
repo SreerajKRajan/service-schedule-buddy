@@ -45,6 +45,7 @@ interface Job {
   created_at: string;
   updated_at: string;
   price: number;
+  quoted_by?: string;
 }
 
 interface EditJobDialogProps {
@@ -82,6 +83,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     next_due_date: "",
     end_date: "",
     assigned_users: [] as string[],
+    quoted_by: "",
   });
   const { toast } = useToast();
 
@@ -142,6 +144,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       next_due_date: "",
       end_date: "",
       assigned_users: [],
+      quoted_by: job.quoted_by || "",
     });
   };
 
@@ -261,6 +264,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         price: formData.price ? parseFloat(formData.price) : null,
         is_recurring: formData.is_recurring,
         first_time: formData.first_time,
+        quoted_by: formData.quoted_by || null,
       };
 
       const { error: jobError } = await supabase
@@ -675,23 +679,42 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Assign Team Members
+                Team Assignment
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2">
-                {users.map(user => (
-                  <div key={user.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`user-${user.id}`}
-                      checked={formData.assigned_users.includes(user.id)}
-                      onCheckedChange={(checked) => handleUserAssignment(user.id, checked as boolean)}
-                    />
-                    <Label htmlFor={`user-${user.id}`} className="flex-1">
-                      {user.name} ({user.role})
-                    </Label>
-                  </div>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="quoted_by">Quoted By</Label>
+                <Select value={formData.quoted_by} onValueChange={(value) => setFormData(prev => ({ ...prev, quoted_by: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team member who quoted this job" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Assign Team Members</Label>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {users.map(user => (
+                    <div key={user.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`user-${user.id}`}
+                        checked={formData.assigned_users.includes(user.id)}
+                        onCheckedChange={(checked) => handleUserAssignment(user.id, checked as boolean)}
+                      />
+                      <Label htmlFor={`user-${user.id}`} className="flex-1">
+                        {user.name} ({user.role})
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

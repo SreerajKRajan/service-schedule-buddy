@@ -30,6 +30,7 @@ interface Job {
   created_at: string;
   updated_at: string;
   price: number;
+  quoted_by?: string;
 }
 
 interface JobAssignment {
@@ -60,6 +61,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [jobSchedule, setJobSchedule] = useState<JobSchedule | null>(null);
+  const [quotedByUser, setQuotedByUser] = useState<string>("");
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -153,10 +155,28 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
     }
   };
 
+  const fetchQuotedByUser = async () => {
+    if (!job.quoted_by) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', job.quoted_by)
+        .single();
+
+      if (error) throw error;
+      setQuotedByUser(data?.name || "");
+    } catch (error) {
+      console.error('Error fetching quoted by user:', error);
+    }
+  };
+
   React.useEffect(() => {
     fetchJobAssignments();
     fetchJobSchedule();
-  }, [job.id, job.is_recurring]);
+    fetchQuotedByUser();
+  }, [job.id, job.is_recurring, job.quoted_by]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not scheduled';
@@ -240,11 +260,20 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             </div>
           )}
 
-          {jobAssignments.length > 0 && (
+          {quotedByUser && (
             <div className="flex items-center gap-2">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
               <span className="line-clamp-1">
-                {jobAssignments.map(assignment => assignment.users.name).join(', ')}
+                <strong>Quoted by:</strong> {quotedByUser}
+              </span>
+            </div>
+          )}
+
+          {jobAssignments.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="line-clamp-1">
+                <strong>Assigned:</strong> {jobAssignments.map(assignment => assignment.users.name).join(', ')}
               </span>
             </div>
           )}
