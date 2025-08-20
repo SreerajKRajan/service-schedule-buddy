@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle, Trash2, Edit } from "lucide-react";
 
 interface AcceptedQuote {
   id: string;
@@ -22,10 +22,14 @@ interface AcceptedQuote {
   };
 }
 
-export default function AcceptedQuotes() {
+interface AcceptedQuotesProps {
+  onConvertToJob?: (quote: AcceptedQuote) => void;
+}
+
+export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) {
   const [quotes, setQuotes] = useState<AcceptedQuote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [converting, setConverting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,54 +63,37 @@ export default function AcceptedQuotes() {
     }
   };
 
-  const convertToJob = async (quote: AcceptedQuote) => {
-    setConverting(quote.id);
+  const handleConvertToJob = (quote: AcceptedQuote) => {
+    if (onConvertToJob) {
+      onConvertToJob(quote);
+    }
+  };
+
+  const deleteQuote = async (quoteId: string) => {
+    setDeleting(quoteId);
     try {
-      // Create job for each selected service
-      for (const job of quote.jobs_selected) {
-        const { error: jobError } = await supabase
-          .from('jobs')
-          .insert({
-            title: job.title || job.name || 'Converted from Quote',
-            job_type: job.type || 'service',
-            customer_name: quote.customer_name,
-            customer_phone: quote.customer_phone,
-            customer_email: quote.customer_email,
-            customer_address: quote.customer_address,
-            quoted_by: quote.quoted_by,
-            first_time: quote.first_time,
-            price: job.price,
-            estimated_duration: job.duration,
-            description: job.description,
-            status: 'pending'
-          });
-
-        if (jobError) throw jobError;
-      }
-
-      // Update quote status to converted
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('accepted_quotes')
-        .update({ status: 'converted' })
-        .eq('id', quote.id);
+        .delete()
+        .eq('id', quoteId);
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `Converted ${quote.jobs_selected.length} job(s) successfully`,
+        title: "Quote Deleted",
+        description: "Quote has been permanently deleted",
       });
 
       fetchAcceptedQuotes();
     } catch (error) {
-      console.error('Error converting quote:', error);
+      console.error('Error deleting quote:', error);
       toast({
         title: "Error",
-        description: "Failed to convert quote to job",
+        description: "Failed to delete quote",
         variant: "destructive",
       });
     } finally {
-      setConverting(null);
+      setDeleting(null);
     }
   };
 
@@ -236,29 +223,32 @@ export default function AcceptedQuotes() {
                     {/* Actions */}
                     <div className="flex gap-2 pt-2">
                       <Button
-                        onClick={() => convertToJob(quote)}
-                        disabled={converting === quote.id}
+                        onClick={() => handleConvertToJob(quote)}
+                        disabled={deleting === quote.id}
                         className="flex-1"
                       >
-                        {converting === quote.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Converting...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Convert to Job{quote.jobs_selected.length > 1 ? 's' : ''}
-                          </>
-                        )}
+                        <Edit className="h-4 w-4 mr-2" />
+                        Convert to Job{quote.jobs_selected.length > 1 ? 's' : ''}
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => rejectQuote(quote.id)}
-                        disabled={converting === quote.id}
+                        disabled={deleting === quote.id}
                       >
                         <XCircle className="h-4 w-4 mr-2" />
                         Reject
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => deleteQuote(quote.id)}
+                        disabled={deleting === quote.id}
+                        size="icon"
+                      >
+                        {deleting === quote.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -287,9 +277,23 @@ export default function AcceptedQuotes() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    {quote.jobs_selected.length} service{quote.jobs_selected.length > 1 ? 's' : ''} • 
-                    Processed on {new Date(quote.created_at).toLocaleDateString()}
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      {quote.jobs_selected.length} service{quote.jobs_selected.length > 1 ? 's' : ''} • 
+                      Processed on {new Date(quote.created_at).toLocaleDateString()}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteQuote(quote.id)}
+                      disabled={deleting === quote.id}
+                    >
+                      {deleting === quote.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

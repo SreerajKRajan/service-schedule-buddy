@@ -13,6 +13,7 @@ import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck } from "lu
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createJobData, setCreateJobData] = useState<any>(null);
 
   useEffect(() => {
     // Initialize any real-time subscriptions or data fetching here
@@ -65,7 +66,20 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="quotes" className="space-y-6">
-            <AcceptedQuotes />
+            <AcceptedQuotes 
+              onConvertToJob={(quote) => {
+                setCreateJobData({
+                  customer_name: quote.customer_name,
+                  customer_phone: quote.customer_phone,
+                  customer_email: quote.customer_email,
+                  customer_address: quote.customer_address,
+                  quoted_by: quote.quoted_by,
+                  first_time: quote.first_time,
+                  jobs_selected: quote.jobs_selected,
+                });
+                setShowCreateForm(true);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
@@ -104,9 +118,14 @@ const Index = () => {
                 <CreateJobForm 
                   onSuccess={() => {
                     setShowCreateForm(false);
+                    setCreateJobData(null);
                     setActiveTab("jobs");
                   }}
-                  onCancel={() => setShowCreateForm(false)}
+                  onCancel={() => {
+                    setShowCreateForm(false);
+                    setCreateJobData(null);
+                  }}
+                  initialData={createJobData}
                 />
               </CardContent>
             </Card>

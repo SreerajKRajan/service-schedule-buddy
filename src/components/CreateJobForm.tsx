@@ -29,9 +29,18 @@ interface Service {
 interface CreateJobFormProps {
   onSuccess: () => void;
   onCancel?: () => void;
+  initialData?: {
+    customer_name?: string;
+    customer_phone?: string;
+    customer_email?: string;
+    customer_address?: string;
+    quoted_by?: string;
+    first_time?: boolean;
+    jobs_selected?: any[];
+  };
 }
 
-export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
+export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFormProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,6 +71,24 @@ export function CreateJobForm({ onSuccess, onCancel }: CreateJobFormProps) {
     fetchUsers();
     fetchServices();
   }, []);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        customer_name: initialData.customer_name || "",
+        customer_phone: initialData.customer_phone || "",
+        customer_email: initialData.customer_email || "",
+        customer_address: initialData.customer_address || "",
+        quoted_by: initialData.quoted_by || "",
+        first_time: initialData.first_time || false,
+        title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || "",
+        job_type: initialData.jobs_selected?.map(job => job.name).join(", ") || "",
+        estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration || 0), 0).toString() || "",
+        price: initialData.jobs_selected?.reduce((sum, job) => sum + (job.price || 0), 0).toString() || "",
+      }));
+    }
+  }, [initialData]);
 
   const fetchUsers = async () => {
     try {
