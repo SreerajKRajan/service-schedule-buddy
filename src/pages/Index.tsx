@@ -109,7 +109,7 @@ const Index = () => {
 
         {showCreateForm && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
               <CardHeader>
                 <CardTitle>Create New Job</CardTitle>
                 <CardDescription>
