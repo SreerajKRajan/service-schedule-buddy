@@ -180,13 +180,11 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not scheduled';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // Display exactly as received (no timezone conversion)
+    // Support values with seconds/timezone or simple datetime-local strings
+    const base = dateString.replace('Z', '');
+    const trimmed = base.length >= 16 ? base.slice(0, 16) : base;
+    return trimmed.replace('T', ', ');
   };
 
   const formatPrice = (price: number) => {
