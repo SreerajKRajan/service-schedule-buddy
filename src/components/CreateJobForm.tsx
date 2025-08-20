@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Users, RotateCcw } from "lucide-react";
 
 interface User {
@@ -45,6 +46,18 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
+  const [customServices, setCustomServices] = useState<Array<{
+    name: string;
+    duration: number;
+    price: number;
+    id: string;
+  }>>([]);
+  const [showCustomServiceForm, setShowCustomServiceForm] = useState(false);
+  const [customServiceData, setCustomServiceData] = useState({
+    name: "",
+    duration: "",
+    price: ""
+  });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -77,6 +90,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
     if (initialData && services.length > 0) {
       // Match services from webhook data to database services
       const matchedServiceIds: string[] = [];
+      const unmatchedServices: Array<{name: string; duration: number; price: number; id: string}> = [];
       
       if (initialData.jobs_selected) {
         initialData.jobs_selected.forEach(job => {
@@ -88,10 +102,21 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           
           if (matchedService) {
             matchedServiceIds.push(matchedService.id);
+          } else {
+            // Create custom service for unmatched webhook data
+            const customService = {
+              id: `custom-${Date.now()}-${Math.random()}`,
+              name: job.title || job.name || 'Custom Service',
+              duration: job.duration ? Math.round(job.duration / 60) : 1, // Convert minutes to hours
+              price: job.price || 0
+            };
+            unmatchedServices.push(customService);
+            matchedServiceIds.push(customService.id);
           }
         });
       }
 
+      setCustomServices(unmatchedServices);
       setFormData(prev => ({
         ...prev,
         customer_name: initialData.customer_name || "",
@@ -102,8 +127,8 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         first_time: initialData.first_time || false,
         selected_services: matchedServiceIds,
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || "",
-        job_type: initialData.jobs_selected?.map(job => job.name).join(", ") || "",
-        estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration || 0), 0).toString() || "",
+        job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || "",
+        estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration ? Math.round(job.duration / 60) : 0), 0).toString() || "",
         price: initialData.jobs_selected?.reduce((sum, job) => sum + (job.price || 0), 0).toString() || "",
       }));
     }
@@ -144,17 +169,29 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         : prev.selected_services.filter(id => id !== serviceId);
       
       // Update job_type to be a comma-separated list of service names
-      const selectedServiceNames = services
+      const allServices = [...services, ...customServices];
+      const selectedServiceNames = allServices
         .filter(s => newSelectedServices.includes(s.id))
         .map(s => s.name)
         .join(", ");
       
-      // Calculate combined duration and price
-      const selectedServicesData = services.filter(s => newSelectedServices.includes(s.id));
-      const totalDuration = selectedServicesData.reduce((sum, service) => 
-        sum + (service.default_duration || 0), 0);
-      const totalPrice = selectedServicesData.reduce((sum, service) => 
-        sum + (service.default_price || 0), 0);
+      // Calculate combined duration and price with proper type handling
+      const selectedServicesData = allServices.filter(s => newSelectedServices.includes(s.id));
+      const totalDuration = selectedServicesData.reduce((sum, service) => {
+        if ('default_duration' in service) {
+          return sum + (service.default_duration || 0);
+        } else {
+          return sum + (service.duration || 0);
+        }
+      }, 0);
+      
+      const totalPrice = selectedServicesData.reduce((sum, service) => {
+        if ('default_price' in service) {
+          return sum + (service.default_price || 0);
+        } else {
+          return sum + (service.price || 0);
+        }
+      }, 0);
       
       return {
         ...prev,
@@ -165,6 +202,47 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       };
     });
   };
+  const addCustomService = () => {
+    if (!customServiceData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Service name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const customService = {
+      id: `custom-${Date.now()}-${Math.random()}`,
+      name: customServiceData.name.trim(),
+      duration: parseInt(customServiceData.duration) || 1,
+      price: parseFloat(customServiceData.price) || 0
+    };
+
+    setCustomServices(prev => [...prev, customService]);
+    setFormData(prev => ({
+      ...prev,
+      selected_services: [...prev.selected_services, customService.id]
+    }));
+    
+    // Reset form
+    setCustomServiceData({ name: "", duration: "", price: "" });
+    setShowCustomServiceForm(false);
+    
+    toast({
+      title: "Success",
+      description: "Custom service added successfully",
+    });
+  };
+
+  const removeCustomService = (serviceId: string) => {
+    setCustomServices(prev => prev.filter(s => s.id !== serviceId));
+    setFormData(prev => ({
+      ...prev,
+      selected_services: prev.selected_services.filter(id => id !== serviceId)
+    }));
+  };
+
   const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
     const jobs = [];
     let currentDate = new Date(startDate);
@@ -408,33 +486,134 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           <Label htmlFor="services">Services *</Label>
           <Card>
             <CardContent className="pt-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                {services.map(service => (
-                  <div key={service.id} className="flex items-start space-x-2">
-                    <Checkbox
-                      id={`service-${service.id}`}
-                      checked={formData.selected_services.includes(service.id)}
-                      onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                    />
-                    <div className="grid gap-1 leading-none">
-                      <Label 
-                        htmlFor={`service-${service.id}`} 
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {service.name}
-                      </Label>
-                      <div className="text-xs text-muted-foreground">
-                        {service.default_duration && `${service.default_duration}h`}
-                        {service.default_duration && service.default_price && " • "}
-                        {service.default_price && `$${service.default_price}`}
+              <div className="space-y-4">
+                {/* Database Services */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  {services.map(service => (
+                    <div key={service.id} className="flex items-start space-x-2">
+                      <Checkbox
+                        id={`service-${service.id}`}
+                        checked={formData.selected_services.includes(service.id)}
+                        onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                      />
+                      <div className="grid gap-1 leading-none">
+                        <Label 
+                          htmlFor={`service-${service.id}`} 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {service.name}
+                        </Label>
+                        <div className="text-xs text-muted-foreground">
+                          {service.default_duration && `${service.default_duration}h`}
+                          {service.default_duration && service.default_price && " • "}
+                          {service.default_price && `$${service.default_price}`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Custom Services */}
+                {customServices.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-3">Custom Services</h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {customServices.map(service => (
+                        <div key={service.id} className="flex items-start space-x-2">
+                          <Checkbox
+                            id={`custom-service-${service.id}`}
+                            checked={formData.selected_services.includes(service.id)}
+                            onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                          />
+                          <div className="grid gap-1 leading-none flex-1">
+                            <Label 
+                              htmlFor={`custom-service-${service.id}`} 
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {service.name}
+                              <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
+                            </Label>
+                            <div className="text-xs text-muted-foreground">
+                              {service.duration}h • ${service.price}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCustomService(service.id)}
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Custom Service Form */}
+                {showCustomServiceForm && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-3">Add Custom Service</h4>
+                    <div className="grid gap-3">
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <Input
+                          placeholder="Service name"
+                          value={customServiceData.name}
+                          onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Duration (hours)"
+                          value={customServiceData.duration}
+                          onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Price ($)"
+                          value={customServiceData.price}
+                          onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="button" onClick={addCustomService} size="sm">
+                          Add Service
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowCustomServiceForm(false);
+                            setCustomServiceData({ name: "", duration: "", price: "" });
+                          }} 
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Add Custom Service Button */}
+                {!showCustomServiceForm && (
+                  <div className="border-t pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowCustomServiceForm(true)}
+                      className="w-full"
+                    >
+                      + Add Custom Service
+                    </Button>
+                  </div>
+                )}
+
+                {formData.selected_services.length === 0 && (
+                  <p className="text-sm text-destructive mt-2">Please select at least one service</p>
+                )}
               </div>
-              {formData.selected_services.length === 0 && (
-                <p className="text-sm text-destructive mt-2">Please select at least one service</p>
-              )}
             </CardContent>
           </Card>
         </div>
