@@ -73,7 +73,24 @@ export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFor
   }, []);
 
   useEffect(() => {
-    if (initialData) {
+    if (initialData && services.length > 0) {
+      // Match services from webhook data to database services
+      const matchedServiceIds: string[] = [];
+      
+      if (initialData.jobs_selected) {
+        initialData.jobs_selected.forEach(job => {
+          const matchedService = services.find(service => 
+            service.name.toLowerCase() === (job.name || job.title || '').toLowerCase() ||
+            service.name.toLowerCase().includes((job.name || job.title || '').toLowerCase()) ||
+            (job.name || job.title || '').toLowerCase().includes(service.name.toLowerCase())
+          );
+          
+          if (matchedService) {
+            matchedServiceIds.push(matchedService.id);
+          }
+        });
+      }
+
       setFormData(prev => ({
         ...prev,
         customer_name: initialData.customer_name || "",
@@ -82,13 +99,14 @@ export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFor
         customer_address: initialData.customer_address || "",
         quoted_by: initialData.quoted_by || "",
         first_time: initialData.first_time || false,
+        selected_services: matchedServiceIds,
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || "",
         job_type: initialData.jobs_selected?.map(job => job.name).join(", ") || "",
         estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration || 0), 0).toString() || "",
         price: initialData.jobs_selected?.reduce((sum, job) => sum + (job.price || 0), 0).toString() || "",
       }));
     }
-  }, [initialData]);
+  }, [initialData, services]);
 
   const fetchUsers = async () => {
     try {
