@@ -90,13 +90,19 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
   useEffect(() => {
     // Apply basic fields immediately (avoid waiting for services)
     if (initialData) {
+      console.log('CreateJobForm initialData:', initialData);
+      console.log('Scheduled date from initialData:', initialData.scheduled_date);
+      
+      const formattedDate = initialData.scheduled_date ? new Date(initialData.scheduled_date).toISOString().slice(0, 16) : "";
+      console.log('Formatted date for input:', formattedDate);
+      
       setFormData(prev => ({
         ...prev,
         customer_name: initialData.customer_name || "",
         customer_phone: initialData.customer_phone || "",
         customer_email: initialData.customer_email || "",
         customer_address: initialData.customer_address || "",
-        scheduled_date: initialData.scheduled_date ? new Date(initialData.scheduled_date).toISOString().slice(0, 16) : "",
+        scheduled_date: formattedDate,
         first_time: initialData.first_time || false,
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
         job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,

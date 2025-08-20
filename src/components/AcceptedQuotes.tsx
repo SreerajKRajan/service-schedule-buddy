@@ -15,6 +15,7 @@ interface AcceptedQuote {
   customer_email?: string;
   customer_address?: string;
   quoted_by?: string;
+  scheduled_date?: string;
   jobs_selected: any[];
   first_time: boolean;
   status: string;
@@ -272,6 +273,13 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
                     {quote.quoted_by_user && (
                       <div className="text-sm">
                         <span className="font-medium">Quoted by:</span> {quote.quoted_by_user.name}
+                      </div>
+                    )}
+
+                    {/* Scheduled Date */}
+                    {quote.scheduled_date && (
+                      <div className="text-sm">
+                        <span className="font-medium">Scheduled for:</span> {new Date(quote.scheduled_date).toLocaleString()}
                       </div>
                     )}
 

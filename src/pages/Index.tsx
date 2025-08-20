@@ -75,6 +75,7 @@ const Index = () => {
                   customer_email: quote.customer_email,
                   customer_address: quote.customer_address,
                   quoted_by: quote.quoted_by,
+                  scheduled_date: quote.scheduled_date,
                   first_time: quote.first_time,
                   jobs_selected: quote.jobs_selected,
                 });
