@@ -50,6 +50,24 @@ serve(async (req) => {
       );
     }
 
+    // Look up user ID if quoted_by is provided as a name
+    let quoted_by_id = null;
+    if (quoted_by && typeof quoted_by === 'string') {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('name', quoted_by)
+        .eq('active', true)
+        .single();
+      
+      if (!userError && userData) {
+        quoted_by_id = userData.id;
+        console.log(`Found user ID ${quoted_by_id} for name "${quoted_by}"`);
+      } else {
+        console.log(`No active user found with name "${quoted_by}"`);
+      }
+    }
+
     // Insert into accepted_quotes table
     const { data, error } = await supabase
       .from('accepted_quotes')
@@ -58,7 +76,7 @@ serve(async (req) => {
         customer_phone,
         customer_email,
         customer_address,
-        quoted_by,
+        quoted_by: quoted_by_id,
         jobs_selected,
         first_time: first_time || false,
         status: 'pending'

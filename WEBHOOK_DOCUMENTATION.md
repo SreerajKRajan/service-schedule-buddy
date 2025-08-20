@@ -17,7 +17,7 @@ Send a POST request with JSON payload:
   "customer_phone": "+1234567890",
   "customer_email": "john@example.com", 
   "customer_address": "123 Main St, City, State",
-  "quoted_by": "uuid-of-team-member",
+  "quoted_by": "John Smith",
   "jobs_selected": [
     {
       "title": "House Cleaning",
@@ -39,7 +39,7 @@ Send a POST request with JSON payload:
 - `customer_phone` (string): Customer's phone number
 - `customer_email` (string): Customer's email address
 - `customer_address` (string): Customer's full address
-- `quoted_by` (string): UUID of team member who provided the quote
+- `quoted_by` (string): Name of team member who provided the quote (e.g., "John Smith"). The system will automatically look up the corresponding user ID.
 - `first_time` (boolean): Whether this is the customer's first time (defaults to false)
 
 ## Response Format
@@ -75,6 +75,7 @@ curl -X POST https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/quote-webhook
   -d '{
     "customer_name": "Test Customer",
     "customer_email": "test@example.com",
+    "quoted_by": "Sarah Johnson",
     "jobs_selected": [
       {
         "title": "Test Service",
