@@ -4,10 +4,11 @@ import { CreateJobForm } from "@/components/CreateJobForm";
 import { UserManagement } from "@/components/UserManagement";
 import { ServicesManagement } from "@/components/ServicesManagement";
 import { Dashboard } from "@/components/Dashboard";
+import AcceptedQuotes from "@/components/AcceptedQuotes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, BarChart3, Briefcase, Settings } from "lucide-react";
+import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -28,7 +29,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -36,6 +37,10 @@ const Index = () => {
             <TabsTrigger value="jobs" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               Jobs
+            </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" />
+              Accepted Quotes
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -57,6 +62,10 @@ const Index = () => {
 
           <TabsContent value="jobs" className="space-y-6">
             <JobBoard />
+          </TabsContent>
+
+          <TabsContent value="quotes" className="space-y-6">
+            <AcceptedQuotes />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">

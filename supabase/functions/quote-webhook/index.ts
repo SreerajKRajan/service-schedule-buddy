@@ -1,0 +1,103 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { 
+      customer_name, 
+      customer_phone, 
+      customer_email, 
+      customer_address, 
+      quoted_by, 
+      jobs_selected, 
+      first_time 
+    } = await req.json();
+
+    console.log('Received webhook data:', {
+      customer_name,
+      customer_phone,
+      customer_email,
+      customer_address,
+      quoted_by,
+      jobs_selected,
+      first_time
+    });
+
+    // Validate required fields
+    if (!customer_name || !jobs_selected) {
+      return new Response(
+        JSON.stringify({ error: 'customer_name and jobs_selected are required' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Insert into accepted_quotes table
+    const { data, error } = await supabase
+      .from('accepted_quotes')
+      .insert({
+        customer_name,
+        customer_phone,
+        customer_email,
+        customer_address,
+        quoted_by,
+        jobs_selected,
+        first_time: first_time || false,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to save quote data' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Successfully saved accepted quote:', data);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Quote received successfully',
+        id: data.id 
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in quote-webhook function:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      accepted_quotes: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          first_time: boolean | null
+          id: string
+          jobs_selected: Json
+          quoted_by: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          first_time?: boolean | null
+          id?: string
+          jobs_selected: Json
+          quoted_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          first_time?: boolean | null
+          id?: string
+          jobs_selected?: Json
+          quoted_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accepted_quotes_quoted_by_fkey"
+            columns: ["quoted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_assignments: {
         Row: {
           assigned_at: string
@@ -108,6 +158,7 @@ export type Database = {
           notes: string | null
           price: number | null
           priority: number | null
+          quoted_by: string | null
           scheduled_date: string | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -129,6 +180,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           priority?: number | null
+          quoted_by?: string | null
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -150,12 +202,21 @@ export type Database = {
           notes?: string | null
           price?: number | null
           priority?: number | null
+          quoted_by?: string | null
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jobs_quoted_by_fkey"
+            columns: ["quoted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
