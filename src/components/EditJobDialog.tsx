@@ -99,18 +99,17 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     if (open && job) {
       fetchUsers();
       fetchServices();
-      fetchJobAssignments();
     }
   }, [open, job]);
 
-  // Separate useEffect to populate form data after services are loaded
+  // Separate useEffect to populate form data after all data is loaded
   useEffect(() => {
-    if (open && job && services.length > 0) {
+    if (open && job && services.length > 0 && users.length > 0) {
       populateFormData();
     }
-  }, [open, job, services]);
+  }, [open, job, services, users]);
 
-  const populateFormData = () => {
+  const populateFormData = async () => {
     const scheduledDate = job.scheduled_date 
       ? new Date(job.scheduled_date).toISOString().slice(0, 16)
       : "";
@@ -120,13 +119,30 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     if (job.job_type && services.length > 0) {
       const jobTypeNames = job.job_type.split(', ').map(name => name.trim());
       jobTypeNames.forEach(jobTypeName => {
-        const matchingService = services.find(service => 
-          service.name.toLowerCase() === jobTypeName.toLowerCase()
+        const matchedService = services.find(service => 
+          service.name.toLowerCase() === jobTypeName.toLowerCase() ||
+          service.name.toLowerCase().includes(jobTypeName.toLowerCase()) ||
+          jobTypeName.toLowerCase().includes(service.name.toLowerCase())
         );
-        if (matchingService) {
-          selectedServiceIds.push(matchingService.id);
+        if (matchedService) {
+          selectedServiceIds.push(matchedService.id);
         }
       });
+    }
+
+    // Fetch current assignments
+    let assignedUsers: string[] = [];
+    try {
+      const { data, error } = await supabase
+        .from('job_assignments')
+        .select('user_id')
+        .eq('job_id', job.id);
+
+      if (error) throw error;
+      assignedUsers = data?.map(assignment => assignment.user_id) || [];
+      setCurrentAssignments(assignedUsers);
+    } catch (error) {
+      console.error('Error fetching job assignments:', error);
     }
 
     setFormData({
@@ -145,7 +161,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       status: job.status || "",
       price: job.price?.toString() || "",
       first_time: job.first_time || false,
-      assigned_users: [],
+      assigned_users: assignedUsers,
       quoted_by: job.quoted_by || "",
     });
   };
@@ -180,23 +196,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   };
 
   const fetchJobAssignments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('job_assignments')
-        .select(`
-          user_id,
-          users (name)
-        `)
-        .eq('job_id', job.id);
-
-      if (error) throw error;
-      
-      const assignments = data?.map(assignment => assignment.user_id) || [];
-      setCurrentAssignments(assignments);
-      setFormData(prev => ({ ...prev, assigned_users: assignments }));
-    } catch (error) {
-      console.error('Error fetching job assignments:', error);
-    }
+    // This function is now integrated into populateFormData for better timing
   };
 
   const addCustomService = () => {
