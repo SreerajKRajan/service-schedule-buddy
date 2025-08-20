@@ -95,7 +95,6 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         customer_phone: initialData.customer_phone || "",
         customer_email: initialData.customer_email || "",
         customer_address: initialData.customer_address || "",
-        quoted_by: initialData.quoted_by || "",
         first_time: initialData.first_time || false,
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
         job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,
@@ -104,6 +103,20 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       }));
     }
   }, [initialData]);
+
+  // Separate useEffect to handle quoted_by after users are loaded
+  useEffect(() => {
+    if (initialData && initialData.quoted_by && users.length > 0) {
+      // Verify the quoted_by user exists in the users list
+      const quotedByUser = users.find(user => user.id === initialData.quoted_by);
+      if (quotedByUser) {
+        setFormData(prev => ({
+          ...prev,
+          quoted_by: initialData.quoted_by || "",
+        }));
+      }
+    }
+  }, [initialData, users]);
 
   useEffect(() => {
     if (initialData && services.length > 0) {
