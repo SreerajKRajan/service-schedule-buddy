@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Mail, Phone, Users, UserCheck, UserX, Trash2 } from "lucide-react";
+import { PlusCircle, Mail, Phone, Users, UserCheck, UserX, Trash2, Edit } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface User {
@@ -38,7 +38,15 @@ export function UserManagement() {
   const [assignments, setAssignments] = useState<JobAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "worker",
+  });
+  const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
     phone: "",
@@ -177,6 +185,61 @@ export function UserManagement() {
       toast({
         title: "Error",
         description: "Failed to delete team member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
+    setEditFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      role: user.role,
+    });
+    setShowEditForm(true);
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    if (!editFormData.name.trim() || !editFormData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Name and email are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: editFormData.name,
+          email: editFormData.email,
+          phone: editFormData.phone || null,
+          role: editFormData.role,
+        })
+        .eq('id', editingUser.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+      setShowEditForm(false);
+      setEditingUser(null);
+      setEditFormData({ name: "", email: "", phone: "", role: "worker" });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user",
         variant: "destructive",
       });
     }
@@ -326,6 +389,14 @@ export function UserManagement() {
                       checked={user.active}
                       onCheckedChange={(checked) => toggleUserActive(user.id, checked)}
                     />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => openEditDialog(user)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="icon" className="h-8 w-8">
@@ -411,6 +482,74 @@ export function UserManagement() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              Update team member information
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditUser} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name *</Label>
+              <Input
+                id="edit-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="John Doe"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email *</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="john@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Phone</Label>
+              <Input
+                id="edit-phone"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="(555) 123-4567"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <Select value={editFormData.role} onValueChange={(value) => setEditFormData(prev => ({ ...prev, role: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border z-50">
+                  <SelectItem value="worker">Worker</SelectItem>
+                  <SelectItem value="supervisor">Supervisor</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" className="flex-1">
+                Update User
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowEditForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
