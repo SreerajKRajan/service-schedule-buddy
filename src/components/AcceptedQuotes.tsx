@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle, Trash2, Edit, Search } from "lucide-react";
+import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle, Trash2, Edit, Search, RotateCcw } from "lucide-react";
 
 interface AcceptedQuote {
   id: string;
@@ -172,6 +172,31 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
       toast({
         title: "Error",
         description: "Failed to reject quote",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetQuoteStatus = async (quoteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('accepted_quotes')
+        .update({ status: 'pending' })
+        .eq('id', quoteId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Quote Reset",
+        description: "Quote status has been reset to pending",
+      });
+
+      fetchAcceptedQuotes();
+    } catch (error) {
+      console.error('Error resetting quote status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset quote status",
         variant: "destructive",
       });
     }
@@ -368,18 +393,31 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
                       {quote.jobs_selected.length} service{quote.jobs_selected.length > 1 ? 's' : ''} • 
                       Processed on {new Date(quote.created_at).toLocaleDateString()}
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteQuote(quote.id)}
-                      disabled={deleting === quote.id}
-                    >
-                      {deleting === quote.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
+                    <div className="flex gap-2">
+                      {quote.status === 'converted' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resetQuoteStatus(quote.id)}
+                          disabled={deleting === quote.id}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reset to Pending
+                        </Button>
                       )}
-                    </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteQuote(quote.id)}
+                        disabled={deleting === quote.id}
+                      >
+                        {deleting === quote.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
