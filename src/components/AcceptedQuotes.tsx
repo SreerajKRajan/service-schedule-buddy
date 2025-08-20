@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle, Trash2, Edit } from "lucide-react";
+import { Loader2, User, Phone, Mail, MapPin, Calendar, CheckCircle, XCircle, Trash2, Edit, Search } from "lucide-react";
 
 interface AcceptedQuote {
   id: string;
@@ -23,18 +25,44 @@ interface AcceptedQuote {
 }
 
 interface AcceptedQuotesProps {
-  onConvertToJob?: (quote: AcceptedQuote) => void;
+  onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void) => void;
 }
 
 export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) {
   const [quotes, setQuotes] = useState<AcceptedQuote[]>([]);
+  const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
     fetchAcceptedQuotes();
   }, []);
+
+  useEffect(() => {
+    // Filter quotes based on search term and status filter
+    let filtered = quotes;
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(quote => 
+        quote.customer_name.toLowerCase().includes(searchLower) ||
+        quote.customer_address?.toLowerCase().includes(searchLower) ||
+        quote.customer_email?.toLowerCase().includes(searchLower) ||
+        quote.jobs_selected.some(job => 
+          (job.title || job.name || '').toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(quote => quote.status === statusFilter);
+    }
+
+    setFilteredQuotes(filtered);
+  }, [quotes, searchTerm, statusFilter]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -65,7 +93,33 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
 
   const handleConvertToJob = (quote: AcceptedQuote) => {
     if (onConvertToJob) {
-      onConvertToJob(quote);
+      const onSuccess = async () => {
+        // Update quote status to converted
+        try {
+          const { error } = await supabase
+            .from('accepted_quotes')
+            .update({ status: 'converted' })
+            .eq('id', quote.id);
+
+          if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: "Quote converted to job successfully",
+          });
+
+          fetchAcceptedQuotes();
+        } catch (error) {
+          console.error('Error updating quote status:', error);
+          toast({
+            title: "Warning",
+            description: "Job created but failed to update quote status",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      onConvertToJob(quote, onSuccess);
     }
   };
 
@@ -130,8 +184,8 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
     );
   }
 
-  const pendingQuotes = quotes.filter(q => q.status === 'pending');
-  const processedQuotes = quotes.filter(q => q.status !== 'pending');
+  const pendingQuotes = filteredQuotes.filter(q => q.status === 'pending');
+  const processedQuotes = filteredQuotes.filter(q => q.status !== 'pending');
 
   return (
     <div className="space-y-6">
@@ -140,6 +194,30 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
         <p className="text-muted-foreground">
           Convert accepted quotes from your website into jobs
         </p>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by customer name, address, email, or service..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {pendingQuotes.length > 0 && (
@@ -298,6 +376,15 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      )}
+
+      {filteredQuotes.length === 0 && quotes.length > 0 && (
+        <div className="text-center py-12">
+          <div className="text-muted-foreground">No quotes match your search criteria</div>
+          <div className="text-sm text-muted-foreground mt-2">
+            Try adjusting your search terms or filters
           </div>
         </div>
       )}

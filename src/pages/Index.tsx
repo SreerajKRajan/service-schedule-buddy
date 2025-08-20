@@ -14,6 +14,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
+  const [quoteConversionCallback, setQuoteConversionCallback] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     // Initialize any real-time subscriptions or data fetching here
@@ -67,7 +68,7 @@ const Index = () => {
 
           <TabsContent value="quotes" className="space-y-6">
             <AcceptedQuotes 
-              onConvertToJob={(quote) => {
+              onConvertToJob={(quote, onSuccess) => {
                 setCreateJobData({
                   customer_name: quote.customer_name,
                   customer_phone: quote.customer_phone,
@@ -77,6 +78,7 @@ const Index = () => {
                   first_time: quote.first_time,
                   jobs_selected: quote.jobs_selected,
                 });
+                setQuoteConversionCallback(() => onSuccess);
                 setShowCreateForm(true);
               }}
             />
@@ -119,12 +121,15 @@ const Index = () => {
                   onSuccess={() => {
                     setShowCreateForm(false);
                     setCreateJobData(null);
+                    setQuoteConversionCallback(null);
                     setActiveTab("jobs");
                   }}
                   onCancel={() => {
                     setShowCreateForm(false);
                     setCreateJobData(null);
+                    setQuoteConversionCallback(null);
                   }}
+                  onJobCreated={quoteConversionCallback || undefined}
                   initialData={createJobData}
                 />
               </CardContent>

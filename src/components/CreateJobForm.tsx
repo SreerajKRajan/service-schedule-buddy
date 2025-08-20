@@ -38,9 +38,10 @@ interface CreateJobFormProps {
     first_time?: boolean;
     jobs_selected?: any[];
   };
+  onJobCreated?: () => void;
 }
 
-export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFormProps) {
+export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }: CreateJobFormProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
@@ -350,6 +351,11 @@ export function CreateJobForm({ onSuccess, onCancel, initialData }: CreateJobFor
         first_time: false,
         quoted_by: "",
       });
+
+      // Call onJobCreated if provided (for quote conversion)
+      if (onJobCreated) {
+        onJobCreated();
+      }
 
       onSuccess();
     } catch (error) {
