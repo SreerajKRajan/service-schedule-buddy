@@ -25,13 +25,6 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-foreground">Job Tracker</h1>
             <p className="text-muted-foreground mt-2">Manage your service jobs efficiently</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2"
-          >
-            <PlusCircle className="h-4 w-4" />
-            New Job
-          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

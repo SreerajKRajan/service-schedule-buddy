@@ -56,6 +56,7 @@ interface EditJobDialogProps {
 
 export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDialogProps) {
   const [users, setUsers] = useState<User[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [currentAssignments, setCurrentAssignments] = useState<string[]>([]);
   const [jobSchedule, setJobSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -63,6 +64,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     title: "",
     description: "",
     job_type: "",
+    selected_services: [] as string[],
     priority: 1,
     estimated_duration: "",
     scheduled_date: "",
@@ -86,6 +88,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   useEffect(() => {
     if (open && job) {
       fetchUsers();
+      fetchServices();
       fetchJobAssignments();
       fetchJobSchedule();
       populateFormData();
@@ -101,6 +104,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       title: job.title || "",
       description: job.description || "",
       job_type: job.job_type || "",
+      selected_services: [],
       priority: job.priority || 1,
       estimated_duration: job.estimated_duration?.toString() || "",
       scheduled_date: scheduledDate,
@@ -132,6 +136,21 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
     }
   };
 
@@ -189,6 +208,15 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       toast({
         title: "Error",
         description: "Job title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.selected_services.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one service",
         variant: "destructive",
       });
       return;
@@ -309,6 +337,38 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     }));
   };
 
+  const handleServiceChange = (serviceId: string, checked: boolean) => {
+    setFormData(prev => {
+      const newSelectedServices = checked
+        ? [...prev.selected_services, serviceId]
+        : prev.selected_services.filter(id => id !== serviceId);
+
+      // Calculate combined duration and price from selected services
+      const selectedServiceData = services.filter(service => 
+        newSelectedServices.includes(service.id)
+      );
+      
+      const totalDuration = selectedServiceData.reduce((sum, service) => 
+        sum + (service.default_duration || 0), 0
+      );
+      
+      const totalPrice = selectedServiceData.reduce((sum, service) => 
+        sum + (service.default_price || 0), 0
+      );
+
+      // Create job type string from selected service names
+      const jobType = selectedServiceData.map(service => service.name).join(', ');
+
+      return {
+        ...prev,
+        selected_services: newSelectedServices,
+        estimated_duration: totalDuration > 0 ? totalDuration.toString() : "",
+        price: totalPrice > 0 ? totalPrice.toString() : "",
+        job_type: jobType
+      };
+    });
+  };
+
   const jobTypes = [
     "Window Cleaning",
     "Gutter Cleaning",
@@ -346,17 +406,34 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="job_type">Job Type</Label>
-              <Select value={formData.job_type} onValueChange={(value) => setFormData(prev => ({ ...prev, job_type: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select job type" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border z-50">
-                  {jobTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Services *</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3">
+                {services.map((service) => (
+                  <div key={service.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={service.id}
+                      checked={formData.selected_services.includes(service.id)}
+                      onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                    />
+                    <Label htmlFor={service.id} className="text-sm font-normal cursor-pointer">
+                      {service.name}
+                      {service.default_duration && (
+                        <span className="text-muted-foreground ml-1">
+                          ({service.default_duration}h)
+                        </span>
+                      )}
+                      {service.default_price && (
+                        <span className="text-muted-foreground ml-1">
+                          (${service.default_price})
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {formData.selected_services.length === 0 && (
+                <p className="text-sm text-muted-foreground">Please select at least one service</p>
+              )}
             </div>
           </div>
 
