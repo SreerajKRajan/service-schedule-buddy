@@ -279,14 +279,7 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
                     {/* Scheduled Date */}
                     {quote.scheduled_date && (
                       <div className="text-sm">
-                        <span className="font-medium">Scheduled for:</span> {new Date(quote.scheduled_date).toLocaleString('en-US', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false
-                        })}
+                        <span className="font-medium">Scheduled for:</span> {quote.scheduled_date.replace('T', ' ').replace('Z', '').slice(0, 16)}
                       </div>
                     )}
 
