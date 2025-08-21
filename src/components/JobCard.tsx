@@ -101,6 +101,18 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
 
       if (error) throw error;
 
+      // Send completion webhook if status is completed
+      if (newStatus === 'completed') {
+        try {
+          await supabase.functions.invoke('project-completion-webhook', {
+            body: { jobId: job.id }
+          });
+        } catch (webhookError) {
+          console.error('Failed to send completion webhook:', webhookError);
+          // Don't fail the status update if webhook fails
+        }
+      }
+
       toast({
         title: "Success",
         description: `Job status updated to ${newStatus}`,

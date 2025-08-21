@@ -2,3 +2,6 @@ project_id = "spelxsmrpbswmmahwzyg"
 
 [functions.quote-webhook]
 verify_jwt = false
+
+[functions.project-completion-webhook]
+verify_jwt = false
