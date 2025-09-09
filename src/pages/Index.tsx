@@ -22,8 +22,11 @@ const Index = () => {
   const [quoteConversionCallback, setQuoteConversionCallback] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    // Initialize any real-time subscriptions or data fetching here
-  }, []);
+    // Set initial tab to jobs if filtered
+    if (isFiltered) {
+      setActiveTab("jobs");
+    }
+  }, [isFiltered]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,40 +44,47 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isFiltered ? 'grid-cols-2' : 'grid-cols-6'}`}>
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              Jobs
-            </TabsTrigger>
-            {!isFiltered && (
-              <>
-                <TabsTrigger value="quotes" className="flex items-center gap-2">
-                  <FileCheck className="h-4 w-4" />
-                  Accepted Quotes
-                </TabsTrigger>
-                <TabsTrigger value="users" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Team
-                </TabsTrigger>
-                <TabsTrigger value="services" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Services
-                </TabsTrigger>
-                <TabsTrigger value="create" className="flex items-center gap-2">
-                  <PlusCircle className="h-4 w-4" />
-                  Create Job
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
+          {isFiltered ? (
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="jobs" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Jobs
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="jobs" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Jobs
+              </TabsTrigger>
+              <TabsTrigger value="quotes" className="flex items-center gap-2">
+                <FileCheck className="h-4 w-4" />
+                Accepted Quotes
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Team
+              </TabsTrigger>
+              <TabsTrigger value="services" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Services
+              </TabsTrigger>
+              <TabsTrigger value="create" className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Create Job
+              </TabsTrigger>
+            </TabsList>
+          )}
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <Dashboard customerEmail={customerEmail} />
-          </TabsContent>
+          {!isFiltered && (
+            <TabsContent value="dashboard" className="space-y-6">
+              <Dashboard customerEmail={customerEmail} />
+            </TabsContent>
+          )}
 
           <TabsContent value="jobs" className="space-y-6">
             <JobBoard customerEmail={customerEmail} />

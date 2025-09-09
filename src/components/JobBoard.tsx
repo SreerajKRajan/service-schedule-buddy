@@ -76,6 +76,11 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
     fetchJobs();
     fetchUsers();
     fetchJobAssignments();
+    
+    // Auto-apply assignee filter if customerEmail is provided
+    if (customerEmail) {
+      autoSetAssigneeFilter();
+    }
   }, [customerEmail]);
 
   useEffect(() => {
@@ -84,63 +89,11 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
 
   const fetchJobs = async () => {
     try {
-      let jobIds: string[] = [];
-      let hasUserMatch = false;
-      
-      // If filtering by email in URL, try to resolve to a team member first
-      if (customerEmail) {
-        // 1) Try by user email
-        const { data: userByEmail } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', customerEmail)
-          .maybeSingle();
-        
-        if (userByEmail?.id) {
-          hasUserMatch = true;
-          const { data: assignments } = await supabase
-            .from('job_assignments')
-            .select('job_id')
-            .eq('user_id', userByEmail.id);
-          jobIds = assignments?.map(a => a.job_id) || [];
-        } else {
-          // 2) Fallback: some teams don't store emails; try matching by name
-          const { data: userByName } = await supabase
-            .from('users')
-            .select('id')
-            .eq('name', customerEmail)
-            .maybeSingle();
-          if (userByName?.id) {
-            hasUserMatch = true;
-            const { data: assignmentsName } = await supabase
-              .from('job_assignments')
-              .select('job_id')
-              .eq('user_id', userByName.id);
-            jobIds = assignmentsName?.map(a => a.job_id) || [];
-          }
-        }
-      }
-      
       let query = supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Apply filtering rules
-      if (customerEmail) {
-        if (hasUserMatch && jobIds.length > 0) {
-          query = query.in('id', jobIds);
-        } else if (hasUserMatch && jobIds.length === 0) {
-          // User exists but has no assignments
-          setJobs([]);
-          return;
-        } else {
-          // Final fallback: treat as customer email view
-          query = query.eq('customer_email', customerEmail);
-        }
-      }
-      
-      console.log('JobBoard filter debug', { customerEmail, hasUserMatch, jobIdsCount: jobIds.length });
       const { data, error } = await query;
 
       if (error) throw error;
@@ -249,6 +202,37 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
     setAssigneeFilter("all");
     setDateRange(undefined);
     setGroupByLocation(false);
+  };
+
+  const autoSetAssigneeFilter = async () => {
+    if (!customerEmail) return;
+    
+    try {
+      // Try to find user by email
+      const { data: userByEmail } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('email', customerEmail)
+        .maybeSingle();
+      
+      if (userByEmail) {
+        setAssigneeFilter(userByEmail.id);
+        return;
+      }
+      
+      // Try to find user by name as fallback
+      const { data: userByName } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('name', customerEmail)
+        .maybeSingle();
+      
+      if (userByName) {
+        setAssigneeFilter(userByName.id);
+      }
+    } catch (error) {
+      console.error('Error setting assignee filter:', error);
+    }
   };
 
   const refreshData = () => {
