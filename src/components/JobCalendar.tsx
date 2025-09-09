@@ -211,16 +211,19 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
               Job Calendar
             </CardTitle>
-            <div className="flex gap-2">
+            
+            {/* Mobile: Stack view buttons, Desktop: Row */}
+            <div className="flex flex-wrap gap-1 sm:gap-2">
               <Button
                 variant={view === "month" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setView("month")}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 Month
               </Button>
@@ -228,6 +231,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                 variant={view === "week" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setView("week")}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 Week
               </Button>
@@ -235,56 +239,57 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                 variant={view === "day" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setView("day")}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 Day
               </Button>
             </div>
           </div>
           
-          <div className="flex justify-between items-center mt-4">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={navigateToday}>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button variant="outline" size="sm" onClick={navigateToday} className="text-xs sm:text-sm">
                 Today
               </Button>
               <Button variant="outline" size="sm" onClick={navigateBack}>
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={navigateNext}>
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "min-w-[200px] justify-center text-center font-medium"
-                  )}
-                >
-                  {getDateTitle()}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <DatePicker
-                  mode="single"
-                  selected={currentDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setCurrentDate(date);
-                    }
-                  }}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <div></div>
+            <div className="flex-1 flex justify-center sm:justify-end">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm"
+                    )}
+                  >
+                    {getDateTitle()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <DatePicker
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setCurrentDate(date);
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="h-96 md:h-[600px]">
+        <CardContent className="p-2 sm:p-6">
+          <div className="h-[400px] sm:h-96 md:h-[600px]">
             <BigCalendar
               localizer={localizer}
               events={events}
@@ -299,32 +304,37 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               style={{ height: '100%' }}
               popup
               toolbar={false}
+              formats={{
+                timeGutterFormat: 'HH:mm',
+                eventTimeRangeFormat: () => '',
+                agendaTimeRangeFormat: () => '',
+              }}
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-2 sm:px-0">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-          <span className="text-sm">Pending</span>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
+          <span className="text-xs sm:text-sm">Pending</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm">In Progress</span>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+          <span className="text-xs sm:text-sm">In Progress</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-sm">Completed</span>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+          <span className="text-xs sm:text-sm">Completed</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
-          <span className="text-sm">Cancelled</span>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
+          <span className="text-xs sm:text-sm">Cancelled</span>
         </div>
       </div>
 
       <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Job Details</DialogTitle>
             <DialogDescription>

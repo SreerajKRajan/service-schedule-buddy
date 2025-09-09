@@ -103,3 +103,71 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile optimizations for react-big-calendar */
+@media (max-width: 768px) {
+  .rbc-calendar {
+    font-size: 0.75rem;
+  }
+  
+  .rbc-header {
+    padding: 4px 2px;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  
+  .rbc-date-cell {
+    padding: 2px;
+    font-size: 0.7rem;
+  }
+  
+  .rbc-day-bg + .rbc-day-bg {
+    border-left: 1px solid hsl(var(--border));
+  }
+  
+  .rbc-month-row + .rbc-month-row {
+    border-top: 1px solid hsl(var(--border));
+  }
+  
+  .rbc-event {
+    font-size: 0.65rem;
+    padding: 1px 2px;
+    border-radius: 2px;
+  }
+  
+  .rbc-event-content {
+    font-size: 0.65rem;
+    line-height: 1.2;
+  }
+  
+  .rbc-show-more {
+    font-size: 0.6rem;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 2px;
+    padding: 1px 3px;
+    margin: 1px;
+  }
+  
+  .rbc-month-view {
+    border: 1px solid hsl(var(--border));
+  }
+  
+  .rbc-time-view .rbc-time-gutter,
+  .rbc-time-view .rbc-time-content {
+    font-size: 0.7rem;
+  }
+  
+  .rbc-time-slot {
+    font-size: 0.65rem;
+  }
+  
+  .rbc-agenda-view table.rbc-agenda-table {
+    font-size: 0.75rem;
+  }
+  
+  .rbc-agenda-view .rbc-agenda-time-cell {
+    font-size: 0.7rem;
+  }
+}
