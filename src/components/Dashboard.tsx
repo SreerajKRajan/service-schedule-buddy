@@ -13,7 +13,11 @@ interface DashboardStats {
   jobsDueToday: number;
 }
 
-export function Dashboard() {
+interface DashboardProps {
+  customerEmail?: string | null;
+}
+
+export function Dashboard({ customerEmail }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
     pendingJobs: 0,
@@ -26,12 +30,16 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [customerEmail]);
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch job stats
-      const { data: jobs } = await supabase.from('jobs').select('status, scheduled_date');
+      // Fetch job stats with email filter if provided
+      let jobsQuery = supabase.from('jobs').select('status, scheduled_date, customer_email');
+      if (customerEmail) {
+        jobsQuery = jobsQuery.eq('customer_email', customerEmail);
+      }
+      const { data: jobs } = await jobsQuery;
       const { data: users } = await supabase.from('users').select('id');
 
       if (jobs && users) {

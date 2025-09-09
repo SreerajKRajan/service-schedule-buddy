@@ -54,7 +54,11 @@ interface Job {
   quoted_by?: string;
 }
 
-export function JobBoard() {
+interface JobBoardProps {
+  customerEmail?: string | null;
+}
+
+export function JobBoard({ customerEmail }: JobBoardProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
@@ -72,7 +76,7 @@ export function JobBoard() {
     fetchJobs();
     fetchUsers();
     fetchJobAssignments();
-  }, []);
+  }, [customerEmail]);
 
   useEffect(() => {
     filterJobs();
@@ -80,10 +84,17 @@ export function JobBoard() {
 
   const fetchJobs = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      // Filter by customer email if provided
+      if (customerEmail) {
+        query = query.eq('customer_email', customerEmail);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       setJobs(data || []);
