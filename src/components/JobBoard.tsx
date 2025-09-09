@@ -71,6 +71,8 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [groupByLocation, setGroupByLocation] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewerUserId, setViewerUserId] = useState<string | null>(null);
+  const [viewerUserName, setViewerUserName] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -217,6 +219,8 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
       
       if (userByEmail) {
         setAssigneeFilter(userByEmail.id);
+        setViewerUserId(userByEmail.id);
+        setViewerUserName(userByEmail.name || null);
         return;
       }
       
@@ -229,6 +233,8 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
       
       if (userByName) {
         setAssigneeFilter(userByName.id);
+        setViewerUserId(userByName.id);
+        setViewerUserName(userByName.name || null);
       }
     } catch (error) {
       console.error('Error setting assignee filter:', error);
@@ -352,12 +358,12 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
               </Select>
               
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filter by assignee" />
+                <SelectTrigger className="w-full" disabled={!!customerEmail}>
+                  <SelectValue placeholder={customerEmail ? (viewerUserName ? `Assignee: ${viewerUserName}` : 'Assignee') : 'Filter by assignee'} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  {users.map(user => (
+                  {!customerEmail && <SelectItem value="all">All Assignees</SelectItem>}
+                  {(customerEmail ? users.filter(u => u.id === viewerUserId) : users).map(user => (
                     <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                   ))}
                 </SelectContent>
