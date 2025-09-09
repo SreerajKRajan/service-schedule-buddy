@@ -35,11 +35,38 @@ export function Dashboard({ customerEmail }: DashboardProps) {
   const fetchDashboardStats = async () => {
     try {
       // Fetch job stats with email filter if provided
-      let jobsQuery = supabase.from('jobs').select('status, scheduled_date, customer_email');
+      let jobs: any[] = [];
+      
+      // Filter by user email if provided
       if (customerEmail) {
-        jobsQuery = jobsQuery.eq('customer_email', customerEmail);
+        // First find the user by email
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', customerEmail)
+          .single();
+        
+        if (user) {
+          // Get job assignments for this user
+          const { data: assignments } = await supabase
+            .from('job_assignments')
+            .select('job_id')
+            .eq('user_id', user.id);
+          
+          const jobIds = assignments?.map(a => a.job_id) || [];
+          
+          if (jobIds.length > 0) {
+            const { data: jobsData } = await supabase
+              .from('jobs')
+              .select('status, scheduled_date, customer_email')
+              .in('id', jobIds);
+            jobs = jobsData || [];
+          }
+        }
+      } else {
+        const { data: jobsData } = await supabase.from('jobs').select('status, scheduled_date, customer_email');
+        jobs = jobsData || [];
       }
-      const { data: jobs } = await jobsQuery;
       const { data: users } = await supabase.from('users').select('id');
 
       if (jobs && users) {
