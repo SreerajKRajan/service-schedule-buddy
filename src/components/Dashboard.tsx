@@ -37,36 +37,64 @@ export function Dashboard({ customerEmail }: DashboardProps) {
       // Fetch job stats with email filter if provided
       let jobs: any[] = [];
       
-      // Filter by user email if provided
       if (customerEmail) {
-        // First find the user by email
-        const { data: user } = await supabase
+        let hasUserMatch = false;
+        let jobIds: string[] = [];
+        
+        // 1) Try to resolve to a team member by email
+        const { data: userByEmail } = await supabase
           .from('users')
           .select('id')
           .eq('email', customerEmail)
-          .single();
+          .maybeSingle();
         
-        if (user) {
-          // Get job assignments for this user
+        if (userByEmail?.id) {
+          hasUserMatch = true;
           const { data: assignments } = await supabase
             .from('job_assignments')
             .select('job_id')
-            .eq('user_id', user.id);
-          
-          const jobIds = assignments?.map(a => a.job_id) || [];
-          
+            .eq('user_id', userByEmail.id);
+          jobIds = assignments?.map(a => a.job_id) || [];
+        } else {
+          // 2) Fallback: try by name (for teams without stored emails)
+          const { data: userByName } = await supabase
+            .from('users')
+            .select('id')
+            .eq('name', customerEmail)
+            .maybeSingle();
+          if (userByName?.id) {
+            hasUserMatch = true;
+            const { data: assignmentsName } = await supabase
+              .from('job_assignments')
+              .select('job_id')
+              .eq('user_id', userByName.id);
+            jobIds = assignmentsName?.map(a => a.job_id) || [];
+          }
+        }
+        
+        if (hasUserMatch) {
           if (jobIds.length > 0) {
             const { data: jobsData } = await supabase
               .from('jobs')
               .select('status, scheduled_date, customer_email')
               .in('id', jobIds);
             jobs = jobsData || [];
+          } else {
+            jobs = [];
           }
+        } else {
+          // Final fallback: treat as customer email view
+          const { data: jobsData } = await supabase
+            .from('jobs')
+            .select('status, scheduled_date, customer_email')
+            .eq('customer_email', customerEmail);
+          jobs = jobsData || [];
         }
       } else {
         const { data: jobsData } = await supabase.from('jobs').select('status, scheduled_date, customer_email');
         jobs = jobsData || [];
       }
+      console.log('Dashboard filter debug', { customerEmail, jobsCount: jobs.length });
       const { data: users } = await supabase.from('users').select('id');
 
       if (jobs && users) {

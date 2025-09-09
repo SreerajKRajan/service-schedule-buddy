@@ -85,24 +85,39 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
   const fetchJobs = async () => {
     try {
       let jobIds: string[] = [];
+      let hasUserMatch = false;
       
-      // If filtering by user email, get their assigned job IDs
+      // If filtering by email in URL, try to resolve to a team member first
       if (customerEmail) {
-        // First find the user by email
-        const { data: user } = await supabase
+        // 1) Try by user email
+        const { data: userByEmail } = await supabase
           .from('users')
           .select('id')
           .eq('email', customerEmail)
-          .single();
+          .maybeSingle();
         
-        if (user) {
-          // Get job assignments for this user
+        if (userByEmail?.id) {
+          hasUserMatch = true;
           const { data: assignments } = await supabase
             .from('job_assignments')
             .select('job_id')
-            .eq('user_id', user.id);
-          
+            .eq('user_id', userByEmail.id);
           jobIds = assignments?.map(a => a.job_id) || [];
+        } else {
+          // 2) Fallback: some teams don't store emails; try matching by name
+          const { data: userByName } = await supabase
+            .from('users')
+            .select('id')
+            .eq('name', customerEmail)
+            .maybeSingle();
+          if (userByName?.id) {
+            hasUserMatch = true;
+            const { data: assignmentsName } = await supabase
+              .from('job_assignments')
+              .select('job_id')
+              .eq('user_id', userByName.id);
+            jobIds = assignmentsName?.map(a => a.job_id) || [];
+          }
         }
       }
       
@@ -111,15 +126,21 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Filter by assigned job IDs if user email provided
-      if (customerEmail && jobIds.length > 0) {
-        query = query.in('id', jobIds);
-      } else if (customerEmail && jobIds.length === 0) {
-        // User exists but has no assignments, return empty
-        setJobs([]);
-        return;
+      // Apply filtering rules
+      if (customerEmail) {
+        if (hasUserMatch && jobIds.length > 0) {
+          query = query.in('id', jobIds);
+        } else if (hasUserMatch && jobIds.length === 0) {
+          // User exists but has no assignments
+          setJobs([]);
+          return;
+        } else {
+          // Final fallback: treat as customer email view
+          query = query.eq('customer_email', customerEmail);
+        }
       }
       
+      console.log('JobBoard filter debug', { customerEmail, hasUserMatch, jobIdsCount: jobIds.length });
       const { data, error } = await query;
 
       if (error) throw error;
