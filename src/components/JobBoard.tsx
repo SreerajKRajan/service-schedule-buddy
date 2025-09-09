@@ -56,9 +56,11 @@ interface Job {
 
 interface JobBoardProps {
   customerEmail?: string | null;
+  userRole?: string | null;
+  hasFullAccess?: boolean;
 }
 
-export function JobBoard({ customerEmail }: JobBoardProps) {
+export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobBoardProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
@@ -79,8 +81,8 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
     fetchUsers();
     fetchJobAssignments();
     
-    // Auto-apply assignee filter if customerEmail is provided
-    if (customerEmail) {
+    // Auto-apply assignee filter if customerEmail is provided and user doesn't have full access
+    if (customerEmail && !hasFullAccess) {
       autoSetAssigneeFilter();
     }
   }, [customerEmail]);
@@ -358,12 +360,16 @@ export function JobBoard({ customerEmail }: JobBoardProps) {
               </Select>
               
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="w-full" disabled={!!customerEmail}>
-                  <SelectValue placeholder={customerEmail ? (viewerUserName ? `Assignee: ${viewerUserName}` : 'Assignee') : 'Filter by assignee'} />
+                <SelectTrigger className="w-full" disabled={!!customerEmail && !hasFullAccess}>
+                  <SelectValue placeholder={
+                    customerEmail && !hasFullAccess 
+                      ? (viewerUserName ? `Assignee: ${viewerUserName}` : 'Assignee') 
+                      : 'Filter by assignee'
+                  } />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
-                  {!customerEmail && <SelectItem value="all">All Assignees</SelectItem>}
-                  {(customerEmail ? users.filter(u => u.id === viewerUserId) : users).map(user => (
+                  {(hasFullAccess || !customerEmail) && <SelectItem value="all">All Assignees</SelectItem>}
+                  {(customerEmail && !hasFullAccess ? users.filter(u => u.id === viewerUserId) : users).map(user => (
                     <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                   ))}
                 </SelectContent>
