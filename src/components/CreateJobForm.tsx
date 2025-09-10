@@ -59,6 +59,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
     duration: "",
     price: ""
   });
+  const [serviceQuotedPrices, setServiceQuotedPrices] = useState<{ [serviceId: string]: { price: number; duration: number } }>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -131,6 +132,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       // Match services from webhook data to database services
       const matchedServiceIds: string[] = [];
       const unmatchedServices: Array<{name: string; duration: number; price: number; id: string}> = [];
+      const serviceQuotedPrices: { [serviceId: string]: { price: number; duration: number } } = {};
       
       if (initialData.jobs_selected) {
         initialData.jobs_selected.forEach(job => {
@@ -142,6 +144,11 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           
           if (matchedService) {
             matchedServiceIds.push(matchedService.id);
+            // Store the actual quoted price and duration for this service
+            serviceQuotedPrices[matchedService.id] = {
+              price: job.price || matchedService.default_price || 0,
+              duration: job.duration ? Math.round(job.duration / 60) : matchedService.default_duration || 0
+            };
           } else {
             // Create custom service for unmatched webhook data
             const customService = {
@@ -157,6 +164,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       }
 
       setCustomServices(unmatchedServices);
+      setServiceQuotedPrices(serviceQuotedPrices);
       setFormData(prev => ({
         ...prev,
         selected_services: matchedServiceIds,
@@ -217,7 +225,9 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       
       const totalPrice = selectedServicesData.reduce((sum, service) => {
         if ('default_price' in service) {
-          return sum + (service.default_price || 0);
+          // Use quoted price if available, otherwise use default price
+          const quotedPrice = serviceQuotedPrices[service.id];
+          return sum + (quotedPrice?.price ?? service.default_price ?? 0);
         } else {
           return sum + (service.price || 0);
         }
@@ -384,13 +394,15 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
               const customService = customServices.find(s => s.id === serviceId);
               
               if (service) {
+                // Use quoted price if available, otherwise use default price
+                const quotedPrice = serviceQuotedPrices[service.id];
                 return {
                   job_id: job.id,
                   service_id: service.id,
                   service_name: service.name,
                   service_description: service.description,
-                  price: service.default_price,
-                  duration: service.default_duration,
+                  price: quotedPrice?.price ?? service.default_price,
+                  duration: quotedPrice?.duration ?? service.default_duration,
                 };
               } else if (customService) {
                 return {
@@ -483,13 +495,15 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             const customService = customServices.find(s => s.id === serviceId);
             
             if (service) {
+              // Use quoted price if available, otherwise use default price
+              const quotedPrice = serviceQuotedPrices[service.id];
               return {
                 job_id: job.id,
                 service_id: service.id,
                 service_name: service.name,
                 service_description: service.description,
-                price: service.default_price,
-                duration: service.default_duration,
+                price: quotedPrice?.price ?? service.default_price,
+                duration: quotedPrice?.duration ?? service.default_duration,
               };
             } else if (customService) {
               return {
