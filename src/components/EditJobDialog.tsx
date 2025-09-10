@@ -80,7 +80,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     job_type: "",
     selected_services: [] as string[],
     priority: 1,
-    estimated_duration: "",
+    estimated_duration: "2",
     scheduled_date: "",
     customer_name: "",
     customer_address: "",
