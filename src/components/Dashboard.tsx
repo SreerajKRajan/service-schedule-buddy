@@ -108,7 +108,7 @@ export function Dashboard({ customerEmail }: DashboardProps) {
         setStats({
           totalJobs: jobs.length,
           pendingJobs: jobs.filter(job => job.status === 'pending').length,
-          onTheWayJobs: jobs.filter(job => job.status === 'no_the_way').length,
+          onTheWayJobs: jobs.filter(job => job.status === 'on_the_way').length,
           inProgressJobs: jobs.filter(job => job.status === 'in_progress').length,
           completedJobs: jobs.filter(job => job.status === 'completed').length,
           totalUsers: users.length,

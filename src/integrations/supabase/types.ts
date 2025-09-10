@@ -365,7 +365,7 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled"
-        | "no_the_way"
+        | "on_the_way"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -506,7 +506,7 @@ export const Constants = {
         "in_progress",
         "completed",
         "cancelled",
-        "no_the_way",
+        "on_the_way",
       ],
     },
   },
