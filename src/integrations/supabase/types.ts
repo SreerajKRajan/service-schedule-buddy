@@ -360,7 +360,12 @@ export type Database = {
         | "quarterly"
         | "yearly"
         | "semi_annually"
-      job_status: "pending" | "in_progress" | "completed" | "cancelled"
+      job_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "no_the_way"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -496,7 +501,13 @@ export const Constants = {
         "yearly",
         "semi_annually",
       ],
-      job_status: ["pending", "in_progress", "completed", "cancelled"],
+      job_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_the_way",
+      ],
     },
   },
 } as const
