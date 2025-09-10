@@ -375,6 +375,44 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           if (assignError) throw assignError;
         }
 
+        // Create job service relationships for all jobs
+        if (formData.selected_services.length > 0 && jobs) {
+          const jobServices = jobs.flatMap(job => {
+            return formData.selected_services.map(serviceId => {
+              // Find service details (either from services list or custom services)
+              const service = services.find(s => s.id === serviceId);
+              const customService = customServices.find(s => s.id === serviceId);
+              
+              if (service) {
+                return {
+                  job_id: job.id,
+                  service_id: service.id,
+                  service_name: service.name,
+                  service_description: service.description,
+                  price: service.default_price,
+                  duration: service.default_duration,
+                };
+              } else if (customService) {
+                return {
+                  job_id: job.id,
+                  service_id: customService.id,
+                  service_name: customService.name,
+                  service_description: null,
+                  price: customService.price,
+                  duration: customService.duration,
+                };
+              }
+              return null;
+            }).filter(Boolean);
+          });
+
+          const { error: servicesError } = await supabase
+            .from('job_services')
+            .insert(jobServices);
+
+          if (servicesError) throw servicesError;
+        }
+
         // Create schedule record for the parent job (first one)
         if (jobs && jobs[0]) {
           const { error: scheduleError } = await supabase
@@ -435,6 +473,42 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             .insert(assignments);
 
           if (assignError) throw assignError;
+        }
+
+        // Create job service relationships
+        if (formData.selected_services.length > 0) {
+          const jobServices = formData.selected_services.map(serviceId => {
+            // Find service details (either from services list or custom services)
+            const service = services.find(s => s.id === serviceId);
+            const customService = customServices.find(s => s.id === serviceId);
+            
+            if (service) {
+              return {
+                job_id: job.id,
+                service_id: service.id,
+                service_name: service.name,
+                service_description: service.description,
+                price: service.default_price,
+                duration: service.default_duration,
+              };
+            } else if (customService) {
+              return {
+                job_id: job.id,
+                service_id: customService.id,
+                service_name: customService.name,
+                service_description: null,
+                price: customService.price,
+                duration: customService.duration,
+              };
+            }
+            return null;
+          }).filter(Boolean);
+
+          const { error: servicesError } = await supabase
+            .from('job_services')
+            .insert(jobServices);
+
+          if (servicesError) throw servicesError;
         }
 
         toast({

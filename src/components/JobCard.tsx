@@ -51,6 +51,16 @@ interface JobSchedule {
   is_active: boolean;
 }
 
+interface JobService {
+  id: string;
+  job_id: string;
+  service_id: string;
+  service_name: string;
+  service_description: string | null;
+  price: number | null;
+  duration: number | null;
+}
+
 interface JobCardProps {
   job: Job;
   onUpdate: () => void;
@@ -61,6 +71,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [jobSchedule, setJobSchedule] = useState<JobSchedule | null>(null);
+  const [jobServices, setJobServices] = useState<JobService[]>([]);
   const [quotedByUser, setQuotedByUser] = useState<string>("");
   const { toast } = useToast();
 
@@ -167,6 +178,20 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
     }
   };
 
+  const fetchJobServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_services')
+        .select('*')
+        .eq('job_id', job.id);
+
+      if (error) throw error;
+      setJobServices(data || []);
+    } catch (error) {
+      console.error('Error fetching job services:', error);
+    }
+  };
+
   const fetchQuotedByUser = async () => {
     if (!job.quoted_by) return;
     
@@ -187,6 +212,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
   React.useEffect(() => {
     fetchJobAssignments();
     fetchJobSchedule();
+    fetchJobServices();
     fetchQuotedByUser();
   }, [job.id, job.is_recurring, job.quoted_by]);
 
@@ -324,6 +350,31 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         {job.notes && (
           <div className="text-sm bg-muted p-2 rounded">
             <strong>Notes:</strong> {job.notes}
+          </div>
+        )}
+
+        {/* Services Breakdown */}
+        {jobServices.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Selected Services ({jobServices.length})</h4>
+            <div className="grid gap-2">
+              {jobServices.map((service) => (
+                <div key={service.id} className="bg-muted/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{service.service_name}</div>
+                      {service.service_description && (
+                        <div className="text-sm text-muted-foreground">{service.service_description}</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {service.price && <div className="font-medium">${service.price}</div>}
+                      {service.duration && <div className="text-sm text-muted-foreground">{service.duration} min</div>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

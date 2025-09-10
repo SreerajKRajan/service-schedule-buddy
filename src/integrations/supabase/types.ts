@@ -144,6 +144,54 @@ export type Database = {
           },
         ]
       }
+      job_services: {
+        Row: {
+          created_at: string
+          duration: number | null
+          id: string
+          job_id: string
+          price: number | null
+          service_description: string | null
+          service_id: string
+          service_name: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          id?: string
+          job_id: string
+          price?: number | null
+          service_description?: string | null
+          service_id: string
+          service_name: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          id?: string
+          job_id?: string
+          price?: number | null
+          service_description?: string | null
+          service_id?: string
+          service_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_services_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           completed_date: string | null
