@@ -7,6 +7,7 @@ import { CalendarDays, Users, Clock, CheckCircle } from "lucide-react";
 interface DashboardStats {
   totalJobs: number;
   pendingJobs: number;
+  onTheWayJobs: number;
   inProgressJobs: number;
   completedJobs: number;
   totalUsers: number;
@@ -21,6 +22,7 @@ export function Dashboard({ customerEmail }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
     pendingJobs: 0,
+    onTheWayJobs: 0,
     inProgressJobs: 0,
     completedJobs: 0,
     totalUsers: 0,
@@ -106,6 +108,7 @@ export function Dashboard({ customerEmail }: DashboardProps) {
         setStats({
           totalJobs: jobs.length,
           pendingJobs: jobs.filter(job => job.status === 'pending').length,
+          onTheWayJobs: jobs.filter(job => job.status === 'no_the_way').length,
           inProgressJobs: jobs.filter(job => job.status === 'in_progress').length,
           completedJobs: jobs.filter(job => job.status === 'completed').length,
           totalUsers: users.length,
@@ -160,6 +163,17 @@ export function Dashboard({ customerEmail }: DashboardProps) {
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{stats.pendingJobs}</div>
             <p className="text-xs text-muted-foreground">Awaiting assignment</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">On the Way</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{stats.onTheWayJobs}</div>
+            <p className="text-xs text-muted-foreground">En route to location</p>
           </CardContent>
         </Card>
 
@@ -222,6 +236,9 @@ export function Dashboard({ customerEmail }: DashboardProps) {
           <div className="flex gap-2 flex-wrap">
             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
               {stats.pendingJobs} Pending
+            </Badge>
+            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+              {stats.onTheWayJobs} On the Way
             </Badge>
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               {stats.inProgressJobs} In Progress
