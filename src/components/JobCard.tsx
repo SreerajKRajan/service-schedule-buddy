@@ -327,18 +327,6 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <span>{formatDate(job.scheduled_date)}</span>
           </div>
 
-          {job.is_recurring && jobSchedule && (
-            <div className="bg-blue-50 p-2 rounded text-xs">
-              <div className="font-medium text-blue-800 mb-1">Recurring Schedule</div>
-              <div className="text-blue-600">
-                Every {jobSchedule.interval_value} {jobSchedule.frequency.replace('ly', '')}
-                {jobSchedule.interval_value > 1 ? 's' : ''}
-              </div>
-              <div className="text-blue-600">
-                Next due: {formatDate(jobSchedule.next_due_date)}
-              </div>
-            </div>
-          )}
           
           {job.estimated_duration && (
             <div className="flex items-center gap-2">
