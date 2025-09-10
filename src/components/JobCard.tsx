@@ -369,7 +369,6 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
                     </div>
                     <div className="text-right">
                       {service.price && <div className="font-medium">${service.price}</div>}
-                      {service.duration && <div className="text-sm text-muted-foreground">{service.duration} min</div>}
                     </div>
                   </div>
                 </div>
