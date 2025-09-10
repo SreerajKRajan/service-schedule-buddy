@@ -166,6 +166,7 @@ export type Database = {
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at: string
+          webhook_sent_at: string | null
         }
         Insert: {
           completed_date?: string | null
@@ -188,6 +189,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at?: string
+          webhook_sent_at?: string | null
         }
         Update: {
           completed_date?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string
+          webhook_sent_at?: string | null
         }
         Relationships: [
           {
@@ -302,7 +305,13 @@ export type Database = {
       }
     }
     Enums: {
-      frequency_type: "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
+      frequency_type:
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "yearly"
+        | "semi_annually"
       job_status: "pending" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -431,7 +440,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      frequency_type: ["daily", "weekly", "monthly", "quarterly", "yearly"],
+      frequency_type: [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "yearly",
+        "semi_annually",
+      ],
       job_status: ["pending", "in_progress", "completed", "cancelled"],
     },
   },

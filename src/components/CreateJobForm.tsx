@@ -290,6 +290,12 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         case 'monthly':
           currentDate.setMonth(currentDate.getMonth() + 1);
           break;
+        case 'quarterly':
+          currentDate.setMonth(currentDate.getMonth() + 3);
+          break;
+        case 'semi_annually':
+          currentDate.setMonth(currentDate.getMonth() + 6);
+          break;
         case 'yearly':
           currentDate.setFullYear(currentDate.getFullYear() + 1);
           break;
@@ -375,7 +381,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             .from('job_schedules')
             .insert({
               job_id: jobs[0].id,
-              frequency: formData.frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
+              frequency: formData.frequency as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'semi_annually' | 'yearly',
               interval_value: 1,
               next_due_date: jobDates[jobDates.length - 1]?.toISOString() || null,
               is_active: true,
@@ -849,6 +855,8 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="semi_annually">Semi Annually</SelectItem>
                       <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
