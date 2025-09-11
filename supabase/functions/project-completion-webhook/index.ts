@@ -51,6 +51,16 @@ serve(async (req) => {
       }
     }
 
+    // Get assigned employees
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('job_assignments')
+      .select(`
+        users (name)
+      `)
+      .eq('job_id', jobId);
+
+    const employeesAssigned = assignments?.map(assignment => assignment.users?.name).filter(Boolean) || [];
+
     // Get job services
     const { data: jobServices, error: servicesError } = await supabase
       .from('job_services')
@@ -67,34 +77,63 @@ serve(async (req) => {
       price: service.price || 0
     })) || [];
 
-    // Prepare webhook payload with customer info and services
-    const webhookPayload = {
+    // Prepare original webhook payload
+    const originalWebhookPayload = {
+      project_value: job.price || 0,
+      project_title: job.title,
+      quoted_by_name: quotedByName,
+      first_time: job.first_time || false,
+      employees_assigned: employeesAssigned
+    };
+
+    // Prepare customer info webhook payload
+    const customerWebhookPayload = {
       customer_name: job.customer_name || '',
       customer_email: job.customer_email || '',
       customer_phone: job.customer_phone || '',
       selected_services: selectedServices
     };
 
-    console.log('Sending webhook payload:', webhookPayload);
+    console.log('Sending original webhook payload:', originalWebhookPayload);
+    console.log('Sending customer webhook payload:', customerWebhookPayload);
 
-    // Send webhook to the specified URL
-    const webhookResponse = await fetch('https://webhook.site/90ed311d-0949-4923-9d72-34169fae2119', {
+    // Send to original webhook
+    const originalWebhookResponse = await fetch('https://bhcobewqjkvptmojaoep.supabase.co/functions/v1/project-webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(webhookPayload),
+      body: JSON.stringify(originalWebhookPayload),
     });
 
-    if (!webhookResponse.ok) {
-      console.error('Webhook failed:', await webhookResponse.text());
-      return new Response(JSON.stringify({ error: 'Webhook failed' }), {
+    if (!originalWebhookResponse.ok) {
+      console.error('Original webhook failed:', await originalWebhookResponse.text());
+    } else {
+      console.log('Original webhook sent successfully');
+    }
+
+    // Send to customer info webhook
+    const customerWebhookResponse = await fetch('https://webhook.site/90ed311d-0949-4923-9d72-34169fae2119', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customerWebhookPayload),
+    });
+
+    if (!customerWebhookResponse.ok) {
+      console.error('Customer webhook failed:', await customerWebhookResponse.text());
+    } else {
+      console.log('Customer webhook sent successfully');
+    }
+
+    // Return success if at least one webhook succeeded
+    if (!originalWebhookResponse.ok && !customerWebhookResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Both webhooks failed' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('Webhook sent successfully');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
