@@ -116,7 +116,7 @@ serve(async (req) => {
     }
 
     // Send to customer info webhook
-    const customerWebhookResponse = await fetch('https://webhook.site/90ed311d-0949-4923-9d72-34169fae2119', {
+    const customerWebhookResponse = await fetch('https://workorder.theservicepilot.com/api/webhook/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
