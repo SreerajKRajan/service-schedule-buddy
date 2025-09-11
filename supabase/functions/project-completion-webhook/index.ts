@@ -51,29 +51,34 @@ serve(async (req) => {
       }
     }
 
-    // Get assigned employees
-    const { data: assignments, error: assignmentsError } = await supabase
-      .from('job_assignments')
-      .select(`
-        users (name)
-      `)
+    // Get job services
+    const { data: jobServices, error: servicesError } = await supabase
+      .from('job_services')
+      .select('service_name, service_description, price')
       .eq('job_id', jobId);
 
-    const employeesAssigned = assignments?.map(assignment => assignment.users?.name).filter(Boolean) || [];
+    if (servicesError) {
+      console.error('Error fetching job services:', servicesError);
+    }
 
-    // Prepare webhook payload
+    const selectedServices = jobServices?.map(service => ({
+      name: service.service_name,
+      description: service.service_description,
+      price: service.price || 0
+    })) || [];
+
+    // Prepare webhook payload with customer info and services
     const webhookPayload = {
-      project_value: job.price || 0,
-      project_title: job.title,
-      quoted_by_name: quotedByName,
-      first_time: job.first_time || false,
-      employees_assigned: employeesAssigned
+      customer_name: job.customer_name || '',
+      customer_email: job.customer_email || '',
+      customer_phone: job.customer_phone || '',
+      selected_services: selectedServices
     };
 
     console.log('Sending webhook payload:', webhookPayload);
 
     // Send webhook to the specified URL
-    const webhookResponse = await fetch('https://bhcobewqjkvptmojaoep.supabase.co/functions/v1/project-webhook', {
+    const webhookResponse = await fetch('https://webhook.site/90ed311d-0949-4923-9d72-34169fae2119', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
