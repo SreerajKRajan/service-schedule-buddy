@@ -102,6 +102,8 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        'apikey': Deno.env.get('SUPABASE_ANON_KEY'),
       },
       body: JSON.stringify(originalWebhookPayload),
     });
