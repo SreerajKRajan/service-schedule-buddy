@@ -91,6 +91,7 @@ serve(async (req) => {
       customer_name: job.customer_name || '',
       customer_email: job.customer_email || '',
       customer_phone: job.customer_phone || '',
+      customer_address: job.customer_address || '',
       selected_services: selectedServices
     };
 
