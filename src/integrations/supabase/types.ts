@@ -351,6 +351,10 @@ export type Database = {
         }
         Returns: string
       }
+      update_overdue_jobs: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       frequency_type:
