@@ -338,27 +338,6 @@ export type Database = {
         }
         Relationships: []
       }
-      webhook_logs: {
-        Row: {
-          id: string
-          job_id: string
-          triggered_at: string | null
-          webhook_type: string
-        }
-        Insert: {
-          id?: string
-          job_id: string
-          triggered_at?: string | null
-          webhook_type: string
-        }
-        Update: {
-          id?: string
-          job_id?: string
-          triggered_at?: string | null
-          webhook_type?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
