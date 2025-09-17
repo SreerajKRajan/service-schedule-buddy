@@ -93,6 +93,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   const fetchJobs = async () => {
     try {
+      // Update overdue jobs to service_due status first
+      await supabase.rpc('update_overdue_jobs');
+      
       let query = supabase
         .from('jobs')
         .select('*')
@@ -341,6 +344,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="service_due">Service Due</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
