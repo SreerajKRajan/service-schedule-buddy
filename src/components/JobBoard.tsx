@@ -200,7 +200,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     setFilteredJobs(filtered);
   };
 
-  const jobTypes = [...new Set(jobs.map(job => job.job_type))];
+  const jobTypes = [...new Set(jobs.map(job => job.job_type).filter(type => type && type.trim() !== ""))];
 
   const clearFilters = () => {
     setSearchTerm("");
