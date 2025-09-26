@@ -93,6 +93,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     first_time: false,
     quoted_by: "",
   });
+  const [servicePrices, setServicePrices] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -143,6 +144,27 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       setCurrentAssignments(assignedUsers);
     } catch (error) {
       console.error('Error fetching job assignments:', error);
+    }
+
+    // Fetch current job services and their custom prices
+    try {
+      const { data, error } = await supabase
+        .from('job_services')
+        .select('service_id, price')
+        .eq('job_id', job.id);
+
+      if (error) throw error;
+      
+      // Set service prices from existing job services
+      const existingServicePrices: Record<string, number> = {};
+      data?.forEach(service => {
+        if (service.service_id && service.price !== null) {
+          existingServicePrices[service.service_id] = service.price;
+        }
+      });
+      setServicePrices(existingServicePrices);
+    } catch (error) {
+      console.error('Error fetching job services:', error);
     }
 
     setFormData({
@@ -316,6 +338,51 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         if (assignError) throw assignError;
       }
 
+      // Update job services
+      // First, remove all existing job services
+      const { error: deleteServicesError } = await supabase
+        .from('job_services')
+        .delete()
+        .eq('job_id', job.id);
+
+      if (deleteServicesError) throw deleteServicesError;
+
+      // Then, add new services with custom prices
+      if (formData.selected_services.length > 0) {
+        const jobServices = formData.selected_services.map(serviceId => {
+          // Find service details (either from services list or custom services)
+          const service = services.find(s => s.id === serviceId);
+          const customService = customServices.find(s => s.id === serviceId);
+          
+          if (service) {
+            return {
+              job_id: job.id,
+              service_id: service.id,
+              service_name: service.name,
+              service_description: service.description,
+              price: servicePrices[service.id] ?? service.default_price,
+              duration: service.default_duration,
+            };
+          } else if (customService) {
+            return {
+              job_id: job.id,
+              service_id: customService.id,
+              service_name: customService.name,
+              service_description: null,
+              price: servicePrices[customService.id] ?? customService.price,
+              duration: customService.duration,
+            };
+          }
+          return null;
+        }).filter(Boolean);
+
+        const { error: servicesError } = await supabase
+          .from('job_services')
+          .insert(jobServices);
+
+        if (servicesError) throw servicesError;
+      }
+
       toast({
         title: "Success",
         description: "Job updated successfully",
@@ -349,6 +416,32 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         ? [...prev.selected_services, serviceId]
         : prev.selected_services.filter(id => id !== serviceId);
       
+      // Initialize service price when adding a service
+      if (checked) {
+        const service = services.find(s => s.id === serviceId);
+        const customService = customServices.find(s => s.id === serviceId);
+        
+        if (service) {
+          const defaultPrice = service.default_price ?? 0;
+          setServicePrices(prevPrices => ({
+            ...prevPrices,
+            [serviceId]: defaultPrice
+          }));
+        } else if (customService) {
+          setServicePrices(prevPrices => ({
+            ...prevPrices,
+            [serviceId]: customService.price || 0
+          }));
+        }
+      } else {
+        // Remove service price when unchecking
+        setServicePrices(prevPrices => {
+          const newPrices = { ...prevPrices };
+          delete newPrices[serviceId];
+          return newPrices;
+        });
+      }
+      
       // Update job_type to be a comma-separated list of service names
       const allServices = [...services, ...customServices];
       const selectedServiceNames = allServices
@@ -356,33 +449,30 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         .map(s => s.name)
         .join(", ");
       
-      // Calculate combined duration and price with proper type handling
-      const selectedServicesData = allServices.filter(s => newSelectedServices.includes(s.id));
-      const totalDuration = selectedServicesData.reduce((sum, service) => {
-        if ('default_duration' in service) {
-          return sum + (service.default_duration || 0);
-        } else {
-          return sum + (service.duration || 0);
-        }
-      }, 0);
-      
-      const totalPrice = selectedServicesData.reduce((sum, service) => {
-        if ('default_price' in service) {
-          return sum + (service.default_price || 0);
-        } else {
-          return sum + (service.price || 0);
-        }
-      }, 0);
-      
       return {
         ...prev,
         selected_services: newSelectedServices,
         job_type: selectedServiceNames,
-        estimated_duration: totalDuration > 0 ? totalDuration.toString() : prev.estimated_duration,
-        price: totalPrice > 0 ? totalPrice.toString() : prev.price,
       };
     });
   };
+
+  const handleServicePriceChange = (serviceId: string, price: string) => {
+    const numPrice = parseFloat(price) || 0;
+    setServicePrices(prev => ({
+      ...prev,
+      [serviceId]: numPrice
+    }));
+  };
+
+  // useEffect to update total price when service prices change
+  useEffect(() => {
+    const total = Object.values(servicePrices).reduce((sum: number, price: number) => sum + price, 0);
+    setFormData(prev => ({
+      ...prev,
+      price: total > 0 ? total.toString() : ""
+    }));
+  }, [servicePrices]);
 
   const jobTypes = [
     "Window Cleaning",
@@ -426,27 +516,42 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                 <CardContent className="pt-4">
                   <div className="space-y-4">
                     {/* Database Services */}
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-3">
                       {services.map((service) => (
-                        <div key={service.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={service.id}
-                            checked={formData.selected_services.includes(service.id)}
-                            onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                          />
-                          <Label htmlFor={service.id} className="text-sm font-normal cursor-pointer">
-                            {service.name}
-                            {service.default_duration && (
-                              <span className="text-muted-foreground ml-1">
-                                ({service.default_duration}h)
-                              </span>
-                            )}
-                            {service.default_price && (
-                              <span className="text-muted-foreground ml-1">
-                                (${service.default_price})
-                              </span>
-                            )}
-                          </Label>
+                        <div key={service.id} className="border border-border rounded-lg p-3">
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id={service.id}
+                              checked={formData.selected_services.includes(service.id)}
+                              onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor={service.id} className="text-sm font-medium cursor-pointer">
+                                  {service.name}
+                                </Label>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {service.default_duration && `Duration: ${service.default_duration}h`}
+                                {service.default_duration && service.default_price && " • "}
+                                {service.default_price && `Default: $${service.default_price}`}
+                              </div>
+                              {formData.selected_services.includes(service.id) && (
+                                <div className="mt-2">
+                                  <Label className="text-xs text-muted-foreground">Price ($)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={servicePrices[service.id] || ''}
+                                    onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
+                                    placeholder="Enter price"
+                                    className="mt-1 h-8"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -455,35 +560,53 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                     {customServices.length > 0 && (
                       <div className="border-t pt-4">
                         <h4 className="text-sm font-medium mb-3">Custom Services</h4>
-                        <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-3">
                           {customServices.map(service => (
-                            <div key={service.id} className="flex items-start space-x-2">
-                              <Checkbox
-                                id={`custom-service-${service.id}`}
-                                checked={formData.selected_services.includes(service.id)}
-                                onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                              />
-                              <div className="grid gap-1 leading-none flex-1">
-                                <Label 
-                                  htmlFor={`custom-service-${service.id}`} 
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {service.name}
-                                  <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
-                                </Label>
-                                <div className="text-xs text-muted-foreground">
-                                  {service.duration}h • ${service.price}
+                            <div key={service.id} className="border border-border rounded-lg p-3">
+                              <div className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={`custom-service-${service.id}`}
+                                  checked={formData.selected_services.includes(service.id)}
+                                  onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <Label 
+                                      htmlFor={`custom-service-${service.id}`} 
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                      {service.name}
+                                      <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
+                                    </Label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeCustomService(service.id)}
+                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Duration: {service.duration}h • Default: ${service.price}
+                                  </div>
+                                  {formData.selected_services.includes(service.id) && (
+                                    <div className="mt-2">
+                                      <Label className="text-xs text-muted-foreground">Price ($)</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={servicePrices[service.id] || ''}
+                                        onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
+                                        placeholder="Enter price"
+                                        className="mt-1 h-8"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeCustomService(service.id)}
-                                className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
-                              >
-                                ×
-                              </Button>
                             </div>
                           ))}
                         </div>
