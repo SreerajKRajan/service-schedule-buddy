@@ -134,6 +134,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       const matchedServiceIds: string[] = [];
       const unmatchedServices: Array<{name: string; duration: number; price: number; id: string}> = [];
       const serviceQuotedPrices: { [serviceId: string]: { price: number; duration: number } } = {};
+      const initialServicePrices: Record<string, number> = {};
       
       if (initialData.jobs_selected) {
         initialData.jobs_selected.forEach(job => {
@@ -146,10 +147,13 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
           if (matchedService) {
             matchedServiceIds.push(matchedService.id);
             // Store the actual quoted price and duration for this service
+            const quotedPrice = job.price || matchedService.default_price || 0;
             serviceQuotedPrices[matchedService.id] = {
-              price: job.price || matchedService.default_price || 0,
+              price: quotedPrice,
               duration: job.duration ? Math.round(job.duration / 60) : matchedService.default_duration || 0
             };
+            // Set the initial service price for the editable input
+            initialServicePrices[matchedService.id] = quotedPrice;
           } else {
             // Create custom service for unmatched webhook data
             const customService = {
@@ -160,12 +164,15 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             };
             unmatchedServices.push(customService);
             matchedServiceIds.push(customService.id);
+            // Set the initial service price for custom service
+            initialServicePrices[customService.id] = customService.price;
           }
         });
       }
 
       setCustomServices(unmatchedServices);
       setServiceQuotedPrices(serviceQuotedPrices);
+      setServicePrices(initialServicePrices);
       setFormData(prev => ({
         ...prev,
         selected_services: matchedServiceIds,
