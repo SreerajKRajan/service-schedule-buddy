@@ -211,12 +211,27 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         .filter(assignment => assignment.user_id === assigneeFilter)
         .map(assignment => assignment.job_id);
       
+      console.log('Filtering for assignee:', assigneeFilter);
+      console.log('Job assignments:', jobAssignments);
+      console.log('Assigned job IDs:', assignedJobIds);
+      console.log('Total jobs before filter:', filtered.length);
+      
       // Show jobs that are either:
       // 1. Explicitly assigned to this user in job_assignments
       // 2. Quoted by this user (quoted_by field)
-      filtered = filtered.filter(job => 
-        assignedJobIds.includes(job.id) || job.quoted_by === assigneeFilter
-      );
+      filtered = filtered.filter(job => {
+        const isAssigned = assignedJobIds.includes(job.id);
+        const isQuotedBy = job.quoted_by === assigneeFilter;
+        const shouldShow = isAssigned || isQuotedBy;
+        
+        if (shouldShow) {
+          console.log(`Job ${job.id} (${job.title}) - Status: ${job.status}, Assigned: ${isAssigned}, Quoted: ${isQuotedBy}`);
+        }
+        
+        return shouldShow;
+      });
+      
+      console.log('Total jobs after filter:', filtered.length);
     }
 
     if (dateRange?.from || dateRange?.to) {
