@@ -62,6 +62,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
+  const [assigneeJobIds, setAssigneeJobIds] = useState<string[] | null>(null);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,7 +127,15 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   useEffect(() => {
     filterJobs();
-  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments]);
+  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
+
+  useEffect(() => {
+    if (assigneeFilter !== 'all') {
+      fetchAssignedJobIds(assigneeFilter);
+    } else {
+      setAssigneeJobIds(null);
+    }
+  }, [assigneeFilter]);
 
   const fetchJobs = async () => {
     try {
@@ -176,6 +185,20 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
   };
 
+  const fetchAssignedJobIds = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('job_assignments')
+        .select('job_id')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      setAssigneeJobIds((data || []).map((r) => r.job_id));
+    } catch (error) {
+      console.error('Error fetching assignee job ids:', error);
+      setAssigneeJobIds([]);
+    }
+  };
   const filterJobs = () => {
     let filtered = jobs;
 
@@ -201,12 +224,13 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
 
     if (assigneeFilter !== "all") {
-      const assignedJobIds = jobAssignments
+      const assignedJobIds = (assigneeJobIds ?? jobAssignments
         .filter((assignment) => assignment.user_id === assigneeFilter)
-        .map((assignment) => assignment.job_id);
+        .map((assignment) => assignment.job_id));
 
       // Filter ONLY by actual assignments from job_assignments
-      filtered = filtered.filter((job) => assignedJobIds.includes(job.id));
+      const assignedSet = new Set(assignedJobIds);
+      filtered = filtered.filter((job) => assignedSet.has(job.id));
     }
 
     if (dateRange?.from || dateRange?.to) {
