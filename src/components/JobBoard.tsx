@@ -210,7 +210,13 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       const assignedJobIds = jobAssignments
         .filter(assignment => assignment.user_id === assigneeFilter)
         .map(assignment => assignment.job_id);
-      filtered = filtered.filter(job => assignedJobIds.includes(job.id));
+      
+      // Show jobs that are either:
+      // 1. Explicitly assigned to this user in job_assignments
+      // 2. Quoted by this user (quoted_by field)
+      filtered = filtered.filter(job => 
+        assignedJobIds.includes(job.id) || job.quoted_by === assigneeFilter
+      );
     }
 
     if (dateRange?.from || dateRange?.to) {
