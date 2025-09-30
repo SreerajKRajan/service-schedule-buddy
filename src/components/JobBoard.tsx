@@ -85,6 +85,45 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     if (customerEmail && !hasFullAccess) {
       autoSetAssigneeFilter();
     }
+
+    // Set up realtime subscriptions for jobs, job_assignments
+    const jobsChannel = supabase
+      .channel('jobs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs'
+        },
+        (payload) => {
+          console.log('Job change detected:', payload);
+          fetchJobs();
+        }
+      )
+      .subscribe();
+
+    const assignmentsChannel = supabase
+      .channel('assignments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_assignments'
+        },
+        (payload) => {
+          console.log('Assignment change detected:', payload);
+          fetchJobAssignments();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase.removeChannel(jobsChannel);
+      supabase.removeChannel(assignmentsChannel);
+    };
   }, [customerEmail]);
 
   useEffect(() => {
