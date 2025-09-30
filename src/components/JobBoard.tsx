@@ -26,10 +26,8 @@ interface User {
 interface JobAssignment {
   user_id: string;
   job_id: string;
-  users: {
-    name: string;
-  };
 }
+
 
 interface Job {
   id: string;
@@ -169,11 +167,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     try {
       const { data, error } = await supabase
         .from('job_assignments')
-        .select(`
-          user_id,
-          job_id,
-          users (name)
-        `);
+        .select('user_id, job_id');
 
       if (error) throw error;
       setJobAssignments(data || []);
