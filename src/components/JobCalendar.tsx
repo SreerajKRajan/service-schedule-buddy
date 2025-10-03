@@ -289,7 +289,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
-          <div className="calendar-container min-h-[500px] sm:min-h-[600px]">
+          <div className="calendar-container h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]">
             <BigCalendar
               localizer={localizer}
               events={events}
@@ -311,126 +311,112 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
           </div>
           <style>{`
-            /* Ensure calendar uses auto height and rows push down naturally */
-            .calendar-container,
-            .calendar-container .rbc-calendar,
+            /* Calendar container styling */
             .calendar-container .rbc-month-view {
-              height: auto !important;
+              height: 100%;
             }
-
-            /* Week row container: allow variable height per week */
+            
+            /* Allow rows to expand */
             .calendar-container .rbc-month-row {
-              display: block !important;
-              height: auto !important;
-              overflow: visible !important;
-              position: relative;
-            }
-
-            /* Header as 7 equal columns */
-            .calendar-container .rbc-month-header {
-              display: grid;
-              grid-template-columns: repeat(7, 1fr);
-              border-bottom: 1px solid #ddd;
-            }
-            .calendar-container .rbc-header {
-              padding: 8px;
-              font-weight: 600;
-              border-left: 1px solid #ddd;
-            }
-            .calendar-container .rbc-header:first-child { border-left: none; }
-
-            /* Background grid matches 7 columns; grows with content */
-            .calendar-container .rbc-row-bg {
-              display: grid !important;
-              grid-template-columns: repeat(7, 1fr);
-              position: relative;
-              height: auto !important;
               min-height: 100px;
+              overflow: visible !important;
+              flex: 1 0 auto;
             }
+            
+            /* Day cells expand vertically */
             .calendar-container .rbc-day-bg {
-              height: auto !important;
-              min-height: 100px;
-              border-left: 1px solid #ddd;
-              border-bottom: 1px solid #ddd;
-            }
-            .calendar-container .rbc-day-bg:first-child { border-left: none; }
-            .calendar-container .rbc-off-range-bg { background: hsl(var(--muted) / 0.3); }
-
-            /* Content grid (7 columns). Use display: contents so event rows collapse into the grid
-               and stack vertically per day without absolute positioning. */
-            .calendar-container .rbc-row-content {
-              display: grid !important;
-              grid-template-columns: repeat(7, 1fr);
-              position: relative;
-              height: auto !important;
               overflow: visible !important;
             }
-            .calendar-container .rbc-row-content .rbc-row {
-              display: contents !important;
+            
+            .calendar-container .rbc-row-content {
+              min-height: 100px;
+              overflow: visible !important;
             }
-
-            /* Date number stays at top in normal flow */
-            .calendar-container .rbc-date-cell {
-              position: static !important;
-              text-align: right;
-              padding: 6px 8px;
-              font-weight: 600;
-              font-size: 14px;
-              margin-bottom: 6px; /* space between date and first job */
-              z-index: 1;
+            
+            .calendar-container .rbc-row {
+              overflow: visible !important;
+              flex: 1 0 auto;
             }
-            .calendar-container .rbc-off-range .rbc-date-cell { color: hsl(var(--muted-foreground)); }
-
-            /* Each segment (wrapper around an event) is in-flow and spaced */
+            
             .calendar-container .rbc-row-segment {
-              position: static !important;
-              margin: 0 6px 4px 6px !important; /* horizontal padding + vertical spacing */
-              padding: 0 !important;
-              width: auto !important;
+              padding: 1px 2px;
             }
-
-            /* Events are full-width blocks, no absolute positioning */
-            .calendar-container .rbc-event,
-            .calendar-container .rbc-event-allday {
-              position: static !important;
-              display: block !important;
-              width: 100% !important;
-              height: auto !important;
-              padding: 8px 10px !important;
-              margin: 0 !important;
+            
+            /* Event styling - distinct blocks */
+            .calendar-container .rbc-event {
+              padding: 6px 8px;
+              margin: 3px 2px;
               font-size: 12px;
               line-height: 1.4;
               border-radius: 6px;
               cursor: pointer;
               transition: all 0.2s ease;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-              border: 1px solid rgba(255, 255, 255, 0.2);
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+              display: block;
+              position: relative;
             }
-            .calendar-container .rbc-event:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 2; }
-            .calendar-container .rbc-event-content { white-space: normal; word-wrap: break-word; overflow: visible; font-weight: 500; }
-
-            /* Remove overflow UI */
-            .calendar-container .rbc-show-more { display: none !important; }
-            .calendar-container .rbc-overlay { display: none !important; }
-
-            /* Ensure any container used for positioning in other views is neutral here */
-            .calendar-container .rbc-events-container { position: static !important; display: contents !important; margin: 0 !important; }
-
-            /* Time/Week view unaffected but keep spacing sane */
-            .calendar-container .rbc-time-slot { min-height: 40px; }
-            .calendar-container .rbc-time-content { border-top: 1px solid #ddd; }
-
-            /* Responsive */
+            
+            .calendar-container .rbc-event:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+              z-index: 10;
+            }
+            
+            .calendar-container .rbc-event-content {
+              white-space: normal;
+              word-wrap: break-word;
+              overflow: visible;
+              font-weight: 500;
+            }
+            
+            /* Hide the "+X more" link completely */
+            .calendar-container .rbc-show-more {
+              display: none !important;
+            }
+            
+            /* Date cell styling */
+            .calendar-container .rbc-date-cell {
+              padding: 6px;
+              font-weight: 600;
+            }
+            
+            /* Ensure events container can grow */
+            .calendar-container .rbc-events-container {
+              margin-right: 0;
+            }
+            
+            /* Week view styling */
+            .calendar-container .rbc-time-slot {
+              min-height: 40px;
+            }
+            
+            /* Responsive adjustments */
             @media (max-width: 640px) {
-              .calendar-container .rbc-row-bg,
-              .calendar-container .rbc-row-content { min-height: 80px; }
-              .calendar-container .rbc-event { font-size: 10px; padding: 6px 8px !important; }
-              .calendar-container .rbc-date-cell { font-size: 12px; padding: 4px 6px; margin-bottom: 4px; }
+              .calendar-container .rbc-event {
+                font-size: 10px;
+                padding: 4px 6px;
+                margin: 2px 1px;
+              }
+              
+              .calendar-container .rbc-month-row {
+                min-height: 80px;
+              }
+              
+              .calendar-container .rbc-date-cell {
+                padding: 4px;
+                font-size: 12px;
+              }
             }
+            
             @media (min-width: 1024px) {
-              .calendar-container .rbc-row-bg,
-              .calendar-container .rbc-row-content { min-height: 120px; }
-              .calendar-container .rbc-event { padding: 10px 12px !important; font-size: 13px; }
+              .calendar-container .rbc-event {
+                padding: 8px 10px;
+                font-size: 13px;
+              }
+              
+              .calendar-container .rbc-month-row {
+                min-height: 120px;
+              }
             }
           `}</style>
         </CardContent>
