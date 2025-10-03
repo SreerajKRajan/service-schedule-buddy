@@ -311,109 +311,124 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
           </div>
           <style>{`
-            /* Calendar container */
-            .calendar-container {
-              height: auto !important;
-            }
-            
+            /* Force calendar to use auto height */
+            .calendar-container,
+            .calendar-container .rbc-calendar,
             .calendar-container .rbc-month-view {
               height: auto !important;
-              display: flex;
-              flex-direction: column;
             }
             
-            /* Header row */
+            /* Week row container - NO flexbox, just block */
+            .calendar-container .rbc-month-row {
+              display: block !important;
+              height: auto !important;
+              min-height: auto !important;
+              overflow: visible !important;
+              position: relative;
+              margin-bottom: 0;
+            }
+            
+            /* Header stays as grid */
             .calendar-container .rbc-month-header {
               display: grid;
               grid-template-columns: repeat(7, 1fr);
+              border-bottom: 1px solid #ddd;
             }
             
-            /* Month body - use CSS Grid for independent cell heights */
-            .calendar-container .rbc-month-row {
-              display: grid !important;
-              grid-template-columns: repeat(7, 1fr);
-              height: auto !important;
-              min-height: 100px;
-              overflow: visible !important;
+            .calendar-container .rbc-header {
+              padding: 8px;
+              font-weight: 600;
+              border-left: 1px solid #ddd;
             }
             
-            /* Background cells grid */
+            .calendar-container .rbc-header:first-child {
+              border-left: none;
+            }
+            
+            /* Background row - grid layout for 7 columns */
             .calendar-container .rbc-row-bg {
               display: grid !important;
               grid-template-columns: repeat(7, 1fr);
-              position: absolute;
-              width: 100%;
-              height: 100%;
+              position: relative;
+              height: auto !important;
+              min-height: 100px;
             }
             
-            /* Individual day cells - independent height */
+            /* Each day background cell */
             .calendar-container .rbc-day-bg {
               height: auto !important;
               min-height: 100px;
-              overflow: visible !important;
               border-left: 1px solid #ddd;
-              position: relative;
+              border-bottom: 1px solid #ddd;
             }
             
             .calendar-container .rbc-day-bg:first-child {
               border-left: none;
             }
             
-            /* Content row - match grid structure */
+            .calendar-container .rbc-off-range-bg {
+              background: hsl(var(--muted) / 0.3);
+            }
+            
+            /* Content container - grid layout matching background */
             .calendar-container .rbc-row-content {
               display: grid !important;
               grid-template-columns: repeat(7, 1fr);
+              position: relative;
               height: auto !important;
               min-height: 100px;
-              overflow: visible !important;
-              position: relative;
             }
             
-            .calendar-container .rbc-row {
-              position: relative;
-              overflow: visible !important;
+            .calendar-container .rbc-row-content-scroll-container {
               height: auto !important;
             }
             
-            /* Date number - stays at top */
-            .calendar-container .rbc-date-cell {
-              padding: 8px;
-              font-weight: 600;
-              text-align: right;
-              display: block;
+            /* Individual day cell content wrapper */
+            .calendar-container .rbc-row-segment {
+              padding: 35px 6px 8px 6px !important;
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 4px !important;
+              height: auto !important;
+              min-height: 100px;
               position: relative;
+            }
+            
+            /* Date number at top of each cell */
+            .calendar-container .rbc-date-cell {
+              position: absolute;
+              top: 6px;
+              right: 8px;
+              padding: 4px;
+              font-weight: 600;
+              font-size: 14px;
               z-index: 5;
             }
             
-            /* Event container - each day column */
-            .calendar-container .rbc-row-content > .rbc-row-segment {
-              padding: 30px 4px 8px 4px;
-              display: flex;
-              flex-direction: column;
-              gap: 4px;
-              height: auto !important;
-              min-height: 100px;
+            .calendar-container .rbc-off-range .rbc-date-cell {
+              color: hsl(var(--muted-foreground));
             }
             
-            /* Individual event blocks */
+            /* Job event blocks */
             .calendar-container .rbc-event {
-              padding: 8px 10px;
-              margin: 0;
+              padding: 8px 10px !important;
+              margin: 0 !important;
               font-size: 12px;
               line-height: 1.4;
               border-radius: 6px;
               cursor: pointer;
               transition: all 0.2s ease;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-              display: block;
-              position: relative;
-              width: 100%;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+              display: block !important;
+              position: relative !important;
+              width: 100% !important;
+              height: auto !important;
               border: 1px solid rgba(255, 255, 255, 0.2);
             }
             
             .calendar-container .rbc-event:hover {
-              transform: translateY(-1px);
-              box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
               z-index: 10;
             }
             
@@ -424,7 +439,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               font-weight: 500;
             }
             
-            /* Hide overflow controls */
+            /* Hide show-more and overlay */
             .calendar-container .rbc-show-more {
               display: none !important;
             }
@@ -435,54 +450,61 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             
             /* Events container */
             .calendar-container .rbc-events-container {
-              display: flex;
-              flex-direction: column;
-              gap: 4px;
-              margin: 0;
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 4px !important;
+              margin: 0 !important;
             }
             
-            /* Week view styling */
+            /* Week and day view */
             .calendar-container .rbc-time-slot {
               min-height: 40px;
             }
             
-            /* Responsive adjustments */
+            .calendar-container .rbc-time-content {
+              border-top: 1px solid #ddd;
+            }
+            
+            /* Responsive */
             @media (max-width: 640px) {
+              .calendar-container .rbc-row-bg,
+              .calendar-container .rbc-row-content {
+                min-height: 80px;
+              }
+              
+              .calendar-container .rbc-row-segment {
+                min-height: 80px;
+                padding: 28px 4px 6px 4px !important;
+                gap: 3px !important;
+              }
+              
               .calendar-container .rbc-event {
                 font-size: 10px;
-                padding: 6px 8px;
-              }
-              
-              .calendar-container .rbc-month-row {
-                min-height: 80px;
-              }
-              
-              .calendar-container .rbc-row-content > .rbc-row-segment {
-                min-height: 80px;
-                padding: 28px 3px 6px 3px;
-                gap: 3px;
+                padding: 6px 8px !important;
               }
               
               .calendar-container .rbc-date-cell {
-                padding: 6px;
                 font-size: 12px;
+                top: 4px;
+                right: 6px;
               }
             }
             
             @media (min-width: 1024px) {
+              .calendar-container .rbc-row-bg,
+              .calendar-container .rbc-row-content {
+                min-height: 120px;
+              }
+              
+              .calendar-container .rbc-row-segment {
+                min-height: 120px;
+                padding: 38px 8px 10px 8px !important;
+                gap: 5px !important;
+              }
+              
               .calendar-container .rbc-event {
-                padding: 10px 12px;
+                padding: 10px 12px !important;
                 font-size: 13px;
-              }
-              
-              .calendar-container .rbc-month-row {
-                min-height: 120px;
-              }
-              
-              .calendar-container .rbc-row-content > .rbc-row-segment {
-                min-height: 120px;
-                padding: 32px 6px 10px 6px;
-                gap: 5px;
               }
             }
           `}</style>
