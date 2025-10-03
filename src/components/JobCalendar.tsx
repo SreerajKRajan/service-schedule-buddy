@@ -289,7 +289,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
-          <div className="h-[400px] sm:h-96 md:h-[600px]">
+          <div className="calendar-container h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]">
             <BigCalendar
               localizer={localizer}
               events={events}
@@ -302,7 +302,6 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               style={{ height: '100%' }}
-              popup
               toolbar={false}
               formats={{
                 timeGutterFormat: 'HH:mm',
@@ -311,6 +310,56 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               }}
             />
           </div>
+          <style>{`
+            .calendar-container .rbc-month-view {
+              height: 100%;
+            }
+            
+            .calendar-container .rbc-month-row {
+              min-height: 80px;
+              overflow: visible;
+            }
+            
+            .calendar-container .rbc-day-bg {
+              overflow: visible;
+            }
+            
+            .calendar-container .rbc-row-content {
+              min-height: 80px;
+              overflow: visible;
+            }
+            
+            .calendar-container .rbc-row {
+              overflow: visible;
+            }
+            
+            .calendar-container .rbc-event {
+              padding: 2px 4px;
+              margin-bottom: 2px;
+              font-size: 11px;
+              line-height: 1.2;
+            }
+            
+            .calendar-container .rbc-event-content {
+              white-space: normal;
+              word-wrap: break-word;
+            }
+            
+            .calendar-container .rbc-show-more {
+              display: none !important;
+            }
+            
+            .calendar-container .rbc-date-cell {
+              padding: 4px;
+            }
+            
+            @media (max-width: 640px) {
+              .calendar-container .rbc-event {
+                font-size: 9px;
+                padding: 1px 2px;
+              }
+            }
+          `}</style>
         </CardContent>
       </Card>
 
