@@ -77,6 +77,8 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
     price: "",
     is_recurring: false,
     frequency: "daily",
+    interval: 1,
+    day_of_week: "",
     recurrence_count: 1,
     assigned_users: [] as string[],
     first_time: false,
@@ -313,31 +315,39 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
     }));
   };
 
-  const generateRecurringJobs = (startDate: Date, frequency: string, occurrences: number) => {
+  const generateRecurringJobs = (startDate: Date, frequency: string, interval: number, occurrences: number, dayOfWeek?: string) => {
     const jobs = [];
     let currentDate = new Date(startDate);
+
+    // If day of week is specified for weekly frequency, adjust start date to that day
+    if (frequency === 'weekly' && dayOfWeek) {
+      const targetDay = parseInt(dayOfWeek);
+      const currentDay = currentDate.getDay();
+      const daysToAdd = (targetDay - currentDay + 7) % 7;
+      currentDate.setDate(currentDate.getDate() + daysToAdd);
+    }
 
     for (let i = 0; i < occurrences; i++) {
       jobs.push(new Date(currentDate));
       
       switch (frequency) {
         case 'daily':
-          currentDate.setDate(currentDate.getDate() + 1);
+          currentDate.setDate(currentDate.getDate() + interval);
           break;
         case 'weekly':
-          currentDate.setDate(currentDate.getDate() + 7);
+          currentDate.setDate(currentDate.getDate() + (7 * interval));
           break;
         case 'monthly':
-          currentDate.setMonth(currentDate.getMonth() + 1);
+          currentDate.setMonth(currentDate.getMonth() + interval);
           break;
         case 'quarterly':
-          currentDate.setMonth(currentDate.getMonth() + 3);
+          currentDate.setMonth(currentDate.getMonth() + (3 * interval));
           break;
         case 'semi_annually':
-          currentDate.setMonth(currentDate.getMonth() + 6);
+          currentDate.setMonth(currentDate.getMonth() + (6 * interval));
           break;
         case 'yearly':
-          currentDate.setFullYear(currentDate.getFullYear() + 1);
+          currentDate.setFullYear(currentDate.getFullYear() + interval);
           break;
       }
     }
@@ -370,7 +380,13 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       if (formData.is_recurring && formData.scheduled_date) {
         // Generate multiple jobs for recurring schedule
         const startDate = new Date(formData.scheduled_date);
-        const jobDates = generateRecurringJobs(startDate, formData.frequency, formData.recurrence_count);
+        const jobDates = generateRecurringJobs(
+          startDate, 
+          formData.frequency, 
+          formData.interval, 
+          formData.recurrence_count,
+          formData.day_of_week || undefined
+        );
         
         const jobsToCreate = jobDates.map((date, index) => ({
           title: `${formData.title}${index > 0 ? ` (${index + 1})` : ''}`,
@@ -462,7 +478,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
             .insert({
               job_id: jobs[0].id,
               frequency: formData.frequency as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'semi_annually' | 'yearly',
-              interval_value: 1,
+              interval_value: formData.interval,
               next_due_date: jobDates[jobDates.length - 1]?.toISOString() || null,
               is_active: true,
             });
@@ -578,6 +594,8 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
         price: "",
         is_recurring: false,
         frequency: "daily",
+        interval: 1,
+        day_of_week: "",
         recurrence_count: 1,
         assigned_users: [],
         first_time: false,
@@ -998,26 +1016,38 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
 
           {formData.is_recurring && (
             <div className="space-y-4 pl-6 border-l-2 border-muted">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency</Label>
+                  <Label htmlFor="interval">Repeat Every</Label>
+                  <Input
+                    id="interval"
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={formData.interval}
+                    onChange={(e) => setFormData(prev => ({ ...prev, interval: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="frequency">Unit</Label>
                   <Select value={formData.frequency} onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border z-50">
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="semi_annually">Semi Annually</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="daily">Day(s)</SelectItem>
+                      <SelectItem value="weekly">Week(s)</SelectItem>
+                      <SelectItem value="monthly">Month(s)</SelectItem>
+                      <SelectItem value="quarterly">Quarter(s)</SelectItem>
+                      <SelectItem value="semi_annually">Semi Annual(s)</SelectItem>
+                      <SelectItem value="yearly">Year(s)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="recurrence_count">Number of Occurrences</Label>
+                  <Label htmlFor="recurrence_count">Occurrences</Label>
                   <Input
                     id="recurrence_count"
                     type="number"
@@ -1027,6 +1057,35 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
                     onChange={(e) => setFormData(prev => ({ ...prev, recurrence_count: parseInt(e.target.value) || 1 }))}
                   />
                 </div>
+              </div>
+
+              {formData.frequency === 'weekly' && (
+                <div className="space-y-2">
+                  <Label htmlFor="day_of_week">Day of Week</Label>
+                  <Select value={formData.day_of_week} onValueChange={(value) => setFormData(prev => ({ ...prev, day_of_week: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select day of week" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="0">Sunday</SelectItem>
+                      <SelectItem value="1">Monday</SelectItem>
+                      <SelectItem value="2">Tuesday</SelectItem>
+                      <SelectItem value="3">Wednesday</SelectItem>
+                      <SelectItem value="4">Thursday</SelectItem>
+                      <SelectItem value="5">Friday</SelectItem>
+                      <SelectItem value="6">Saturday</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="text-sm text-muted-foreground">
+                {formData.interval > 1 && formData.frequency === 'weekly' && (
+                  <p>Bi-weekly: Every {formData.interval} weeks{formData.day_of_week && ` on ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][parseInt(formData.day_of_week)]}`}</p>
+                )}
+                {formData.interval === 1 && formData.frequency === 'weekly' && formData.day_of_week && (
+                  <p>Weekly: Every {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][parseInt(formData.day_of_week)]}</p>
+                )}
               </div>
             </div>
           )}
