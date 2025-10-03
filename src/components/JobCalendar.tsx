@@ -289,7 +289,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
-          <div className="calendar-container h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px]">
+          <div className="calendar-container min-h-[500px] sm:min-h-[600px]">
             <BigCalendar
               localizer={localizer}
               events={events}
@@ -311,38 +311,65 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
           </div>
           <style>{`
-            /* Calendar container styling */
-            .calendar-container .rbc-month-view {
-              height: 100%;
+            /* Calendar container - allow natural height */
+            .calendar-container {
+              height: auto !important;
             }
             
-            /* Allow rows to expand */
+            .calendar-container .rbc-month-view {
+              height: auto !important;
+            }
+            
+            .calendar-container .rbc-month-header {
+              display: flex;
+              flex-direction: row;
+            }
+            
+            /* Rows expand based on content */
             .calendar-container .rbc-month-row {
               min-height: 100px;
+              height: auto !important;
               overflow: visible !important;
-              flex: 1 0 auto;
+              display: flex;
+              flex-direction: column;
             }
             
-            /* Day cells expand vertically */
+            /* Day cells - flexible height */
             .calendar-container .rbc-day-bg {
+              min-height: 100px;
+              height: auto !important;
               overflow: visible !important;
+              flex: 1;
             }
             
             .calendar-container .rbc-row-content {
               min-height: 100px;
+              height: auto !important;
               overflow: visible !important;
+              flex: 1;
             }
             
             .calendar-container .rbc-row {
               overflow: visible !important;
-              flex: 1 0 auto;
+              height: auto !important;
+              min-height: 100px;
             }
             
             .calendar-container .rbc-row-segment {
               padding: 1px 2px;
             }
             
-            /* Event styling - distinct blocks */
+            /* Date cell - stays at top */
+            .calendar-container .rbc-date-cell {
+              padding: 6px;
+              font-weight: 600;
+              position: sticky;
+              top: 0;
+              background: inherit;
+              z-index: 5;
+            }
+            
+            /* Event styling - distinct blocks with spacing */
             .calendar-container .rbc-event {
               padding: 6px 8px;
               margin: 3px 2px;
@@ -354,6 +381,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
               display: block;
               position: relative;
+              width: calc(100% - 4px);
             }
             
             .calendar-container .rbc-event:hover {
@@ -369,25 +397,32 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               font-weight: 500;
             }
             
-            /* Hide the "+X more" link completely */
+            /* Hide the "+X more" link */
             .calendar-container .rbc-show-more {
               display: none !important;
             }
             
-            /* Date cell styling */
-            .calendar-container .rbc-date-cell {
-              padding: 6px;
-              font-weight: 600;
-            }
-            
-            /* Ensure events container can grow */
+            /* Events container grows with content */
             .calendar-container .rbc-events-container {
               margin-right: 0;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+            }
+            
+            /* Overlay container for events */
+            .calendar-container .rbc-overlay {
+              display: none !important;
             }
             
             /* Week view styling */
             .calendar-container .rbc-time-slot {
               min-height: 40px;
+            }
+            
+            /* Ensure consistent grid */
+            .calendar-container .rbc-day-bg + .rbc-day-bg {
+              border-left: 1px solid #ddd;
             }
             
             /* Responsive adjustments */
@@ -399,6 +434,10 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               }
               
               .calendar-container .rbc-month-row {
+                min-height: 80px;
+              }
+              
+              .calendar-container .rbc-day-bg {
                 min-height: 80px;
               }
               
@@ -415,6 +454,10 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               }
               
               .calendar-container .rbc-month-row {
+                min-height: 120px;
+              }
+              
+              .calendar-container .rbc-day-bg {
                 min-height: 120px;
               }
             }
