@@ -311,52 +311,111 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
           </div>
           <style>{`
+            /* Calendar container styling */
             .calendar-container .rbc-month-view {
               height: 100%;
             }
             
+            /* Allow rows to expand */
             .calendar-container .rbc-month-row {
-              min-height: 80px;
-              overflow: visible;
+              min-height: 100px;
+              overflow: visible !important;
+              flex: 1 0 auto;
             }
             
+            /* Day cells expand vertically */
             .calendar-container .rbc-day-bg {
-              overflow: visible;
+              overflow: visible !important;
             }
             
             .calendar-container .rbc-row-content {
-              min-height: 80px;
-              overflow: visible;
+              min-height: 100px;
+              overflow: visible !important;
             }
             
             .calendar-container .rbc-row {
-              overflow: visible;
+              overflow: visible !important;
+              flex: 1 0 auto;
             }
             
+            .calendar-container .rbc-row-segment {
+              padding: 1px 2px;
+            }
+            
+            /* Event styling - distinct blocks */
             .calendar-container .rbc-event {
-              padding: 2px 4px;
-              margin-bottom: 2px;
-              font-size: 11px;
-              line-height: 1.2;
+              padding: 6px 8px;
+              margin: 3px 2px;
+              font-size: 12px;
+              line-height: 1.4;
+              border-radius: 6px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+              display: block;
+              position: relative;
+            }
+            
+            .calendar-container .rbc-event:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+              z-index: 10;
             }
             
             .calendar-container .rbc-event-content {
               white-space: normal;
               word-wrap: break-word;
+              overflow: visible;
+              font-weight: 500;
             }
             
+            /* Hide the "+X more" link completely */
             .calendar-container .rbc-show-more {
               display: none !important;
             }
             
+            /* Date cell styling */
             .calendar-container .rbc-date-cell {
-              padding: 4px;
+              padding: 6px;
+              font-weight: 600;
             }
             
+            /* Ensure events container can grow */
+            .calendar-container .rbc-events-container {
+              margin-right: 0;
+            }
+            
+            /* Week view styling */
+            .calendar-container .rbc-time-slot {
+              min-height: 40px;
+            }
+            
+            /* Responsive adjustments */
             @media (max-width: 640px) {
               .calendar-container .rbc-event {
-                font-size: 9px;
-                padding: 1px 2px;
+                font-size: 10px;
+                padding: 4px 6px;
+                margin: 2px 1px;
+              }
+              
+              .calendar-container .rbc-month-row {
+                min-height: 80px;
+              }
+              
+              .calendar-container .rbc-date-cell {
+                padding: 4px;
+                font-size: 12px;
+              }
+            }
+            
+            @media (min-width: 1024px) {
+              .calendar-container .rbc-event {
+                padding: 8px 10px;
+                font-size: 13px;
+              }
+              
+              .calendar-container .rbc-month-row {
+                min-height: 120px;
               }
             }
           `}</style>
