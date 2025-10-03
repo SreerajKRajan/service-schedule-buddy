@@ -311,68 +311,94 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
           </div>
           <style>{`
-            /* Calendar container - allow natural height */
+            /* Calendar container */
             .calendar-container {
               height: auto !important;
             }
             
             .calendar-container .rbc-month-view {
               height: auto !important;
-            }
-            
-            .calendar-container .rbc-month-header {
-              display: flex;
-              flex-direction: row;
-            }
-            
-            /* Rows expand based on content */
-            .calendar-container .rbc-month-row {
-              min-height: 100px;
-              height: auto !important;
-              overflow: visible !important;
               display: flex;
               flex-direction: column;
             }
             
-            /* Day cells - flexible height */
-            .calendar-container .rbc-day-bg {
-              min-height: 100px;
-              height: auto !important;
-              overflow: visible !important;
-              flex: 1;
+            /* Header row */
+            .calendar-container .rbc-month-header {
+              display: grid;
+              grid-template-columns: repeat(7, 1fr);
             }
             
-            .calendar-container .rbc-row-content {
-              min-height: 100px;
+            /* Month body - use CSS Grid for independent cell heights */
+            .calendar-container .rbc-month-row {
+              display: grid !important;
+              grid-template-columns: repeat(7, 1fr);
               height: auto !important;
+              min-height: 100px;
               overflow: visible !important;
-              flex: 1;
+            }
+            
+            /* Background cells grid */
+            .calendar-container .rbc-row-bg {
+              display: grid !important;
+              grid-template-columns: repeat(7, 1fr);
+              position: absolute;
+              width: 100%;
+              height: 100%;
+            }
+            
+            /* Individual day cells - independent height */
+            .calendar-container .rbc-day-bg {
+              height: auto !important;
+              min-height: 100px;
+              overflow: visible !important;
+              border-left: 1px solid #ddd;
+              position: relative;
+            }
+            
+            .calendar-container .rbc-day-bg:first-child {
+              border-left: none;
+            }
+            
+            /* Content row - match grid structure */
+            .calendar-container .rbc-row-content {
+              display: grid !important;
+              grid-template-columns: repeat(7, 1fr);
+              height: auto !important;
+              min-height: 100px;
+              overflow: visible !important;
+              position: relative;
             }
             
             .calendar-container .rbc-row {
+              position: relative;
               overflow: visible !important;
+              height: auto !important;
+            }
+            
+            /* Date number - stays at top */
+            .calendar-container .rbc-date-cell {
+              padding: 8px;
+              font-weight: 600;
+              text-align: right;
+              display: block;
+              position: relative;
+              z-index: 5;
+            }
+            
+            /* Event container - each day column */
+            .calendar-container .rbc-row-content > .rbc-row-segment {
+              padding: 30px 4px 8px 4px;
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
               height: auto !important;
               min-height: 100px;
             }
             
-            .calendar-container .rbc-row-segment {
-              padding: 1px 2px;
-            }
-            
-            /* Date cell - stays at top */
-            .calendar-container .rbc-date-cell {
-              padding: 6px;
-              font-weight: 600;
-              position: sticky;
-              top: 0;
-              background: inherit;
-              z-index: 5;
-            }
-            
-            /* Event styling - distinct blocks with spacing */
+            /* Individual event blocks */
             .calendar-container .rbc-event {
-              padding: 6px 8px;
-              margin: 3px 2px;
+              padding: 8px 10px;
+              margin: 0;
               font-size: 12px;
               line-height: 1.4;
               border-radius: 6px;
@@ -381,12 +407,13 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
               display: block;
               position: relative;
-              width: calc(100% - 4px);
+              width: 100%;
+              border: 1px solid rgba(255, 255, 255, 0.2);
             }
             
             .calendar-container .rbc-event:hover {
               transform: translateY(-1px);
-              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+              box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
               z-index: 10;
             }
             
@@ -397,22 +424,21 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               font-weight: 500;
             }
             
-            /* Hide the "+X more" link */
+            /* Hide overflow controls */
             .calendar-container .rbc-show-more {
               display: none !important;
             }
             
-            /* Events container grows with content */
-            .calendar-container .rbc-events-container {
-              margin-right: 0;
-              display: flex;
-              flex-direction: column;
-              gap: 2px;
-            }
-            
-            /* Overlay container for events */
             .calendar-container .rbc-overlay {
               display: none !important;
+            }
+            
+            /* Events container */
+            .calendar-container .rbc-events-container {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+              margin: 0;
             }
             
             /* Week view styling */
@@ -420,36 +446,32 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               min-height: 40px;
             }
             
-            /* Ensure consistent grid */
-            .calendar-container .rbc-day-bg + .rbc-day-bg {
-              border-left: 1px solid #ddd;
-            }
-            
             /* Responsive adjustments */
             @media (max-width: 640px) {
               .calendar-container .rbc-event {
                 font-size: 10px;
-                padding: 4px 6px;
-                margin: 2px 1px;
+                padding: 6px 8px;
               }
               
               .calendar-container .rbc-month-row {
                 min-height: 80px;
               }
               
-              .calendar-container .rbc-day-bg {
+              .calendar-container .rbc-row-content > .rbc-row-segment {
                 min-height: 80px;
+                padding: 28px 3px 6px 3px;
+                gap: 3px;
               }
               
               .calendar-container .rbc-date-cell {
-                padding: 4px;
+                padding: 6px;
                 font-size: 12px;
               }
             }
             
             @media (min-width: 1024px) {
               .calendar-container .rbc-event {
-                padding: 8px 10px;
+                padding: 10px 12px;
                 font-size: 13px;
               }
               
@@ -457,8 +479,10 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                 min-height: 120px;
               }
               
-              .calendar-container .rbc-day-bg {
+              .calendar-container .rbc-row-content > .rbc-row-segment {
                 min-height: 120px;
+                padding: 32px 6px 10px 6px;
+                gap: 5px;
               }
             }
           `}</style>
