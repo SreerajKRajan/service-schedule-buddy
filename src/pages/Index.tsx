@@ -22,7 +22,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
-  const [quoteConversionCallback, setQuoteConversionCallback] = useState<(() => void) | null>(null);
+  const [quoteConversionCallback, setQuoteConversionCallback] = useState<{ onSuccess: () => void; onError: () => void } | null>(null);
 
   useEffect(() => {
     // Set initial tab to jobs if filtered
@@ -145,7 +145,7 @@ const Index = () => {
               <>
                 <TabsContent value="quotes" className="space-y-6">
                   <AcceptedQuotes 
-                    onConvertToJob={(quote, onSuccess) => {
+                    onConvertToJob={(quote, onSuccess, onError) => {
                       setCreateJobData({
                         customer_name: quote.customer_name,
                         customer_phone: quote.customer_phone,
@@ -156,7 +156,10 @@ const Index = () => {
                         first_time: quote.first_time,
                         jobs_selected: quote.jobs_selected,
                       });
-                      setQuoteConversionCallback(() => onSuccess);
+                      setQuoteConversionCallback(() => ({
+                        onSuccess,
+                        onError
+                      }));
                       setShowCreateForm(true);
                     }}
                   />
@@ -210,7 +213,8 @@ const Index = () => {
                     setCreateJobData(null);
                     setQuoteConversionCallback(null);
                   }}
-                  onJobCreated={quoteConversionCallback || undefined}
+                  onJobCreated={quoteConversionCallback?.onSuccess}
+                  onJobCreatedError={quoteConversionCallback?.onError}
                   initialData={createJobData}
                 />
               </CardContent>

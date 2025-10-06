@@ -41,9 +41,10 @@ interface CreateJobFormProps {
     jobs_selected?: any[];
   };
   onJobCreated?: () => void;
+  onJobCreatedError?: () => void;
 }
 
-export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }: CreateJobFormProps) {
+export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, onJobCreatedError }: CreateJobFormProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
@@ -610,9 +611,15 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated }
       onSuccess();
     } catch (error) {
       console.error('Error creating job:', error);
+      
+      // Call onJobCreatedError if provided (for quote conversion)
+      if (onJobCreatedError) {
+        onJobCreatedError();
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create job",
+        description: error instanceof Error ? error.message : "Failed to create job. Please try again.",
         variant: "destructive",
       });
     } finally {

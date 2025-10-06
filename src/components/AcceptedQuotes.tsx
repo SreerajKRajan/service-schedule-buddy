@@ -26,7 +26,7 @@ interface AcceptedQuote {
 }
 
 interface AcceptedQuotesProps {
-  onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void) => void;
+  onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => void;
 }
 
 export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) {
@@ -113,14 +113,24 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
         } catch (error) {
           console.error('Error updating quote status:', error);
           toast({
-            title: "Warning",
-            description: "Job created but failed to update quote status",
+            title: "Error",
+            description: "Failed to update quote status. Please try again.",
             variant: "destructive",
           });
+          fetchAcceptedQuotes();
         }
       };
+
+      const onError = async () => {
+        toast({
+          title: "Error",
+          description: "Failed to convert quote to job. Please try again.",
+          variant: "destructive",
+        });
+        fetchAcceptedQuotes();
+      };
       
-      onConvertToJob(quote, onSuccess);
+      onConvertToJob(quote, onSuccess, onError);
     }
   };
 
