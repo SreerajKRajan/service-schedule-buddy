@@ -454,7 +454,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
               } else if (customService) {
                return {
                  job_id: job.id,
-                 service_id: customService.id,
+                 service_id: crypto.randomUUID(),
                  service_name: customService.name,
                  service_description: null,
                  price: servicePrices[customService.id] ?? customService.price,
@@ -555,7 +555,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
             } else if (customService) {
               return {
                 job_id: job.id,
-                service_id: customService.id,
+                service_id: crypto.randomUUID(),
                 service_name: customService.name,
                 service_description: null,
                 price: customService.price,
