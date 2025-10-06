@@ -378,6 +378,36 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
 
     setLoading(true);
     try {
+      // First, insert any custom services into the services table
+      const customServiceIdMap: Record<string, string> = {};
+      const customServicesToInsert = customServices.filter(cs => 
+        formData.selected_services.includes(cs.id)
+      );
+
+      if (customServicesToInsert.length > 0) {
+        const servicesToInsert = customServicesToInsert.map(cs => ({
+          name: cs.name,
+          description: null,
+          default_duration: cs.duration,
+          default_price: cs.price,
+          active: true
+        }));
+
+        const { data: insertedServices, error: serviceInsertError } = await supabase
+          .from('services')
+          .insert(servicesToInsert)
+          .select();
+
+        if (serviceInsertError) throw serviceInsertError;
+
+        // Map temporary custom service IDs to real database UUIDs
+        if (insertedServices) {
+          customServicesToInsert.forEach((cs, index) => {
+            customServiceIdMap[cs.id] = insertedServices[index].id;
+          });
+        }
+      }
+
       if (formData.is_recurring && formData.scheduled_date) {
         // Generate multiple jobs for recurring schedule
         const startDate = new Date(formData.scheduled_date);
@@ -436,8 +466,11 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         if (formData.selected_services.length > 0 && jobs) {
           const jobServices = jobs.flatMap(job => {
             return formData.selected_services.map(serviceId => {
+              // Use mapped custom service ID if this was a custom service
+              const actualServiceId = customServiceIdMap[serviceId] || serviceId;
+              
               // Find service details (either from services list or custom services)
-              const service = services.find(s => s.id === serviceId);
+              const service = services.find(s => s.id === actualServiceId);
               const customService = customServices.find(s => s.id === serviceId);
               
               if (service) {
@@ -448,13 +481,13 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                  service_id: service.id,
                  service_name: service.name,
                  service_description: service.description,
-                 price: servicePrices[service.id] ?? quotedPrice?.price ?? service.default_price,
+                 price: servicePrices[serviceId] ?? quotedPrice?.price ?? service.default_price,
                  duration: quotedPrice?.duration ?? service.default_duration,
                 };
               } else if (customService) {
                return {
                  job_id: job.id,
-                 service_id: crypto.randomUUID(),
+                 service_id: actualServiceId,
                  service_name: customService.name,
                  service_description: null,
                  price: servicePrices[customService.id] ?? customService.price,
@@ -537,8 +570,11 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         // Create job service relationships
         if (formData.selected_services.length > 0) {
           const jobServices = formData.selected_services.map(serviceId => {
+            // Use mapped custom service ID if this was a custom service
+            const actualServiceId = customServiceIdMap[serviceId] || serviceId;
+            
             // Find service details (either from services list or custom services)
-            const service = services.find(s => s.id === serviceId);
+            const service = services.find(s => s.id === actualServiceId);
             const customService = customServices.find(s => s.id === serviceId);
             
             if (service) {
@@ -549,16 +585,16 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                 service_id: service.id,
                 service_name: service.name,
                 service_description: service.description,
-                price: quotedPrice?.price ?? service.default_price,
+                price: servicePrices[serviceId] ?? quotedPrice?.price ?? service.default_price,
                 duration: quotedPrice?.duration ?? service.default_duration,
               };
             } else if (customService) {
               return {
                 job_id: job.id,
-                service_id: crypto.randomUUID(),
+                service_id: actualServiceId,
                 service_name: customService.name,
                 service_description: null,
-                price: customService.price,
+                price: servicePrices[customService.id] ?? customService.price,
                 duration: customService.duration,
               };
             }
