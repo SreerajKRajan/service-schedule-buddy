@@ -289,10 +289,16 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <a
-                href={`/redirect-to-maps?address=${encodeURIComponent(job.customer_address)}`}
+                href={`https://www.google.com/maps?q=${encodeURIComponent(job.customer_address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline line-clamp-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(job.customer_address)}`;
+                  // Force Lovable to open in full tab instead of preview
+                  window.open(mapUrl, "_blank");
+                }}
               >
                 {job.customer_address}
               </a>
