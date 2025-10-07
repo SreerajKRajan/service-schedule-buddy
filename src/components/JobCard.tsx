@@ -281,7 +281,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.open(`https://app.gohighlevel.com/v2/location/${job.ghl_contact_id}/contacts`, '_blank', 'noopener,noreferrer');
+                    window.open(`https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${job.ghl_contact_id}`, '_blank', 'noopener,noreferrer');
                   }}
                   className="text-primary hover:underline cursor-pointer"
                 >
