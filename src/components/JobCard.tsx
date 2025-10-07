@@ -31,6 +31,7 @@ interface Job {
   updated_at: string;
   price: number;
   quoted_by?: string;
+  ghl_contact_id?: string;
 }
 
 interface JobAssignment {
@@ -275,28 +276,56 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           {job.customer_name && (
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{job.customer_name}</span>
+              {job.ghl_contact_id ? (
+                <a 
+                  href={`https://app.gohighlevel.com/v2/location/${job.ghl_contact_id}/contacts`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {job.customer_name}
+                </a>
+              ) : (
+                <span>{job.customer_name}</span>
+              )}
             </div>
           )}
           
           {job.customer_address && (
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="line-clamp-1">{job.customer_address}</span>
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline line-clamp-1"
+              >
+                {job.customer_address}
+              </a>
             </div>
           )}
           
           {job.customer_phone && (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{job.customer_phone}</span>
+              <a 
+                href={`tel:${job.customer_phone}`}
+                className="text-primary hover:underline"
+              >
+                {job.customer_phone}
+              </a>
             </div>
           )}
           
           {job.customer_email && (
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="line-clamp-1">{job.customer_email}</span>
+              <a 
+                href={`mailto:${job.customer_email}`}
+                className="text-primary hover:underline line-clamp-1"
+              >
+                {job.customer_email}
+              </a>
             </div>
           )}
 

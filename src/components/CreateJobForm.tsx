@@ -84,6 +84,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
     assigned_users: [] as string[],
     first_time: false,
     quoted_by: "",
+    ghl_contact_id: "",
   });
   const { toast } = useToast();
 
@@ -436,6 +437,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
           first_time: formData.first_time && index === 0, // Only mark the first job as first time
           status: 'pending' as const,
           quoted_by: formData.quoted_by || null,
+          ghl_contact_id: formData.ghl_contact_id || null,
         }));
 
         // Insert all jobs
@@ -543,6 +545,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
           first_time: formData.first_time,
           status: 'pending' as const,
           quoted_by: formData.quoted_by || null,
+          ghl_contact_id: formData.ghl_contact_id || null,
         };
 
         const { data: job, error: jobError } = await supabase
@@ -637,6 +640,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         assigned_users: [],
         first_time: false,
         quoted_by: "",
+        ghl_contact_id: "",
       });
 
       // Call onJobCreated if provided (for quote conversion)
@@ -953,6 +957,18 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="ghl_contact_id">GHL Contact ID</Label>
+              <Input
+                id="ghl_contact_id"
+                value={formData.ghl_contact_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, ghl_contact_id: e.target.value }))}
+                placeholder="GoHighLevel contact ID"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
               <Label htmlFor="customer_phone">Phone</Label>
               <Input
                 id="customer_phone"
@@ -961,17 +977,17 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                 placeholder="(555) 123-4567"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="customer_email">Email</Label>
-            <Input
-              id="customer_email"
-              type="email"
-              value={formData.customer_email}
-              onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
-              placeholder="john@example.com"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="customer_email">Email</Label>
+              <Input
+                id="customer_email"
+                type="email"
+                value={formData.customer_email}
+                onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
+                placeholder="john@example.com"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

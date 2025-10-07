@@ -47,6 +47,7 @@ interface Job {
   updated_at: string;
   price: number;
   quoted_by?: string;
+  ghl_contact_id?: string;
 }
 
 interface EditJobDialogProps {
@@ -92,6 +93,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     assigned_users: [] as string[],
     first_time: false,
     quoted_by: "",
+    ghl_contact_id: "",
   });
   const [servicePrices, setServicePrices] = useState<Record<string, number>>({});
   const { toast } = useToast();
@@ -185,6 +187,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       first_time: job.first_time || false,
       assigned_users: assignedUsers,
       quoted_by: job.quoted_by || "",
+      ghl_contact_id: job.ghl_contact_id || "",
     });
   };
 
@@ -306,6 +309,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         price: formData.price ? parseFloat(formData.price) : null,
         first_time: formData.first_time,
         quoted_by: formData.quoted_by || null,
+        ghl_contact_id: formData.ghl_contact_id || null,
       };
 
       const { error: jobError } = await supabase
@@ -790,11 +794,33 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="ghl_contact_id">GHL Contact ID</Label>
+                  <Input
+                    id="ghl_contact_id"
+                    value={formData.ghl_contact_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, ghl_contact_id: e.target.value }))}
+                    placeholder="GoHighLevel contact ID"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
                   <Label htmlFor="customer_phone">Phone</Label>
                   <Input
                     id="customer_phone"
                     value={formData.customer_phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customer_email">Email</Label>
+                  <Input
+                    id="customer_email"
+                    type="email"
+                    value={formData.customer_email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
                   />
                 </div>
               </div>

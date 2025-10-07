@@ -22,6 +22,7 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           first_time: boolean | null
+          ghl_contact_id: string | null
           id: string
           jobs_selected: Json
           quoted_by: string | null
@@ -36,6 +37,7 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           first_time?: boolean | null
+          ghl_contact_id?: string | null
           id?: string
           jobs_selected: Json
           quoted_by?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           first_time?: boolean | null
+          ghl_contact_id?: string | null
           id?: string
           jobs_selected?: Json
           quoted_by?: string | null
@@ -203,6 +206,7 @@ export type Database = {
           description: string | null
           estimated_duration: number | null
           first_time: boolean | null
+          ghl_contact_id: string | null
           id: string
           is_recurring: boolean | null
           job_type: string
@@ -226,6 +230,7 @@ export type Database = {
           description?: string | null
           estimated_duration?: number | null
           first_time?: boolean | null
+          ghl_contact_id?: string | null
           id?: string
           is_recurring?: boolean | null
           job_type: string
@@ -249,6 +254,7 @@ export type Database = {
           description?: string | null
           estimated_duration?: number | null
           first_time?: boolean | null
+          ghl_contact_id?: string | null
           id?: string
           is_recurring?: boolean | null
           job_type?: string
@@ -335,6 +341,27 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          id: string
+          job_id: string
+          triggered_at: string | null
+          webhook_type: string
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          triggered_at?: string | null
+          webhook_type: string
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          triggered_at?: string | null
+          webhook_type?: string
         }
         Relationships: []
       }
