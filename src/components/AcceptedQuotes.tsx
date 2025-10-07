@@ -20,6 +20,7 @@ interface AcceptedQuote {
   first_time: boolean;
   status: string;
   created_at: string;
+  ghl_contact_id?: string;
   quoted_by_user?: {
     name: string;
   };

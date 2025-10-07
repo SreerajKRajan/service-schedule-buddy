@@ -39,6 +39,7 @@ interface CreateJobFormProps {
     scheduled_date?: string;
     first_time?: boolean;
     jobs_selected?: any[];
+    ghl_contact_id?: string;
   };
   onJobCreated?: () => void;
   onJobCreatedError?: () => void;
@@ -110,6 +111,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         customer_address: initialData.customer_address || "",
         scheduled_date: initialData.scheduled_date ? initialData.scheduled_date.slice(0, 16) : "",
         first_time: initialData.first_time || false,
+        ghl_contact_id: initialData.ghl_contact_id || "",
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
         job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,
         estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration ? Math.round(job.duration / 60) : 0), 0).toString() || prev.estimated_duration,
