@@ -27,7 +27,8 @@ serve(async (req) => {
       quoted_by, 
       jobs_selected, 
       first_time,
-      scheduled_date 
+      scheduled_date,
+      ghl_contact_id
     } = await req.json();
 
     console.log('Received webhook data:', {
@@ -38,7 +39,8 @@ serve(async (req) => {
       quoted_by,
       jobs_selected,
       first_time,
-      scheduled_date
+      scheduled_date,
+      ghl_contact_id
     });
 
     // Validate required fields
@@ -82,6 +84,7 @@ serve(async (req) => {
         jobs_selected,
         first_time: first_time || false,
         scheduled_date,
+        ghl_contact_id,
         status: 'pending'
       })
       .select()
