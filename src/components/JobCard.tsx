@@ -278,10 +278,12 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
               <Users className="h-4 w-4 text-muted-foreground" />
               {job.ghl_contact_id ? (
                 <a 
-                  href={`https://app.gohighlevel.com/v2/location/${job.ghl_contact_id}/contacts`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.open(`https://app.gohighlevel.com/v2/location/${job.ghl_contact_id}/contacts`, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="text-primary hover:underline cursor-pointer"
                 >
                   {job.customer_name}
                 </a>
@@ -295,10 +297,12 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline line-clamp-1"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`, '_blank', 'noopener,noreferrer');
+                }}
+                className="text-primary hover:underline line-clamp-1 cursor-pointer"
               >
                 {job.customer_address}
               </a>
