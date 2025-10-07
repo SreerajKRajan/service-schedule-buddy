@@ -82,13 +82,21 @@ export function DeleteJobDialog({ job, onUpdate, disabled }: DeleteJobDialogProp
     try {
       // Find all recurring jobs with the same customer, job type, and quoted_by
       // that are part of the same recurring sequence
-      const { data: relatedJobs, error: fetchError } = await supabase
+      let query = supabase
         .from('jobs')
         .select('id, title, scheduled_date')
         .eq('job_type', job.job_type)
         .eq('customer_name', job.customer_name || '')
-        .eq('is_recurring', true)
-        .eq('quoted_by', job.quoted_by || '');
+        .eq('is_recurring', true);
+
+      // Only filter by quoted_by if it exists
+      if (job.quoted_by) {
+        query = query.eq('quoted_by', job.quoted_by);
+      } else {
+        query = query.is('quoted_by', null);
+      }
+
+      const { data: relatedJobs, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
 
