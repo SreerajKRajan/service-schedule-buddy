@@ -292,23 +292,31 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           )}
           
           {job.customer_address && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="text-primary hover:underline line-clamp-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`;
-                  window.open(url, "_blank", "noopener,noreferrer");
-                }}
-              >
-                {job.customer_address}
-              </a>
-            </div>
-          )}
+  <div className="flex items-center gap-2">
+    <MapPin className="h-4 w-4 text-muted-foreground" />
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary hover:underline line-clamp-1"
+      onClick={(e) => {
+        e.stopPropagation();
+        // Use window.open with full URL directly
+        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`;
+        const newTab = window.open();
+        if (newTab) {
+          newTab.opener = null;
+          newTab.location = mapUrl;
+        } else {
+          window.location.href = mapUrl; // fallback
+        }
+      }}
+    >
+      {job.customer_address}
+    </a>
+  </div>
+)}
+
           
           {job.customer_phone && (
             <div className="flex items-center gap-2">
