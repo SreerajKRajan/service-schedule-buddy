@@ -155,6 +155,7 @@ const Index = () => {
                         scheduled_date: quote.scheduled_date,
                         first_time: quote.first_time,
                         jobs_selected: quote.jobs_selected,
+                        ghl_contact_id: quote.ghl_contact_id,
                       });
                       setQuoteConversionCallback(() => ({
                         onSuccess,
