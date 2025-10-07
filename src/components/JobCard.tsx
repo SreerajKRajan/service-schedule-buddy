@@ -295,9 +295,9 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
+                href={`https://maps.google.com/?q=${encodeURIComponent(job.customer_address)}`}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-primary hover:underline line-clamp-1"
               >
                 {job.customer_address}
