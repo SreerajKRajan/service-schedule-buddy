@@ -78,55 +78,51 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "on_the_way":
-        return "bg-orange-100 text-orange-800";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "service_due":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'on_the_way': return 'bg-orange-100 text-orange-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'service_due': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority >= 3) return "bg-red-100 text-red-800";
-    if (priority === 2) return "bg-orange-100 text-orange-800";
-    return "bg-green-100 text-green-800";
+    if (priority >= 3) return 'bg-red-100 text-red-800';
+    if (priority === 2) return 'bg-orange-100 text-orange-800';
+    return 'bg-green-100 text-green-800';
   };
 
   const getPriorityText = (priority: number) => {
-    if (priority >= 3) return "High";
-    if (priority === 2) return "Medium";
-    return "Low";
+    if (priority >= 3) return 'High';
+    if (priority === 2) return 'Medium';
+    return 'Low';
   };
 
   const updateJobStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
       const updates: any = { status: newStatus };
-      if (newStatus === "completed") {
+      if (newStatus === 'completed') {
         updates.completed_date = new Date().toISOString();
       }
 
-      const { error } = await supabase.from("jobs").update(updates).eq("id", job.id);
+      const { error } = await supabase
+        .from('jobs')
+        .update(updates)
+        .eq('id', job.id);
 
       if (error) throw error;
 
       // Send completion webhook if status is completed
-      if (newStatus === "completed") {
+      if (newStatus === 'completed') {
         try {
-          await supabase.functions.invoke("project-completion-webhook", {
-            body: { jobId: job.id },
+          await supabase.functions.invoke('project-completion-webhook', {
+            body: { jobId: job.id }
           });
         } catch (webhookError) {
-          console.error("Failed to send completion webhook:", webhookError);
+          console.error('Failed to send completion webhook:', webhookError);
           // Don't fail the status update if webhook fails
         }
       }
@@ -137,7 +133,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
       });
       onUpdate();
     } catch (error) {
-      console.error("Error updating job:", error);
+      console.error('Error updating job:', error);
       toast({
         title: "Error",
         description: "Failed to update job status",
@@ -148,65 +144,71 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
     }
   };
 
+
   const fetchJobAssignments = async () => {
     try {
       const { data, error } = await supabase
-        .from("job_assignments")
-        .select(
-          `
+        .from('job_assignments')
+        .select(`
           user_id,
           job_id,
           users (name)
-        `,
-        )
-        .eq("job_id", job.id);
+        `)
+        .eq('job_id', job.id);
 
       if (error) throw error;
       setJobAssignments(data || []);
     } catch (error) {
-      console.error("Error fetching job assignments:", error);
+      console.error('Error fetching job assignments:', error);
     }
   };
 
   const fetchJobSchedule = async () => {
     if (!job.is_recurring) return;
-
+    
     try {
       const { data, error } = await supabase
-        .from("job_schedules")
-        .select("*")
-        .eq("job_id", job.id)
-        .eq("is_active", true)
+        .from('job_schedules')
+        .select('*')
+        .eq('job_id', job.id)
+        .eq('is_active', true)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error;
+      if (error && error.code !== 'PGRST116') throw error;
       setJobSchedule(data);
     } catch (error) {
-      console.error("Error fetching job schedule:", error);
+      console.error('Error fetching job schedule:', error);
     }
   };
 
   const fetchJobServices = async () => {
     try {
-      const { data, error } = await supabase.from("job_services").select("*").eq("job_id", job.id);
+      const { data, error } = await supabase
+        .from('job_services')
+        .select('*')
+        .eq('job_id', job.id);
 
       if (error) throw error;
       setJobServices(data || []);
     } catch (error) {
-      console.error("Error fetching job services:", error);
+      console.error('Error fetching job services:', error);
     }
   };
 
   const fetchQuotedByUser = async () => {
     if (!job.quoted_by) return;
-
+    
     try {
-      const { data, error } = await supabase.from("users").select("name").eq("id", job.quoted_by).single();
+      const { data, error } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', job.quoted_by)
+        .single();
 
       if (error) throw error;
       setQuotedByUser(data?.name || "");
     } catch (error) {
-      console.error("Error fetching quoted by user:", error);
+      console.error('Error fetching quoted by user:', error);
     }
   };
 
@@ -218,19 +220,19 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
   }, [job.id, job.is_recurring, job.quoted_by]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return "Not scheduled";
+    if (!dateString) return 'Not scheduled';
     // Display exactly as received (no timezone conversion)
     // Support values with seconds/timezone or simple datetime-local strings
-    const base = dateString.replace("Z", "");
+    const base = dateString.replace('Z', '');
     const trimmed = base.length >= 16 ? base.slice(0, 16) : base;
-    return trimmed.replace("T", ", ");
+    return trimmed.replace('T', ', ');
   };
 
   const formatPrice = (price: number) => {
     if (!price) return null;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
     }).format(price);
   };
 
@@ -246,17 +248,21 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             </Badge>
           )}
         </div>
-        <CardDescription className="line-clamp-2">{job.description}</CardDescription>
+        <CardDescription className="line-clamp-2">
+          {job.description}
+        </CardDescription>
         <div className="flex gap-2 flex-wrap">
           <Badge className={getStatusColor(job.status)}>
-            {job.status === "on_the_way"
-              ? "On The Way"
-              : job.status === "service_due"
-                ? "Service Due"
-                : job.status.replace("_", " ")}
+            {job.status === 'on_the_way' ? 'On The Way' : 
+             job.status === 'service_due' ? 'Service Due' : 
+             job.status.replace('_', ' ')}
           </Badge>
-          <Badge className={getPriorityColor(job.priority)}>{getPriorityText(job.priority)} Priority</Badge>
-          <Badge variant="outline">{job.job_type}</Badge>
+          <Badge className={getPriorityColor(job.priority)}>
+            {getPriorityText(job.priority)} Priority
+          </Badge>
+          <Badge variant="outline">
+            {job.job_type}
+          </Badge>
           {job.first_time && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               First Time
@@ -264,14 +270,14 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
           )}
         </div>
       </CardHeader>
-
+      
       <CardContent className="space-y-4">
         <div className="space-y-2 text-sm">
           {job.customer_name && (
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               {job.ghl_contact_id ? (
-                <a
+                <a 
                   href={`https://app.gohighlevel.com/v2/location/${job.ghl_contact_id}/contacts`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -284,40 +290,40 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
               )}
             </div>
           )}
-
+          
           {job.customer_address && (
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`https://www.google.com/maps?q=${encodeURIComponent(job.customer_address)}`}
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.customer_address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline line-clamp-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(job.customer_address)}`;
-                  // Force Lovable to open in full tab instead of preview
-                  window.open(mapUrl, "_blank");
-                }}
               >
                 {job.customer_address}
               </a>
             </div>
           )}
-
+          
           {job.customer_phone && (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <a href={`tel:${job.customer_phone}`} className="text-primary hover:underline">
+              <a 
+                href={`tel:${job.customer_phone}`}
+                className="text-primary hover:underline"
+              >
                 {job.customer_phone}
               </a>
             </div>
           )}
-
+          
           {job.customer_email && (
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <a href={`mailto:${job.customer_email}`} className="text-primary hover:underline line-clamp-1">
+              <a 
+                href={`mailto:${job.customer_email}`}
+                className="text-primary hover:underline line-clamp-1"
+              >
                 {job.customer_email}
               </a>
             </div>
@@ -336,7 +342,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="line-clamp-1">
-                <strong>Assigned:</strong> {jobAssignments.map((assignment) => assignment.users.name).join(", ")}
+                <strong>Assigned:</strong> {jobAssignments.map(assignment => assignment.users.name).join(', ')}
               </span>
             </div>
           )}
@@ -347,12 +353,13 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
               <span className="font-medium text-green-600">{formatPrice(job.price)}</span>
             </div>
           )}
-
+          
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>{formatDate(job.scheduled_date)}</span>
           </div>
 
+          
           {job.estimated_duration && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -392,7 +399,11 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         )}
 
         <div className="pt-2 space-y-2">
-          <Select value={job.status} onValueChange={updateJobStatus} disabled={updating}>
+          <Select
+            value={job.status}
+            onValueChange={updateJobStatus}
+            disabled={updating}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Update status" />
             </SelectTrigger>
@@ -416,12 +427,20 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
               Edit Job
             </Button>
 
-            <DeleteJobDialog job={job} onUpdate={onUpdate} />
+            <DeleteJobDialog 
+              job={job} 
+              onUpdate={onUpdate}
+            />
           </div>
         </div>
       </CardContent>
 
-      <EditJobDialog job={job} open={showEditDialog} onOpenChange={setShowEditDialog} onSuccess={onUpdate} />
+      <EditJobDialog
+        job={job}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={onUpdate}
+      />
     </Card>
   );
 }
