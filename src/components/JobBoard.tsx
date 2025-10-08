@@ -91,6 +91,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [viewerUserName, setViewerUserName] = useState<string | null>(null);
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
+  const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
     // Don't fetch all jobs initially if we're filtering by customer
@@ -400,6 +401,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         setAssigneeFilter(userByEmail.id);
         setViewerUserId(userByEmail.id);
         setViewerUserName(userByEmail.name || null);
+        setUserNotFound(false);
         return;
       }
       
@@ -415,11 +417,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         setAssigneeFilter(userByName.id);
         setViewerUserId(userByName.id);
         setViewerUserName(userByName.name || null);
+        setUserNotFound(false);
       } else {
         console.log('[JobBoard] No user found for:', customerEmail);
+        setUserNotFound(true);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error setting assignee filter:', error);
+      setUserNotFound(true);
+      setLoading(false);
     }
   };
 
@@ -442,6 +449,26 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
     return grouped;
   };
+
+  if (userNotFound) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-destructive">User Not Found</CardTitle>
+            <CardDescription>
+              The user ID provided in the URL does not match any user in the system.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Please check the URL and try again, or contact support if you believe this is an error.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
