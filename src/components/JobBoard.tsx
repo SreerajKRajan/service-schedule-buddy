@@ -94,8 +94,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // Only fetch all jobs if no customerEmail filter is active
-    if (!customerEmail) {
+    // Fetch all jobs if no customerEmail OR if user has full access
+    if (!customerEmail || (customerEmail && hasFullAccess)) {
       fetchJobs();
     }
     
@@ -103,8 +103,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchJobAssignments();
     fetchAcceptedQuotes();
     
-    // Auto-apply assignee filter when customerEmail is provided
-    if (customerEmail) {
+    // Auto-apply assignee filter when customerEmail is provided (only if no full access)
+    if (customerEmail && !hasFullAccess) {
       autoSetAssigneeFilter();
     }
 
@@ -123,7 +123,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           // Don't fetch all jobs if we're filtering by assignee
           if (assigneeFilter !== 'all') {
             fetchJobsByAssignee(assigneeFilter);
-          } else if (!customerEmail) {
+          } else if (!customerEmail || (customerEmail && hasFullAccess)) {
             fetchJobs();
           }
         }
@@ -145,7 +145,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           // Refresh jobs with current filter
           if (assigneeFilter !== 'all') {
             fetchJobsByAssignee(assigneeFilter);
-          } else if (!customerEmail) {
+          } else if (!customerEmail || (customerEmail && hasFullAccess)) {
             fetchJobs();
           }
         }
@@ -194,7 +194,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
     if (assigneeFilter !== 'all') {
       fetchJobsByAssignee(assigneeFilter);
-    } else if (!customerEmail) {
+    } else if (!customerEmail || (customerEmail && hasFullAccess)) {
       fetchJobs();
     }
   }, [assigneeFilter, userNotFound, customerEmail]);
