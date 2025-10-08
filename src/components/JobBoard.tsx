@@ -159,7 +159,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [customerEmail]);
+  }, [customerEmail, hasFullAccess]);
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
@@ -242,13 +242,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   const fetchAssignedJobIds = async (userId: string) => {
     try {
+      console.log('[JobBoard] Fetching job IDs for user:', userId);
       const { data, error } = await supabase
         .from('job_assignments')
         .select('job_id')
         .eq('user_id', userId);
 
       if (error) throw error;
-      setAssigneeJobIds((data || []).map((r) => r.job_id));
+      const jobIds = (data || []).map((r) => r.job_id);
+      console.log('[JobBoard] Found job IDs:', jobIds.length, jobIds);
+      setAssigneeJobIds(jobIds);
     } catch (error) {
       console.error('Error fetching assignee job ids:', error);
       setAssigneeJobIds([]);
@@ -283,9 +286,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         .filter((assignment) => assignment.user_id === assigneeFilter)
         .map((assignment) => assignment.job_id));
 
+      console.log('[JobBoard] Filtering by assignee:', assigneeFilter);
+      console.log('[JobBoard] assigneeJobIds:', assigneeJobIds);
+      console.log('[JobBoard] Assigned job IDs:', assignedJobIds);
+      console.log('[JobBoard] Jobs before filter:', filtered.length);
+
       // Filter ONLY by actual assignments from job_assignments
       const assignedSet = new Set(assignedJobIds);
       filtered = filtered.filter((job) => assignedSet.has(job.id));
+      
+      console.log('[JobBoard] Jobs after filter:', filtered.length);
     }
 
     if (dateRange?.from || dateRange?.to) {
@@ -367,6 +377,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     if (!customerEmail) return;
     
     try {
+      console.log('[JobBoard] Auto-setting assignee filter for email:', customerEmail);
       // Try to find user by email (case-insensitive)
       const { data: userByEmail } = await supabase
         .from('users')
@@ -375,6 +386,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         .maybeSingle();
       
       if (userByEmail) {
+        console.log('[JobBoard] Found user by email:', userByEmail);
         setAssigneeFilter(userByEmail.id);
         setViewerUserId(userByEmail.id);
         setViewerUserName(userByEmail.name || null);
@@ -389,9 +401,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         .maybeSingle();
       
       if (userByName) {
+        console.log('[JobBoard] Found user by name:', userByName);
         setAssigneeFilter(userByName.id);
         setViewerUserId(userByName.id);
         setViewerUserName(userByName.name || null);
+      } else {
+        console.log('[JobBoard] No user found for:', customerEmail);
       }
     } catch (error) {
       console.error('Error setting assignee filter:', error);
