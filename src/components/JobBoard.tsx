@@ -175,6 +175,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
 
   useEffect(() => {
+    // Don't fetch if user was not found
+    if (userNotFound) {
+      return;
+    }
+
     // When assignee changes, fetch jobs directly from backend
     const fetchJobsByAssignee = async () => {
       if (assigneeFilter !== 'all') {
@@ -198,7 +203,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     };
     
     fetchJobsByAssignee();
-  }, [assigneeFilter]);
+  }, [assigneeFilter, userNotFound]);
 
   const fetchJobsByAssignee = async (userId: string) => {
     try {
