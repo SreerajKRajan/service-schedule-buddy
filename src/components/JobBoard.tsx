@@ -202,10 +202,18 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       // Fetch jobs, optionally filtered by assignee using the same /jobs API
       console.log('[JobBoard] Fetching jobs', assigneeFilter !== 'all' ? `for assignee ${assigneeFilter}` : '(all)');
 
+      // Limit to a reasonable calendar window to avoid 206 partial content
+      const now = new Date();
+      const windowStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      const windowEnd = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
+
       let query = supabase
         .from('jobs')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .not('scheduled_date', 'is', null)
+        .gte('scheduled_date', windowStart.toISOString())
+        .lte('scheduled_date', windowEnd.toISOString())
+        .order('scheduled_date', { ascending: true })
         .limit(10000);
 
       // If an assignee is selected, use an inner join to job_assignments and filter by user_id
@@ -214,15 +222,25 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           .from('jobs')
           .select('*, job_assignments!inner(user_id)', { count: 'exact' })
           .eq('job_assignments.user_id', assigneeFilter)
-          .order('created_at', { ascending: false })
+          .not('scheduled_date', 'is', null)
+          .gte('scheduled_date', windowStart.toISOString())
+          .lte('scheduled_date', windowEnd.toISOString())
+          .order('scheduled_date', { ascending: true })
           .limit(10000);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       console.log('[JobBoard] Fetched jobs:', (data || []).length);
-      // Cast to Job[] since we don't use the joined relation in state
-      setJobs((data as unknown as Job[]) || []);
+      // Ensure unique jobs by id (in case of multiple assignments)
+      const uniqueJobsMap = new Map<string, any>();
+      (data || []).forEach((j: any) => {
+        const id = j.id;
+        if (id && !uniqueJobsMap.has(id)) uniqueJobsMap.set(id, j);
+      });
+      const uniqueJobs = Array.from(uniqueJobsMap.values()) as unknown as Job[];
+      setJobs(uniqueJobs);
+
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([]);
@@ -654,7 +672,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           quotes={filteredQuotes}
           statusFilter={statusFilter}
           onRefresh={refreshData}
-          hideAcceptedQuotes={!!customerEmail || assigneeFilter !== 'all'}
+          hideAcceptedQuotes={statusFilter !== 'accepted_quotes'}
         />
       ) : (
         <>
