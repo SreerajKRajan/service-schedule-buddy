@@ -39,6 +39,20 @@ interface Job {
   quoted_by?: string;
 }
 
+interface AcceptedQuote {
+  id: string;
+  customer_name: string;
+  customer_address: string;
+  customer_phone: string;
+  customer_email: string;
+  scheduled_date: string;
+  jobs_selected: any;
+  status: string;
+  first_time: boolean;
+  quoted_by?: string;
+  ghl_contact_id?: string;
+}
+
 interface JobSchedule {
   id: string;
   job_id: string;
@@ -54,7 +68,8 @@ interface CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  resource: Job;
+  resource: Job | AcceptedQuote;
+  type: 'job' | 'quote';
 }
 
 interface JobCalendarProps {
@@ -65,13 +80,33 @@ interface JobCalendarProps {
 export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<View>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
+
+  useEffect(() => {
+    fetchAcceptedQuotes();
+  }, []);
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs]);
+  }, [jobs, acceptedQuotes]);
+
+  const fetchAcceptedQuotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('accepted_quotes')
+        .select('*')
+        .neq('status', 'converted');
+      
+      if (error) throw error;
+      setAcceptedQuotes(data || []);
+    } catch (error) {
+      console.error('Error fetching accepted quotes:', error);
+    }
+  };
 
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
@@ -93,6 +128,27 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         start: startDate,
         end: endDate,
         resource: job,
+        type: 'job',
+      });
+    });
+
+    // Add accepted quotes that haven't been converted
+    acceptedQuotes.forEach(quote => {
+      if (!quote.scheduled_date) return;
+      
+      const startDate = new Date(quote.scheduled_date);
+      const endDate = new Date(startDate);
+      
+      // Default to 2 hours for quotes
+      endDate.setHours(startDate.getHours() + 2);
+
+      calendarEvents.push({
+        id: quote.id,
+        title: `Quote - ${quote.customer_name || 'Customer'}`,
+        start: startDate,
+        end: endDate,
+        resource: quote,
+        type: 'quote',
       });
     });
 
@@ -100,7 +156,13 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   };
 
   const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedJob(event.resource);
+    if (event.type === 'job') {
+      setSelectedJob(event.resource as Job);
+      setSelectedQuote(null);
+    } else {
+      setSelectedQuote(event.resource as AcceptedQuote);
+      setSelectedJob(null);
+    }
   };
 
   const handleNavigate = (newDate: Date) => {
@@ -161,22 +223,26 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
-    const job = event.resource;
     let backgroundColor = '#3174ad';
     
-    switch (job.status) {
-      case 'pending':
-        backgroundColor = '#f59e0b';
-        break;
-      case 'in_progress':
-        backgroundColor = '#3b82f6';
-        break;
-      case 'completed':
-        backgroundColor = '#10b981';
-        break;
-      case 'cancelled':
-        backgroundColor = '#ef4444';
-        break;
+    if (event.type === 'quote') {
+      backgroundColor = '#8b5cf6'; // Purple for quotes
+    } else {
+      const job = event.resource as Job;
+      switch (job.status) {
+        case 'pending':
+          backgroundColor = '#f59e0b';
+          break;
+        case 'in_progress':
+          backgroundColor = '#3b82f6';
+          break;
+        case 'completed':
+          backgroundColor = '#10b981';
+          break;
+        case 'cancelled':
+          backgroundColor = '#ef4444';
+          break;
+      }
     }
 
     return {
@@ -314,7 +380,11 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-2 sm:px-0">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-2 sm:px-0">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded"></div>
+          <span className="text-xs sm:text-sm">Quote</span>
+        </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
           <span className="text-xs sm:text-sm">Pending</span>
@@ -333,12 +403,15 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         </div>
       </div>
 
-      <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
+      <Dialog open={!!selectedJob || !!selectedQuote} onOpenChange={() => {
+        setSelectedJob(null);
+        setSelectedQuote(null);
+      }}>
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Job Details</DialogTitle>
+            <DialogTitle>{selectedQuote ? 'Quote Details' : 'Job Details'}</DialogTitle>
             <DialogDescription>
-              View and manage job information
+              {selectedQuote ? 'View accepted quote information' : 'View and manage job information'}
             </DialogDescription>
           </DialogHeader>
            {selectedJob && (
@@ -349,6 +422,36 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                 setSelectedJob(null);
               }} 
             />
+           )}
+           {selectedQuote && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Customer Name</p>
+                <p className="text-sm text-muted-foreground">{selectedQuote.customer_name}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Address</p>
+                <p className="text-sm text-muted-foreground">{selectedQuote.customer_address}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Phone</p>
+                <p className="text-sm text-muted-foreground">{selectedQuote.customer_phone}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Email</p>
+                <p className="text-sm text-muted-foreground">{selectedQuote.customer_email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Scheduled Date</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedQuote.scheduled_date ? new Date(selectedQuote.scheduled_date).toLocaleString() : 'Not scheduled'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Status</p>
+                <Badge>{selectedQuote.status}</Badge>
+              </div>
+            </div>
            )}
         </DialogContent>
       </Dialog>
