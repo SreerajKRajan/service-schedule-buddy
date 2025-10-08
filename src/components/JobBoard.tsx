@@ -120,7 +120,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log('Job change detected:', payload);
-          fetchJobs();
+          // Don't fetch all jobs if we're filtering by assignee
+          if (assigneeFilter !== 'all') {
+            fetchJobsByAssignee(assigneeFilter);
+          } else if (!customerEmail) {
+            fetchJobs();
+          }
         }
       )
       .subscribe();
@@ -137,6 +142,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         (payload) => {
           console.log('Assignment change detected:', payload);
           fetchJobAssignments();
+          // Refresh jobs with current filter
+          if (assigneeFilter !== 'all') {
+            fetchJobsByAssignee(assigneeFilter);
+          } else if (!customerEmail) {
+            fetchJobs();
+          }
         }
       )
       .subscribe();
@@ -421,7 +432,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   };
 
   const refreshData = () => {
-    fetchJobs();
+    // Respect current filter state when refreshing
+    if (assigneeFilter !== 'all') {
+      fetchJobsByAssignee(assigneeFilter);
+    } else {
+      fetchJobs();
+    }
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
