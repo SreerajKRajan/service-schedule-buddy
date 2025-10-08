@@ -606,7 +606,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
       {viewMode === "calendar" ? (
         <JobCalendar 
-          jobs={filteredJobs} 
+          jobs={filteredJobs}
+          quotes={filteredQuotes}
+          statusFilter={statusFilter}
           onRefresh={refreshData}
           hideAcceptedQuotes={!!customerEmail}
         />

@@ -87,11 +87,13 @@ interface CalendarEvent {
 
 interface JobCalendarProps {
   jobs: Job[];
+  quotes?: AcceptedQuote[];
+  statusFilter?: string;
   onRefresh: () => void;
   hideAcceptedQuotes?: boolean;
 }
 
-export function JobCalendar({ jobs, onRefresh, hideAcceptedQuotes = false }: JobCalendarProps) {
+export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
@@ -109,7 +111,7 @@ export function JobCalendar({ jobs, onRefresh, hideAcceptedQuotes = false }: Job
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, acceptedQuotes, statusFilter]);
+  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -125,9 +127,28 @@ export function JobCalendar({ jobs, onRefresh, hideAcceptedQuotes = false }: Job
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
 
-    // Filter based on statusFilter
-    if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
-      // Only show accepted quotes
+    // If parent has filtered to accepted_quotes, use the passed quotes
+    if (parentStatusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
+      quotes.forEach((quote) => {
+        if (!quote.scheduled_date) return;
+
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
+
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
+
+        calendarEvents.push({
+          id: quote.id,
+          title: `Quote - ${quote.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: quote,
+          type: "quote",
+        });
+      });
+    } else if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
+      // Only show accepted quotes from calendar's own filter
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
