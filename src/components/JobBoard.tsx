@@ -187,6 +187,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   useEffect(() => {
     if (userNotFound) return;
 
+    // If assignee filter is applied, switch away from accepted_quotes status
+    if (assigneeFilter !== 'all' && statusFilter === 'accepted_quotes') {
+      setStatusFilter('all');
+    }
+
     if (assigneeFilter !== 'all') {
       fetchJobsByAssignee(assigneeFilter);
     } else if (!customerEmail) {
@@ -554,7 +559,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {!customerEmail && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+                  {!customerEmail && assigneeFilter === 'all' && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="service_due">Service Due</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
