@@ -235,8 +235,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       console.log('[JobBoard] Fetching all jobs');
       const { data, error } = await supabase
         .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(10000);
       
       if (error) throw error;
       console.log('[JobBoard] Fetched all jobs:', (data || []).length);
