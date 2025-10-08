@@ -410,9 +410,11 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedQuote ? 'Quote Details' : 'Job Details'}</DialogTitle>
-            <DialogDescription>
-              {selectedQuote ? 'View accepted quote information' : 'View and manage job information'}
-            </DialogDescription>
+            {!selectedQuote && (
+              <DialogDescription>
+                View and manage job information
+              </DialogDescription>
+            )}
           </DialogHeader>
            {selectedJob && (
             <JobCard 
@@ -465,7 +467,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                       )}
                     </div>
                   )}
-                  
+                   
                   {selectedQuote.customer_address && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -506,15 +508,6 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                     </div>
                   )}
 
-                  {selectedQuote.quoted_by && (
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4 text-muted-foreground" />
-                      <span className="line-clamp-1">
-                        <strong>Quoted by:</strong> {selectedQuote.quoted_by}
-                      </span>
-                    </div>
-                  )}
-
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -531,9 +524,9 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                         <div key={index} className="bg-muted/50 p-3 rounded-lg">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-medium">{service.name || service.service_name || 'Service'}</div>
-                              {service.description && (
-                                <div className="text-sm text-muted-foreground">{service.description}</div>
+                              <div className="font-medium">{service.service_name || service.name || 'Service'}</div>
+                              {service.service_description && (
+                                <div className="text-sm text-muted-foreground">{service.service_description}</div>
                               )}
                             </div>
                             <div className="text-right">
