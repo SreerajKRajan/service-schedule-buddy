@@ -93,7 +93,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
 
   useEffect(() => {
-    fetchJobs();
+    // Don't fetch all jobs initially if we're filtering by customer
+    // Let the assignee filter useEffect handle it
+    if (!(customerEmail && !hasFullAccess)) {
+      fetchJobs();
+    }
+    
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
