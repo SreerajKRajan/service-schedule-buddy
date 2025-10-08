@@ -230,6 +230,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       const { data, error } = await supabase
         .from('accepted_quotes')
         .select('*')
+        .neq('status', 'converted')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
