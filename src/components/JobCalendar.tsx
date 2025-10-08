@@ -422,7 +422,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedQuote ? "Quote Details" : "Job Details"}</DialogTitle>
-            {!selectedQuote && <DialogDescription>View and manage job information</DialogDescription>}
+            <DialogDescription>View and manage {selectedQuote? 'quote' : ' job ' information}</DialogDescription>
           </DialogHeader>
           {selectedJob && (
             <JobCard
@@ -437,7 +437,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             <Card className="h-full border-0 shadow-none">
               <CardHeader className="space-y-2 px-0">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">Quote Request</CardTitle>
+                  <CardTitle className="text-lg">Quote Request</CardTitle>
                 </div>
                 <CardDescription className="line-clamp-2">Accepted quote for scheduled service</CardDescription>
                 <div className="flex gap-2 flex-wrap">
