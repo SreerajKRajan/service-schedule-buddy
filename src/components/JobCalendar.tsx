@@ -88,9 +88,10 @@ interface CalendarEvent {
 interface JobCalendarProps {
   jobs: Job[];
   onRefresh: () => void;
+  hideAcceptedQuotes?: boolean;
 }
 
-export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
+export function JobCalendar({ jobs, onRefresh, hideAcceptedQuotes = false }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
@@ -101,8 +102,10 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
-    fetchAcceptedQuotes();
-  }, []);
+    if (!hideAcceptedQuotes) {
+      fetchAcceptedQuotes();
+    }
+  }, [hideAcceptedQuotes]);
 
   useEffect(() => {
     convertJobsToEvents();
@@ -123,7 +126,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
     const calendarEvents: CalendarEvent[] = [];
 
     // Filter based on statusFilter
-    if (statusFilter === "accepted_quotes") {
+    if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
       // Only show accepted quotes
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
@@ -168,8 +171,8 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         });
       });
 
-      // Add accepted quotes if filter is "all"
-      if (statusFilter === "all") {
+      // Add accepted quotes if filter is "all" and not hidden
+      if (statusFilter === "all" && !hideAcceptedQuotes) {
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
@@ -334,7 +337,9 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
+                  {!hideAcceptedQuotes && (
+                    <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
 
