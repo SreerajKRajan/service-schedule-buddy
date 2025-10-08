@@ -199,17 +199,30 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       // Update overdue jobs to service_due status first
       await supabase.rpc('update_overdue_jobs');
 
-      // Always fetch all jobs
-      console.log('[JobBoard] Fetching all jobs');
-      const { data, error } = await supabase
+      // Fetch jobs, optionally filtered by assignee using the same /jobs API
+      console.log('[JobBoard] Fetching jobs', assigneeFilter !== 'all' ? `for assignee ${assigneeFilter}` : '(all)');
+
+      let query = supabase
         .from('jobs')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .limit(10000);
-      
+
+      // If an assignee is selected, use an inner join to job_assignments and filter by user_id
+      if (assigneeFilter !== 'all') {
+        query = supabase
+          .from('jobs')
+          .select('*, job_assignments!inner(user_id)', { count: 'exact' })
+          .eq('job_assignments.user_id', assigneeFilter)
+          .order('created_at', { ascending: false })
+          .limit(10000);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      console.log('[JobBoard] Fetched all jobs:', (data || []).length);
-      setJobs(data || []);
+      console.log('[JobBoard] Fetched jobs:', (data || []).length);
+      // Cast to Job[] since we don't use the joined relation in state
+      setJobs((data as unknown as Job[]) || []);
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([]);
@@ -283,14 +296,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       filtered = filtered.filter(job => job.job_type === typeFilter);
     }
 
-    // Filter by assignee using job_assignments
-    if (assigneeFilter !== 'all') {
-      const jobIdsForAssignee = jobAssignments
-        .filter(assignment => assignment.user_id === assigneeFilter)
-        .map(assignment => assignment.job_id);
-      
-      filtered = filtered.filter(job => jobIdsForAssignee.includes(job.id));
-    }
+    // Assignee filtering is now handled server-side via query params on /jobs
+    // (joining job_assignments!inner and filtering by job_assignments.user_id)
+    // So we do not perform additional client-side filtering here to avoid mismatches.
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter(job => {
