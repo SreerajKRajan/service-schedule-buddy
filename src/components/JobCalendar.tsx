@@ -421,7 +421,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
       >
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{!selectedQuote && "Job Details"}</DialogTitle>
+            <DialogTitle>{selectedQuote ? "Quote Details" : "Job Details"}</DialogTitle>
             {!selectedQuote && <DialogDescription>View and manage job information</DialogDescription>}
           </DialogHeader>
           {selectedJob && (
