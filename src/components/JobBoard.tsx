@@ -78,7 +78,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
-  const [assigneeJobIds, setAssigneeJobIds] = useState<string[] | null>(null);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -167,7 +166,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     } else {
       filterJobs();
     }
-  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
 
   useEffect(() => {
     // When assignee changes, fetch jobs directly from backend
@@ -180,15 +179,15 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         
         if (error) {
           console.error('[JobBoard] Error fetching jobs by assignee:', error);
-          setAssigneeJobIds([]);
+          setJobs([]);
           return;
         }
         
-        const jobIds = (data || []).map((job: any) => job.id);
-        console.log('[JobBoard] RPC returned job IDs:', jobIds.length);
-        setAssigneeJobIds(jobIds);
+        console.log('[JobBoard] RPC returned jobs:', (data || []).length);
+        setJobs(data || []);
       } else {
-        setAssigneeJobIds(null);
+        // Fetch all jobs when no assignee filter
+        fetchJobs();
       }
     };
     
@@ -282,13 +281,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       filtered = filtered.filter(job => job.job_type === typeFilter);
     }
 
-    if (assigneeFilter !== "all" && assigneeJobIds !== null) {
-      // Use only RPC result from backend (no snapshot merging)
-      const assignedSet = new Set(assigneeJobIds);
-      console.log('[JobBoard] Filtering by assignee using RPC result:', assigneeJobIds.length, 'jobs');
-      filtered = filtered.filter((job) => assignedSet.has(job.id));
-      console.log('[JobBoard] Jobs after assignee filter:', filtered.length);
-    }
+    // No need to filter by assignee here - backend RPC already handles it
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter(job => {
