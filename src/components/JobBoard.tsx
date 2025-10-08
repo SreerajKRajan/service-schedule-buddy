@@ -674,7 +674,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           onRefresh={refreshData}
           hideAcceptedQuotes={
             statusFilter !== 'accepted_quotes' && 
-            !(statusFilter === 'all' && hasFullAccess)
+            !(statusFilter === 'all' && assigneeFilter === 'all' && hasFullAccess)
           }
         />
       ) : (
