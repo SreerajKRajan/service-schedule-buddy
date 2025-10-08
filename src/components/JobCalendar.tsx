@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { Calendar as BigCalendar, momentLocalizer, View } from "react-big-calendar";
 import moment from "moment";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarDays, Grid, List, ChevronLeft, ChevronRight, Users, MapPin, Phone, Mail } from "lucide-react";
+import { CalendarDays, Grid, List, ChevronLeft, ChevronRight, Users, MapPin, Phone, Mail, UserCheck, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JobCard } from "./JobCard";
 import { Calendar as DatePicker } from "@/components/ui/calendar";
@@ -424,103 +424,129 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
             />
            )}
            {selectedQuote && (
-            <div className="space-y-4">
-              <div className="space-y-2 text-sm">
-                {selectedQuote.customer_name && (
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    {selectedQuote.ghl_contact_id ? (
+            <Card className="h-full border-0 shadow-none">
+              <CardHeader className="space-y-2 px-0">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">Quote Request</CardTitle>
+                </div>
+                <CardDescription className="line-clamp-2">
+                  Accepted quote for scheduled service
+                </CardDescription>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge className="bg-purple-100 text-purple-800">
+                    {selectedQuote.status}
+                  </Badge>
+                  {selectedQuote.first_time && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      First Time
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4 px-0">
+                <div className="space-y-2 text-sm">
+                  {selectedQuote.customer_name && (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      {selectedQuote.ghl_contact_id ? (
+                        <a 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.open(`https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="text-primary hover:underline cursor-pointer"
+                        >
+                          {selectedQuote.customer_name}
+                        </a>
+                      ) : (
+                        <span>{selectedQuote.customer_name}</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {selectedQuote.customer_address && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
                       <a 
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          window.open(`https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`, '_blank', 'noopener,noreferrer');
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`, '_blank', 'noopener,noreferrer');
                         }}
-                        className="text-primary hover:underline cursor-pointer"
+                        className="text-primary hover:underline line-clamp-1 cursor-pointer"
                       >
-                        {selectedQuote.customer_name}
+                        {selectedQuote.customer_address}
                       </a>
-                    ) : (
-                      <span>{selectedQuote.customer_name}</span>
-                    )}
-                  </div>
-                )}
-                
-                {selectedQuote.customer_address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`, '_blank', 'noopener,noreferrer');
-                      }}
-                      className="text-primary hover:underline line-clamp-1 cursor-pointer"
-                    >
-                      {selectedQuote.customer_address}
-                    </a>
-                  </div>
-                )}
-                
-                {selectedQuote.customer_phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={`tel:${selectedQuote.customer_phone}`}
-                      className="text-primary hover:underline"
-                    >
-                      {selectedQuote.customer_phone}
-                    </a>
-                  </div>
-                )}
-                
-                {selectedQuote.customer_email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={`mailto:${selectedQuote.customer_email}`}
-                      className="text-primary hover:underline line-clamp-1"
-                    >
-                      {selectedQuote.customer_email}
-                    </a>
-                  </div>
-                )}
+                    </div>
+                  )}
+                  
+                  {selectedQuote.customer_phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <a 
+                        href={`tel:${selectedQuote.customer_phone}`}
+                        className="text-primary hover:underline"
+                      >
+                        {selectedQuote.customer_phone}
+                      </a>
+                    </div>
+                  )}
+                  
+                  {selectedQuote.customer_email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <a 
+                        href={`mailto:${selectedQuote.customer_email}`}
+                        className="text-primary hover:underline line-clamp-1"
+                      >
+                        {selectedQuote.customer_email}
+                      </a>
+                    </div>
+                  )}
 
-                {selectedQuote.scheduled_date && (
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    <span>{new Date(selectedQuote.scheduled_date).toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
+                  {selectedQuote.quoted_by && (
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-muted-foreground" />
+                      <span className="line-clamp-1">
+                        <strong>Quoted by:</strong> {selectedQuote.quoted_by}
+                      </span>
+                    </div>
+                  )}
 
-              {selectedQuote.jobs_selected && (
-                <div>
-                  <h4 className="font-medium mb-2">Selected Services ({Array.isArray(selectedQuote.jobs_selected) ? selectedQuote.jobs_selected.length : 0})</h4>
-                  <div className="grid gap-2">
-                    {Array.isArray(selectedQuote.jobs_selected) && selectedQuote.jobs_selected.map((service: any, index: number) => (
-                      <div key={index} className="bg-muted/50 p-3 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">{service.name || service.service_name}</div>
-                            {service.description && (
-                              <div className="text-sm text-muted-foreground">{service.description}</div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {service.price && <div className="font-medium">${service.price}</div>}
+                  {selectedQuote.scheduled_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{new Date(selectedQuote.scheduled_date).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                {selectedQuote.jobs_selected && Array.isArray(selectedQuote.jobs_selected) && selectedQuote.jobs_selected.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Selected Services ({selectedQuote.jobs_selected.length})</h4>
+                    <div className="grid gap-2">
+                      {selectedQuote.jobs_selected.map((service: any, index: number) => (
+                        <div key={index} className="bg-muted/50 p-3 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium">{service.name || service.service_name || 'Service'}</div>
+                              {service.description && (
+                                <div className="text-sm text-muted-foreground">{service.description}</div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              {service.price && <div className="font-medium">${service.price}</div>}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              <div className="pt-2">
-                <Badge>{selectedQuote.status}</Badge>
-              </div>
-            </div>
+                )}
+              </CardContent>
+            </Card>
            )}
         </DialogContent>
       </Dialog>
