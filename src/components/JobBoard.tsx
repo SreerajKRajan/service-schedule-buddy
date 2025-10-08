@@ -170,6 +170,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
 
   useEffect(() => {
+    // Clear date range on assignee change to avoid hidden intersections
+    setDateRange(undefined);
     if (assigneeFilter !== 'all') {
       fetchAssignedJobIds(assigneeFilter);
     } else {
