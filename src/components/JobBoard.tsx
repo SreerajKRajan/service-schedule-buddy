@@ -367,11 +367,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     if (!customerEmail) return;
     
     try {
-      // Try to find user by email
+      // Try to find user by email (case-insensitive)
       const { data: userByEmail } = await supabase
         .from('users')
         .select('id, name')
-        .eq('email', customerEmail)
+        .ilike('email', customerEmail)
         .maybeSingle();
       
       if (userByEmail) {

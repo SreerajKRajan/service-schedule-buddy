@@ -41,11 +41,11 @@ const Index = () => {
     }
     
     try {
-      // Try to find user by email first
+      // Try to find user by email first (case-insensitive)
       let { data: user } = await supabase
         .from('users')
         .select('role')
-        .eq('email', customerEmail)
+        .ilike('email', customerEmail)
         .maybeSingle();
       
       // Fallback to name if email doesn't match

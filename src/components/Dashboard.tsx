@@ -46,11 +46,11 @@ export function Dashboard({ customerEmail }: DashboardProps) {
         let hasUserMatch = false;
         let jobIds: string[] = [];
         
-        // 1) Try to resolve to a team member by email
+        // 1) Try to resolve to a team member by email (case-insensitive)
         const { data: userByEmail } = await supabase
           .from('users')
           .select('id')
-          .eq('email', customerEmail)
+          .ilike('email', customerEmail)
           .maybeSingle();
         
         if (userByEmail?.id) {
