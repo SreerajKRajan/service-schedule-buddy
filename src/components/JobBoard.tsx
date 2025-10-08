@@ -174,7 +174,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [customerEmail, hasFullAccess]);
+  }, [customerEmail, hasFullAccess, assigneeFilter]);
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
@@ -189,10 +189,10 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
     if (assigneeFilter !== 'all') {
       fetchJobsByAssignee(assigneeFilter);
-    } else {
+    } else if (!customerEmail) {
       fetchJobs();
     }
-  }, [assigneeFilter, userNotFound]);
+  }, [assigneeFilter, userNotFound, customerEmail]);
 
   const fetchJobsByAssignee = async (userId: string) => {
     try {
