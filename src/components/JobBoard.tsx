@@ -282,17 +282,21 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
 
     if (assigneeFilter !== "all") {
-      // Always derive assigned job IDs from the live job_assignments snapshot
-      const assignedJobIds = jobAssignments
+      // Combine IDs from both the latest direct query and the live snapshot
+      const fromSnapshot = jobAssignments
         .filter((assignment) => assignment.user_id === assigneeFilter)
         .map((assignment) => assignment.job_id);
+      const fromQuery = assigneeJobIds ?? [];
+      const combinedIds = Array.from(new Set([...fromQuery, ...fromSnapshot]));
 
       console.log('[JobBoard] Filtering by assignee:', assigneeFilter);
-      console.log('[JobBoard] Assigned job IDs (from snapshot):', assignedJobIds);
+      console.log('[JobBoard] Assigned job IDs (from query):', fromQuery.length);
+      console.log('[JobBoard] Assigned job IDs (from snapshot):', fromSnapshot.length);
+      console.log('[JobBoard] Combined assigned IDs:', combinedIds.length);
       console.log('[JobBoard] Jobs before filter:', filtered.length);
 
       // Filter ONLY by actual assignments from job_assignments
-      const assignedSet = new Set(assignedJobIds);
+      const assignedSet = new Set(combinedIds);
       filtered = filtered.filter((job) => assignedSet.has(job.id));
       
       console.log('[JobBoard] Jobs after filter:', filtered.length);
