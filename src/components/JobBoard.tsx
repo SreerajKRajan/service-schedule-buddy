@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,9 @@ interface JobBoardProps {
 }
 
 export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobBoardProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const assigneeFromUrl = searchParams.get("assignee");
+  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
@@ -83,7 +87,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [assigneeFilter, setAssigneeFilter] = useState(assigneeFromUrl || "all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [groupByLocation, setGroupByLocation] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -94,11 +98,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // Fetch all jobs if no customerEmail OR if user has full access
-    if (!customerEmail || (customerEmail && hasFullAccess)) {
-      fetchJobs();
-    }
-    
+    // Always fetch all jobs
+    fetchJobs();
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
@@ -120,12 +121,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log('Job change detected:', payload);
-          // Don't fetch all jobs if we're filtering by assignee
-          if (assigneeFilter !== 'all') {
-            fetchJobsByAssignee(assigneeFilter);
-          } else if (!customerEmail || (customerEmail && hasFullAccess)) {
-            fetchJobs();
-          }
+          fetchJobs();
         }
       )
       .subscribe();
@@ -142,12 +138,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         (payload) => {
           console.log('Assignment change detected:', payload);
           fetchJobAssignments();
-          // Refresh jobs with current filter
-          if (assigneeFilter !== 'all') {
-            fetchJobsByAssignee(assigneeFilter);
-          } else if (!customerEmail || (customerEmail && hasFullAccess)) {
-            fetchJobs();
-          }
+          fetchJobs();
         }
       )
       .subscribe();
@@ -182,7 +173,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     } else {
       filterJobs();
     }
-  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments, assigneeFilter]);
 
   useEffect(() => {
     if (userNotFound) return;
@@ -192,49 +183,23 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       setStatusFilter('all');
     }
 
+    // Update URL query params when assignee filter changes
+    const newParams = new URLSearchParams(searchParams);
     if (assigneeFilter !== 'all') {
-      fetchJobsByAssignee(assigneeFilter);
-    } else if (!customerEmail || (customerEmail && hasFullAccess)) {
-      fetchJobs();
+      newParams.set('assignee', assigneeFilter);
+    } else {
+      newParams.delete('assignee');
     }
-  }, [assigneeFilter, userNotFound, customerEmail]);
-
-  const fetchJobsByAssignee = async (userId: string) => {
-    try {
-      setLoading(true);
-      console.log('[JobBoard] Fetching jobs via RPC for assignee:', userId);
-
-      const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
-        p_user_id: userId
-      });
-
-      if (error) throw error;
-
-      // Deduplicate jobs by id (extra safety measure)
-      const uniqueJobs = data ? Array.from(new Map(data.map(job => [job.id, job])).values()) : [];
-      
-      console.log('[JobBoard] RPC returned jobs:', uniqueJobs.length);
-      setJobs(uniqueJobs);
-    } catch (error) {
-      console.error('Error fetching jobs by assignee:', error);
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setSearchParams(newParams, { replace: true });
+  }, [assigneeFilter, userNotFound, searchParams, setSearchParams]);
 
   const fetchJobs = async () => {
     try {
+      setLoading(true);
       // Update overdue jobs to service_due status first
       await supabase.rpc('update_overdue_jobs');
 
-      // If customerEmail exists or assignee filter is active, use RPC
-      if (assigneeFilter !== 'all') {
-        await fetchJobsByAssignee(assigneeFilter);
-        return;
-      }
-
-      // Only fetch all jobs when no filter is active
+      // Always fetch all jobs
       console.log('[JobBoard] Fetching all jobs');
       const { data, error } = await supabase
         .from('jobs')
@@ -247,6 +212,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       setJobs(data || []);
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -317,7 +283,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       filtered = filtered.filter(job => job.job_type === typeFilter);
     }
 
-    // No need to filter by assignee here - backend RPC already handles it
+    // Filter by assignee using job_assignments
+    if (assigneeFilter !== 'all') {
+      const jobIdsForAssignee = jobAssignments
+        .filter(assignment => assignment.user_id === assigneeFilter)
+        .map(assignment => assignment.job_id);
+      
+      filtered = filtered.filter(job => jobIdsForAssignee.includes(job.id));
+    }
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter(job => {
@@ -441,12 +414,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   };
 
   const refreshData = () => {
-    // Respect current filter state when refreshing
-    if (assigneeFilter !== 'all') {
-      fetchJobsByAssignee(assigneeFilter);
-    } else {
-      fetchJobs();
-    }
+    fetchJobs();
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
