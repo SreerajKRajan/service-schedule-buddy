@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import {
   CalendarDays,
@@ -97,6 +98,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const [view, setView] = useState<View>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchAcceptedQuotes();
@@ -104,7 +106,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, acceptedQuotes]);
+  }, [jobs, acceptedQuotes, statusFilter]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -120,46 +122,74 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
 
-    // Add all jobs (including recurring instances)
-    jobs.forEach((job) => {
-      if (!job.scheduled_date) return;
+    // Filter based on statusFilter
+    if (statusFilter === "accepted_quotes") {
+      // Only show accepted quotes
+      acceptedQuotes.forEach((quote) => {
+        if (!quote.scheduled_date) return;
 
-      const startDate = new Date(job.scheduled_date);
-      const endDate = new Date(startDate);
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
 
-      // Add estimated duration or default to 2 hours
-      const duration = job.estimated_duration || 2;
-      endDate.setHours(startDate.getHours() + duration);
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
 
-      calendarEvents.push({
-        id: job.id,
-        title: `${job.title} - ${job.customer_name || "Customer"}`,
-        start: startDate,
-        end: endDate,
-        resource: job,
-        type: "job",
+        calendarEvents.push({
+          id: quote.id,
+          title: `Quote - ${quote.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: quote,
+          type: "quote",
+        });
       });
-    });
+    } else {
+      // Show jobs (filtered by status if not "all")
+      jobs.forEach((job) => {
+        if (!job.scheduled_date) return;
+        
+        // Apply status filter for jobs
+        if (statusFilter !== "all" && job.status !== statusFilter) return;
 
-    // Add accepted quotes that haven't been converted
-    acceptedQuotes.forEach((quote) => {
-      if (!quote.scheduled_date) return;
+        const startDate = new Date(job.scheduled_date);
+        const endDate = new Date(startDate);
 
-      const startDate = new Date(quote.scheduled_date);
-      const endDate = new Date(startDate);
+        // Add estimated duration or default to 2 hours
+        const duration = job.estimated_duration || 2;
+        endDate.setHours(startDate.getHours() + duration);
 
-      // Default to 2 hours for quotes
-      endDate.setHours(startDate.getHours() + 2);
-
-      calendarEvents.push({
-        id: quote.id,
-        title: `Quote - ${quote.customer_name || "Customer"}`,
-        start: startDate,
-        end: endDate,
-        resource: quote,
-        type: "quote",
+        calendarEvents.push({
+          id: job.id,
+          title: `${job.title} - ${job.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: job,
+          type: "job",
+        });
       });
-    });
+
+      // Add accepted quotes if filter is "all"
+      if (statusFilter === "all") {
+        acceptedQuotes.forEach((quote) => {
+          if (!quote.scheduled_date) return;
+
+          const startDate = new Date(quote.scheduled_date);
+          const endDate = new Date(startDate);
+
+          // Default to 2 hours for quotes
+          endDate.setHours(startDate.getHours() + 2);
+
+          calendarEvents.push({
+            id: quote.id,
+            title: `Quote - ${quote.customer_name || "Customer"}`,
+            start: startDate,
+            end: endDate,
+            resource: quote,
+            type: "quote",
+          });
+        });
+      }
+    }
 
     setEvents(calendarEvents);
   };
@@ -292,32 +322,49 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               Job Calendar
             </CardTitle>
 
-            {/* Mobile: Stack view buttons, Desktop: Row */}
-            <div className="flex flex-wrap gap-1 sm:gap-2">
-              <Button
-                variant={view === "month" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setView("month")}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
-              >
-                Month
-              </Button>
-              <Button
-                variant={view === "week" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setView("week")}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
-              >
-                Week
-              </Button>
-              <Button
-                variant={view === "day" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setView("day")}
-                className="flex-1 sm:flex-none text-xs sm:text-sm"
-              >
-                Day
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Mobile: Stack view buttons, Desktop: Row */}
+              <div className="flex flex-wrap gap-1 sm:gap-2">
+                <Button
+                  variant={view === "month" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setView("month")}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  Month
+                </Button>
+                <Button
+                  variant={view === "week" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setView("week")}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  Week
+                </Button>
+                <Button
+                  variant={view === "day" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setView("day")}
+                  className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  Day
+                </Button>
+              </div>
             </div>
           </div>
 
