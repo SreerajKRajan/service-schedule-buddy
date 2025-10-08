@@ -8,7 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarDays, Grid, List, ChevronLeft, ChevronRight, Users, MapPin, Phone, Mail, UserCheck, Calendar } from "lucide-react";
+import {
+  CalendarDays,
+  Grid,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  UserCheck,
+  Calendar,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JobCard } from "./JobCard";
 import { Calendar as DatePicker } from "@/components/ui/calendar";
@@ -69,7 +81,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   resource: Job | AcceptedQuote;
-  type: 'job' | 'quote';
+  type: "job" | "quote";
 }
 
 interface JobCalendarProps {
@@ -96,15 +108,12 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
 
   const fetchAcceptedQuotes = async () => {
     try {
-      const { data, error } = await supabase
-        .from('accepted_quotes')
-        .select('*')
-        .neq('status', 'converted');
-      
+      const { data, error } = await supabase.from("accepted_quotes").select("*").neq("status", "converted");
+
       if (error) throw error;
       setAcceptedQuotes(data || []);
     } catch (error) {
-      console.error('Error fetching accepted quotes:', error);
+      console.error("Error fetching accepted quotes:", error);
     }
   };
 
@@ -112,43 +121,43 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
     const calendarEvents: CalendarEvent[] = [];
 
     // Add all jobs (including recurring instances)
-    jobs.forEach(job => {
+    jobs.forEach((job) => {
       if (!job.scheduled_date) return;
-      
+
       const startDate = new Date(job.scheduled_date);
       const endDate = new Date(startDate);
-      
+
       // Add estimated duration or default to 2 hours
       const duration = job.estimated_duration || 2;
       endDate.setHours(startDate.getHours() + duration);
 
       calendarEvents.push({
         id: job.id,
-        title: `${job.title} - ${job.customer_name || 'Customer'}`,
+        title: `${job.title} - ${job.customer_name || "Customer"}`,
         start: startDate,
         end: endDate,
         resource: job,
-        type: 'job',
+        type: "job",
       });
     });
 
     // Add accepted quotes that haven't been converted
-    acceptedQuotes.forEach(quote => {
+    acceptedQuotes.forEach((quote) => {
       if (!quote.scheduled_date) return;
-      
+
       const startDate = new Date(quote.scheduled_date);
       const endDate = new Date(startDate);
-      
+
       // Default to 2 hours for quotes
       endDate.setHours(startDate.getHours() + 2);
 
       calendarEvents.push({
         id: quote.id,
-        title: `Quote - ${quote.customer_name || 'Customer'}`,
+        title: `Quote - ${quote.customer_name || "Customer"}`,
         start: startDate,
         end: endDate,
         resource: quote,
-        type: 'quote',
+        type: "quote",
       });
     });
 
@@ -156,7 +165,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   };
 
   const handleSelectEvent = (event: CalendarEvent) => {
-    if (event.type === 'job') {
+    if (event.type === "job") {
       setSelectedJob(event.resource as Job);
       setSelectedQuote(null);
     } else {
@@ -176,13 +185,13 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const navigateBack = () => {
     const newDate = new Date(currentDate);
     switch (view) {
-      case 'month':
+      case "month":
         newDate.setMonth(newDate.getMonth() - 1);
         break;
-      case 'week':
+      case "week":
         newDate.setDate(newDate.getDate() - 7);
         break;
-      case 'day':
+      case "day":
         newDate.setDate(newDate.getDate() - 1);
         break;
     }
@@ -192,13 +201,13 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   const navigateNext = () => {
     const newDate = new Date(currentDate);
     switch (view) {
-      case 'month':
+      case "month":
         newDate.setMonth(newDate.getMonth() + 1);
         break;
-      case 'week':
+      case "week":
         newDate.setDate(newDate.getDate() + 7);
         break;
-      case 'day':
+      case "day":
         newDate.setDate(newDate.getDate() + 1);
         break;
     }
@@ -207,15 +216,15 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
 
   const getDateTitle = () => {
     switch (view) {
-      case 'month':
+      case "month":
         return format(currentDate, "MMMM yyyy");
-      case 'week':
+      case "week":
         const weekStart = new Date(currentDate);
         weekStart.setDate(currentDate.getDate() - currentDate.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
-      case 'day':
+      case "day":
         return format(currentDate, "MMMM d, yyyy");
       default:
         return format(currentDate, "MMMM yyyy");
@@ -223,24 +232,24 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
-    let backgroundColor = '#3174ad';
-    
-    if (event.type === 'quote') {
-      backgroundColor = '#8b5cf6'; // Purple for quotes
+    let backgroundColor = "#3174ad";
+
+    if (event.type === "quote") {
+      backgroundColor = "#8b5cf6"; // Purple for quotes
     } else {
       const job = event.resource as Job;
       switch (job.status) {
-        case 'pending':
-          backgroundColor = '#f59e0b';
+        case "pending":
+          backgroundColor = "#f59e0b";
           break;
-        case 'in_progress':
-          backgroundColor = '#3b82f6';
+        case "in_progress":
+          backgroundColor = "#3b82f6";
           break;
-        case 'completed':
-          backgroundColor = '#10b981';
+        case "completed":
+          backgroundColor = "#10b981";
           break;
-        case 'cancelled':
-          backgroundColor = '#ef4444';
+        case "cancelled":
+          backgroundColor = "#ef4444";
           break;
       }
     }
@@ -248,12 +257,12 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
     return {
       style: {
         backgroundColor,
-        borderRadius: '4px',
+        borderRadius: "4px",
         opacity: 0.8,
-        color: 'white',
-        border: 'none',
-        fontSize: '12px',
-      }
+        color: "white",
+        border: "none",
+        fontSize: "12px",
+      },
     };
   };
 
@@ -282,7 +291,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               <CalendarDays className="h-5 w-5" />
               Job Calendar
             </CardTitle>
-            
+
             {/* Mobile: Stack view buttons, Desktop: Row */}
             <div className="flex flex-wrap gap-1 sm:gap-2">
               <Button
@@ -311,7 +320,7 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
             <div className="flex items-center gap-1 sm:gap-2">
               <Button variant="outline" size="sm" onClick={navigateToday} className="text-xs sm:text-sm">
@@ -324,14 +333,14 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                 <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
-            
+
             <div className="flex-1 flex justify-center sm:justify-end">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm"
+                      "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm",
                     )}
                   >
                     {getDateTitle()}
@@ -367,13 +376,13 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
               onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
-              style={{ height: '100%' }}
+              style={{ height: "100%" }}
               popup
               toolbar={false}
               formats={{
-                timeGutterFormat: 'HH:mm',
-                eventTimeRangeFormat: () => '',
-                agendaTimeRangeFormat: () => '',
+                timeGutterFormat: "HH:mm",
+                eventTimeRangeFormat: () => "",
+                agendaTimeRangeFormat: () => "",
               }}
             />
           </div>
@@ -403,41 +412,36 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
         </div>
       </div>
 
-      <Dialog open={!!selectedJob || !!selectedQuote} onOpenChange={() => {
-        setSelectedJob(null);
-        setSelectedQuote(null);
-      }}>
+      <Dialog
+        open={!!selectedJob || !!selectedQuote}
+        onOpenChange={() => {
+          setSelectedJob(null);
+          setSelectedQuote(null);
+        }}
+      >
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedQuote ? 'Quote Details' : 'Job Details'}</DialogTitle>
-            {!selectedQuote && (
-              <DialogDescription>
-                View and manage job information
-              </DialogDescription>
-            )}
+            <DialogTitle>{selectedQuote ? "Quote Details" : "Job Details"}</DialogTitle>
+            {!selectedQuote && <DialogDescription>View and manage job information</DialogDescription>}
           </DialogHeader>
-           {selectedJob && (
-            <JobCard 
-              job={selectedJob} 
+          {selectedJob && (
+            <JobCard
+              job={selectedJob}
               onUpdate={() => {
                 onRefresh();
                 setSelectedJob(null);
-              }} 
+              }}
             />
-           )}
-           {selectedQuote && (
+          )}
+          {selectedQuote && (
             <Card className="h-full border-0 shadow-none">
               <CardHeader className="space-y-2 px-0">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">Quote Request</CardTitle>
                 </div>
-                <CardDescription className="line-clamp-2">
-                  Accepted quote for scheduled service
-                </CardDescription>
+                <CardDescription className="line-clamp-2">Accepted quote for scheduled service</CardDescription>
                 <div className="flex gap-2 flex-wrap">
-                  <Badge className="bg-purple-100 text-purple-800">
-                    {selectedQuote.status}
-                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-800">{selectedQuote.status}</Badge>
                   {selectedQuote.first_time && (
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                       First Time
@@ -445,18 +449,22 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                   )}
                 </div>
               </CardHeader>
-              
+
               <CardContent className="space-y-4 px-0">
                 <div className="space-y-2 text-sm">
                   {selectedQuote.customer_name && (
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       {selectedQuote.ghl_contact_id ? (
-                        <a 
+                        <a
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            window.open(`https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`, '_blank', 'noopener,noreferrer');
+                            window.open(
+                              `https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
                           }}
                           className="text-primary hover:underline cursor-pointer"
                         >
@@ -467,15 +475,19 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                       )}
                     </div>
                   )}
-                   
+
                   {selectedQuote.customer_address && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <a 
+                      <a
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`, '_blank', 'noopener,noreferrer');
+                          window.open(
+                            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
                         }}
                         className="text-primary hover:underline line-clamp-1 cursor-pointer"
                       >
@@ -483,23 +495,20 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                       </a>
                     </div>
                   )}
-                  
+
                   {selectedQuote.customer_phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={`tel:${selectedQuote.customer_phone}`}
-                        className="text-primary hover:underline"
-                      >
+                      <a href={`tel:${selectedQuote.customer_phone}`} className="text-primary hover:underline">
                         {selectedQuote.customer_phone}
                       </a>
                     </div>
                   )}
-                  
+
                   {selectedQuote.customer_email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a 
+                      <a
                         href={`mailto:${selectedQuote.customer_email}`}
                         className="text-primary hover:underline line-clamp-1"
                       >
@@ -516,31 +525,33 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
                   )}
                 </div>
 
-                {selectedQuote.jobs_selected && Array.isArray(selectedQuote.jobs_selected) && selectedQuote.jobs_selected.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Selected Services ({selectedQuote.jobs_selected.length})</h4>
-                    <div className="grid gap-2">
-                      {selectedQuote.jobs_selected.map((service: any, index: number) => (
-                        <div key={index} className="bg-muted/50 p-3 rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-medium">{service.service_name || service.name || 'Service'}</div>
-                              {service.service_description && (
-                                <div className="text-sm text-muted-foreground">{service.service_description}</div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              {service.price && <div className="font-medium">${service.price}</div>}
+                {selectedQuote.jobs_selected &&
+                  Array.isArray(selectedQuote.jobs_selected) &&
+                  selectedQuote.jobs_selected.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Selected Services ({selectedQuote.jobs_selected.length})</h4>
+                      <div className="grid gap-2">
+                        {selectedQuote.jobs_selected.map((service: any, index: number) => (
+                          <div key={index} className="bg-muted/50 p-3 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium">{service.title || service.name || "Service"}</div>
+                                {service.service_description && (
+                                  <div className="text-sm text-muted-foreground">{service.service_description}</div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                {service.price && <div className="font-medium">${service.price}</div>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </CardContent>
             </Card>
-           )}
+          )}
         </DialogContent>
       </Dialog>
     </div>
