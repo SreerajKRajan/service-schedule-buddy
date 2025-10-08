@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarDays, Grid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Grid, List, ChevronLeft, ChevronRight, Users, MapPin, Phone, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JobCard } from "./JobCard";
 import { Calendar as DatePicker } from "@/components/ui/calendar";
@@ -425,30 +425,99 @@ export function JobCalendar({ jobs, onRefresh }: JobCalendarProps) {
            )}
            {selectedQuote && (
             <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Customer Name</p>
-                <p className="text-sm text-muted-foreground">{selectedQuote.customer_name}</p>
+              <div className="space-y-2 text-sm">
+                {selectedQuote.customer_name && (
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    {selectedQuote.ghl_contact_id ? (
+                      <a 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open(`https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="text-primary hover:underline cursor-pointer"
+                      >
+                        {selectedQuote.customer_name}
+                      </a>
+                    ) : (
+                      <span>{selectedQuote.customer_name}</span>
+                    )}
+                  </div>
+                )}
+                
+                {selectedQuote.customer_address && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <a 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`, '_blank', 'noopener,noreferrer');
+                      }}
+                      className="text-primary hover:underline line-clamp-1 cursor-pointer"
+                    >
+                      {selectedQuote.customer_address}
+                    </a>
+                  </div>
+                )}
+                
+                {selectedQuote.customer_phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a 
+                      href={`tel:${selectedQuote.customer_phone}`}
+                      className="text-primary hover:underline"
+                    >
+                      {selectedQuote.customer_phone}
+                    </a>
+                  </div>
+                )}
+                
+                {selectedQuote.customer_email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a 
+                      href={`mailto:${selectedQuote.customer_email}`}
+                      className="text-primary hover:underline line-clamp-1"
+                    >
+                      {selectedQuote.customer_email}
+                    </a>
+                  </div>
+                )}
+
+                {selectedQuote.scheduled_date && (
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    <span>{new Date(selectedQuote.scheduled_date).toLocaleString()}</span>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-sm font-medium">Address</p>
-                <p className="text-sm text-muted-foreground">{selectedQuote.customer_address}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Phone</p>
-                <p className="text-sm text-muted-foreground">{selectedQuote.customer_phone}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">{selectedQuote.customer_email}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Scheduled Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedQuote.scheduled_date ? new Date(selectedQuote.scheduled_date).toLocaleString() : 'Not scheduled'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Status</p>
+
+              {selectedQuote.jobs_selected && (
+                <div>
+                  <h4 className="font-medium mb-2">Selected Services ({Array.isArray(selectedQuote.jobs_selected) ? selectedQuote.jobs_selected.length : 0})</h4>
+                  <div className="grid gap-2">
+                    {Array.isArray(selectedQuote.jobs_selected) && selectedQuote.jobs_selected.map((service: any, index: number) => (
+                      <div key={index} className="bg-muted/50 p-3 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">{service.name || service.service_name}</div>
+                            {service.description && (
+                              <div className="text-sm text-muted-foreground">{service.description}</div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {service.price && <div className="font-medium">${service.price}</div>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
                 <Badge>{selectedQuote.status}</Badge>
               </div>
             </div>

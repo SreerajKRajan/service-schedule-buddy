@@ -52,6 +52,22 @@ interface Job {
   quoted_by?: string;
 }
 
+interface AcceptedQuote {
+  id: string;
+  customer_name: string;
+  customer_address: string;
+  customer_phone: string;
+  customer_email: string;
+  scheduled_date: string;
+  jobs_selected: any;
+  status: string;
+  first_time: boolean;
+  quoted_by?: string;
+  ghl_contact_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface JobBoardProps {
   customerEmail?: string | null;
   userRole?: string | null;
@@ -74,11 +90,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [viewerUserId, setViewerUserId] = useState<string | null>(null);
   const [viewerUserName, setViewerUserName] = useState<string | null>(null);
+  const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
+  const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
 
   useEffect(() => {
     fetchJobs();
     fetchUsers();
     fetchJobAssignments();
+    fetchAcceptedQuotes();
     
     // Auto-apply assignee filter if customerEmail is provided and user doesn't have full access
     if (customerEmail && !hasFullAccess) {
@@ -118,16 +137,37 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       )
       .subscribe();
 
+    const quotesChannel = supabase
+      .channel('quotes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accepted_quotes'
+        },
+        (payload) => {
+          console.log('Quote change detected:', payload);
+          fetchAcceptedQuotes();
+        }
+      )
+      .subscribe();
+
     // Cleanup subscriptions on unmount
     return () => {
       supabase.removeChannel(jobsChannel);
       supabase.removeChannel(assignmentsChannel);
+      supabase.removeChannel(quotesChannel);
     };
   }, [customerEmail]);
 
   useEffect(() => {
-    filterJobs();
-  }, [jobs, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
+    if (statusFilter === "accepted_quotes") {
+      filterAcceptedQuotes();
+    } else {
+      filterJobs();
+    }
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
 
   useEffect(() => {
     if (assigneeFilter !== 'all') {
@@ -185,6 +225,20 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
   };
 
+  const fetchAcceptedQuotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('accepted_quotes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAcceptedQuotes(data || []);
+    } catch (error) {
+      console.error('Error fetching accepted quotes:', error);
+    }
+  };
+
   const fetchAssignedJobIds = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -215,7 +269,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       );
     }
 
-    if (statusFilter !== "all") {
+    if (statusFilter !== "all" && statusFilter !== "accepted_quotes") {
       filtered = filtered.filter(job => job.status === statusFilter);
     }
 
@@ -257,6 +311,44 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
 
     setFilteredJobs(filtered);
+  };
+
+  const filterAcceptedQuotes = () => {
+    let filtered = acceptedQuotes;
+
+    if (searchTerm) {
+      filtered = filtered.filter(quote =>
+        quote.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customer_email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (dateRange?.from || dateRange?.to) {
+      filtered = filtered.filter(quote => {
+        if (!quote.scheduled_date) return false;
+        
+        const scheduledDate = new Date(quote.scheduled_date);
+        const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+
+        if (dateRange.from && dateRange.to) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly >= fromDate && scheduledDateOnly <= toDate;
+        } else if (dateRange.from) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          return scheduledDateOnly >= fromDate;
+        } else if (dateRange.to) {
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly <= toDate;
+        }
+        
+        return true;
+      });
+    }
+
+    setFilteredQuotes(filtered);
   };
 
   const jobTypes = [...new Set(jobs.map(job => job.job_type).filter(type => type && type.trim() !== ""))];
@@ -309,6 +401,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchJobs();
     fetchUsers();
     fetchJobAssignments();
+    fetchAcceptedQuotes();
   };
 
   const groupJobsByLocation = (jobs: Job[]) => {
@@ -402,6 +495,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="service_due">Service Due</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
@@ -519,11 +613,72 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         <>
           <div className="flex justify-between items-center">
             <p className="text-muted-foreground">
-              {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
+              {statusFilter === "accepted_quotes" 
+                ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? 's' : ''} found`
+                : `${filteredJobs.length} job${filteredJobs.length !== 1 ? 's' : ''} found`
+              }
             </p>
           </div>
 
-          {groupByLocation ? (
+          {statusFilter === "accepted_quotes" ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredQuotes.map((quote) => (
+                  <Card key={quote.id}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Quote - {quote.customer_name}</CardTitle>
+                      <CardDescription>
+                        {quote.scheduled_date ? new Date(quote.scheduled_date).toLocaleString() : 'Not scheduled'}
+                      </CardDescription>
+                      <div className="flex gap-2">
+                        <Badge>{quote.status}</Badge>
+                        {quote.first_time && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            First Time
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      {quote.customer_address && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <a 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.customer_address)}`, '_blank', 'noopener,noreferrer');
+                            }}
+                            className="text-primary hover:underline line-clamp-1 cursor-pointer"
+                          >
+                            {quote.customer_address}
+                          </a>
+                        </div>
+                      )}
+                      {quote.customer_phone && (
+                        <div className="flex items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <a href={`tel:${quote.customer_phone}`} className="text-primary hover:underline">
+                            {quote.customer_phone}
+                          </a>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {filteredQuotes.length === 0 && (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <div className="text-muted-foreground text-center">
+                      <h3 className="text-lg font-semibold mb-2">No quotes found</h3>
+                      <p>Try adjusting your search criteria.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : groupByLocation ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {Object.entries(groupJobsByLocation(filteredJobs)).map(([location, jobs]) => (
                 <LocationCard
@@ -542,7 +697,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
             </div>
           )}
 
-          {filteredJobs.length === 0 && (
+          {statusFilter !== "accepted_quotes" && filteredJobs.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <div className="text-muted-foreground text-center">
