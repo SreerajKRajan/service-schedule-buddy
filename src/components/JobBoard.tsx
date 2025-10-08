@@ -282,13 +282,13 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
 
     if (assigneeFilter !== "all") {
-      const assignedJobIds = (assigneeJobIds ?? jobAssignments
+      // Always derive assigned job IDs from the live job_assignments snapshot
+      const assignedJobIds = jobAssignments
         .filter((assignment) => assignment.user_id === assigneeFilter)
-        .map((assignment) => assignment.job_id));
+        .map((assignment) => assignment.job_id);
 
       console.log('[JobBoard] Filtering by assignee:', assigneeFilter);
-      console.log('[JobBoard] assigneeJobIds:', assigneeJobIds);
-      console.log('[JobBoard] Assigned job IDs:', assignedJobIds);
+      console.log('[JobBoard] Assigned job IDs (from snapshot):', assignedJobIds);
       console.log('[JobBoard] Jobs before filter:', filtered.length);
 
       // Filter ONLY by actual assignments from job_assignments
