@@ -94,8 +94,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // If a customerEmail is present via query param, don't fetch all jobs.
-    // We'll auto-apply the assignee filter and let that effect fetch.
+    // Only fetch all jobs if no customerEmail filter is active
     if (!customerEmail) {
       fetchJobs();
     }
@@ -104,7 +103,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchJobAssignments();
     fetchAcceptedQuotes();
     
-    // Auto-apply assignee filter whenever a customerEmail is provided
+    // Auto-apply assignee filter when customerEmail is provided
     if (customerEmail) {
       autoSetAssigneeFilter();
     }
@@ -210,18 +209,21 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       // Update overdue jobs to service_due status first
       await supabase.rpc('update_overdue_jobs');
 
-      // Respect active assignee filter when refreshing or on realtime updates
+      // If customerEmail exists or assignee filter is active, use RPC
       if (assigneeFilter !== 'all') {
         await fetchJobsByAssignee(assigneeFilter);
         return;
       }
-      
+
+      // Only fetch all jobs when no filter is active
+      console.log('[JobBoard] Fetching all jobs');
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      console.log('[JobBoard] Fetched all jobs:', (data || []).length);
       setJobs(data || []);
     } catch (error) {
       console.error('Error fetching jobs:', error);
