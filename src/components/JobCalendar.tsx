@@ -192,8 +192,13 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         });
       });
 
-      // Add accepted quotes if filter is "all" and not hidden
-      if (statusFilter === "all" && !hideAcceptedQuotes) {
+      // Add accepted quotes only if parent filter is not set to a specific job status
+      // and calendar's own filter allows it
+      const parentIsJobStatus = parentStatusFilter && 
+        parentStatusFilter !== "all" && 
+        parentStatusFilter !== "accepted_quotes";
+      
+      if (statusFilter === "all" && !hideAcceptedQuotes && !parentIsJobStatus) {
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
