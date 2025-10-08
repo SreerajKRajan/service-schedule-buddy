@@ -94,9 +94,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // Don't fetch all jobs initially if we're filtering by customer
-    // Let the assignee filter useEffect handle it
-    if (!(customerEmail && !hasFullAccess)) {
+    // If a customerEmail is present via query param, don't fetch all jobs.
+    // We'll auto-apply the assignee filter and let that effect fetch.
+    if (!customerEmail) {
       fetchJobs();
     }
     
@@ -104,8 +104,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchJobAssignments();
     fetchAcceptedQuotes();
     
-    // Auto-apply assignee filter if customerEmail is provided and user doesn't have full access
-    if (customerEmail && !hasFullAccess) {
+    // Auto-apply assignee filter whenever a customerEmail is provided
+    if (customerEmail) {
       autoSetAssigneeFilter();
     }
 
@@ -175,45 +175,44 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
 
   useEffect(() => {
-    // Don't fetch if user was not found
-    if (userNotFound) {
-      return;
-    }
+    if (userNotFound) return;
 
-    // When assignee changes, fetch jobs directly from backend
-    const fetchJobsByAssignee = async () => {
-      if (assigneeFilter !== 'all') {
-        console.log('[JobBoard] Fetching jobs via RPC for assignee:', assigneeFilter);
-        const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
-          p_user_id: assigneeFilter
-        });
-        
-        if (error) {
-          console.error('[JobBoard] Error fetching jobs by assignee:', error);
-          setJobs([]);
-          return;
-        }
-        
-        console.log('[JobBoard] RPC returned jobs:', (data || []).length);
-        setJobs(data || []);
-      } else {
-        // Fetch all jobs when no assignee filter
-        fetchJobs();
-      }
-    };
-    
-    fetchJobsByAssignee();
+    if (assigneeFilter !== 'all') {
+      fetchJobsByAssignee(assigneeFilter);
+    } else {
+      fetchJobs();
+    }
   }, [assigneeFilter, userNotFound]);
 
   const fetchJobsByAssignee = async (userId: string) => {
     try {
-      console.log('[JobBoard] Fetching jobs via RPC for assignee (refresh):', userId);
-      const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
-        p_user_id: userId
-      });
+      setLoading(true);
+      console.log('[JobBoard] Fetching jobs via direct query for assignee:', userId);
 
-      if (error) throw error;
-      setJobs(data || []);
+      // Get job IDs assigned to the user
+      const { data: assignments, error: assignError } = await supabase
+        .from('job_assignments')
+        .select('job_id')
+        .eq('user_id', userId);
+
+      if (assignError) throw assignError;
+
+      const jobIds = (assignments || []).map((a: { job_id: string }) => a.job_id);
+      if (jobIds.length === 0) {
+        setJobs([]);
+        return;
+      }
+
+      // Fetch jobs for those IDs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .in('id', jobIds)
+        .order('created_at', { ascending: false });
+
+      if (jobsError) throw jobsError;
+
+      setJobs(jobsData || []);
     } catch (error) {
       console.error('Error fetching jobs by assignee:', error);
       setJobs([]);
