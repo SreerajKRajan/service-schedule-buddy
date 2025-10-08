@@ -187,32 +187,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const fetchJobsByAssignee = async (userId: string) => {
     try {
       setLoading(true);
-      console.log('[JobBoard] Fetching jobs via direct query for assignee:', userId);
+      console.log('[JobBoard] Fetching jobs via RPC for assignee:', userId);
 
-      // Get job IDs assigned to the user
-      const { data: assignments, error: assignError } = await supabase
-        .from('job_assignments')
-        .select('job_id')
-        .eq('user_id', userId);
+      const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
+        p_user_id: userId
+      });
 
-      if (assignError) throw assignError;
+      if (error) throw error;
 
-      const jobIds = (assignments || []).map((a: { job_id: string }) => a.job_id);
-      if (jobIds.length === 0) {
-        setJobs([]);
-        return;
-      }
-
-      // Fetch jobs for those IDs
-      const { data: jobsData, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*')
-        .in('id', jobIds)
-        .order('created_at', { ascending: false });
-
-      if (jobsError) throw jobsError;
-
-      setJobs(jobsData || []);
+      console.log('[JobBoard] RPC returned jobs:', (data || []).length);
+      setJobs(data || []);
     } catch (error) {
       console.error('Error fetching jobs by assignee:', error);
       setJobs([]);
