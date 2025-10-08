@@ -378,6 +378,33 @@ export type Database = {
         }
         Returns: string
       }
+      get_jobs_by_assignee: {
+        Args: { p_user_id: string }
+        Returns: {
+          completed_date: string | null
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          description: string | null
+          estimated_duration: number | null
+          first_time: boolean | null
+          ghl_contact_id: string | null
+          id: string
+          is_recurring: boolean | null
+          job_type: string
+          notes: string | null
+          price: number | null
+          priority: number | null
+          quoted_by: string | null
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          title: string
+          updated_at: string
+          webhook_sent_at: string | null
+        }[]
+      }
       update_overdue_jobs: {
         Args: Record<PropertyKey, never>
         Returns: number

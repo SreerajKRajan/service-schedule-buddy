@@ -170,13 +170,29 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange, jobAssignments, assigneeJobIds]);
 
   useEffect(() => {
-    // Clear date range on assignee change to avoid hidden intersections
-    setDateRange(undefined);
-    if (assigneeFilter !== 'all') {
-      fetchAssignedJobIds(assigneeFilter);
-    } else {
-      setAssigneeJobIds(null);
-    }
+    // When assignee changes, fetch jobs directly from backend
+    const fetchJobsByAssignee = async () => {
+      if (assigneeFilter !== 'all') {
+        console.log('[JobBoard] Fetching jobs via RPC for assignee:', assigneeFilter);
+        const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
+          p_user_id: assigneeFilter
+        });
+        
+        if (error) {
+          console.error('[JobBoard] Error fetching jobs by assignee:', error);
+          setAssigneeJobIds([]);
+          return;
+        }
+        
+        const jobIds = (data || []).map((job: any) => job.id);
+        console.log('[JobBoard] RPC returned job IDs:', jobIds.length);
+        setAssigneeJobIds(jobIds);
+      } else {
+        setAssigneeJobIds(null);
+      }
+    };
+    
+    fetchJobsByAssignee();
   }, [assigneeFilter]);
 
   const fetchJobs = async () => {
@@ -242,23 +258,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     }
   };
 
-  const fetchAssignedJobIds = async (userId: string) => {
-    try {
-      console.log('[JobBoard] Fetching job IDs for user:', userId);
-      const { data, error } = await supabase
-        .from('job_assignments')
-        .select('job_id')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      const jobIds = (data || []).map((r) => r.job_id);
-      console.log('[JobBoard] Found job IDs:', jobIds.length, jobIds);
-      setAssigneeJobIds(jobIds);
-    } catch (error) {
-      console.error('Error fetching assignee job ids:', error);
-      setAssigneeJobIds([]);
-    }
-  };
   const filterJobs = () => {
     let filtered = jobs;
 
@@ -283,25 +282,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       filtered = filtered.filter(job => job.job_type === typeFilter);
     }
 
-    if (assigneeFilter !== "all") {
-      // Combine IDs from both the latest direct query and the live snapshot
-      const fromSnapshot = jobAssignments
-        .filter((assignment) => assignment.user_id === assigneeFilter)
-        .map((assignment) => assignment.job_id);
-      const fromQuery = assigneeJobIds ?? [];
-      const combinedIds = Array.from(new Set([...fromQuery, ...fromSnapshot]));
-
-      console.log('[JobBoard] Filtering by assignee:', assigneeFilter);
-      console.log('[JobBoard] Assigned job IDs (from query):', fromQuery.length);
-      console.log('[JobBoard] Assigned job IDs (from snapshot):', fromSnapshot.length);
-      console.log('[JobBoard] Combined assigned IDs:', combinedIds.length);
-      console.log('[JobBoard] Jobs before filter:', filtered.length);
-
-      // Filter ONLY by actual assignments from job_assignments
-      const assignedSet = new Set(combinedIds);
+    if (assigneeFilter !== "all" && assigneeJobIds !== null) {
+      // Use only RPC result from backend (no snapshot merging)
+      const assignedSet = new Set(assigneeJobIds);
+      console.log('[JobBoard] Filtering by assignee using RPC result:', assigneeJobIds.length, 'jobs');
       filtered = filtered.filter((job) => assignedSet.has(job.id));
-      
-      console.log('[JobBoard] Jobs after filter:', filtered.length);
+      console.log('[JobBoard] Jobs after assignee filter:', filtered.length);
     }
 
     if (dateRange?.from || dateRange?.to) {
