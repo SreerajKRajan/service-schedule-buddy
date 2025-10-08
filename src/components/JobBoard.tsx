@@ -672,7 +672,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           quotes={filteredQuotes}
           statusFilter={statusFilter}
           onRefresh={refreshData}
-          hideAcceptedQuotes={statusFilter !== 'all' && statusFilter !== 'accepted_quotes'}
+          hideAcceptedQuotes={assigneeFilter !== 'all' && statusFilter !== 'accepted_quotes'}
         />
       ) : (
         <>
