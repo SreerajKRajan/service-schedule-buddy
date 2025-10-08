@@ -210,8 +210,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
       if (error) throw error;
 
-      console.log('[JobBoard] RPC returned jobs:', (data || []).length);
-      setJobs(data || []);
+      // Deduplicate jobs by id (extra safety measure)
+      const uniqueJobs = data ? Array.from(new Map(data.map(job => [job.id, job])).values()) : [];
+      
+      console.log('[JobBoard] RPC returned jobs:', uniqueJobs.length);
+      setJobs(uniqueJobs);
     } catch (error) {
       console.error('Error fetching jobs by assignee:', error);
       setJobs([]);
