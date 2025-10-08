@@ -199,18 +199,39 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchJobsByAssignee();
   }, [assigneeFilter]);
 
+  const fetchJobsByAssignee = async (userId: string) => {
+    try {
+      console.log('[JobBoard] Fetching jobs via RPC for assignee (refresh):', userId);
+      const { data, error } = await supabase.rpc('get_jobs_by_assignee', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+      setJobs(data || []);
+    } catch (error) {
+      console.error('Error fetching jobs by assignee:', error);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchJobs = async () => {
     try {
       // Update overdue jobs to service_due status first
       await supabase.rpc('update_overdue_jobs');
+
+      // Respect active assignee filter when refreshing or on realtime updates
+      if (assigneeFilter !== 'all') {
+        await fetchJobsByAssignee(assigneeFilter);
+        return;
+      }
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
       
-      const { data, error } = await query;
-
       if (error) throw error;
       setJobs(data || []);
     } catch (error) {
@@ -219,7 +240,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       setLoading(false);
     }
   };
-
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
