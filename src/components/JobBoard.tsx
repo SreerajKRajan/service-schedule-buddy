@@ -179,6 +179,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     };
   }, [customerEmail, hasFullAccess]);
 
+  // Sync assignee filter with URL parameter when it changes (prevents double fetch)
+  useEffect(() => {
+    const urlAssignee = assigneeFromUrl || "all";
+    if (urlAssignee !== assigneeFilter) {
+      setAssigneeFilter(urlAssignee);
+    }
+  }, [assigneeFromUrl]);
+
   // Fetch jobs once the assignee filter is known (including initial URL value)
   useEffect(() => {
     fetchJobs(assigneeFilter);
@@ -200,15 +208,20 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       setStatusFilter("all");
     }
 
-    // Update URL query params when assignee filter changes
-    const newParams = new URLSearchParams(searchParams);
-    if (assigneeFilter !== "all") {
-      newParams.set("assignee", assigneeFilter);
-    } else {
-      newParams.delete("assignee");
+    // Update URL query params when assignee filter changes (only if different)
+    const currentAssigneeParam = searchParams.get("assignee");
+    const shouldHaveParam = assigneeFilter !== "all" ? assigneeFilter : null;
+    
+    if (currentAssigneeParam !== shouldHaveParam) {
+      const newParams = new URLSearchParams(searchParams);
+      if (assigneeFilter !== "all") {
+        newParams.set("assignee", assigneeFilter);
+      } else {
+        newParams.delete("assignee");
+      }
+      setSearchParams(newParams, { replace: true });
     }
-    setSearchParams(newParams, { replace: true });
-  }, [assigneeFilter, userNotFound, searchParams, setSearchParams]);
+  }, [assigneeFilter, userNotFound]);
 
   const fetchJobs = async (currentAssigneeFilter: string = assigneeFilter) => {
     try {
