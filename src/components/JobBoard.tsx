@@ -29,7 +29,6 @@ interface JobAssignment {
   job_id: string;
 }
 
-
 interface Job {
   id: string;
   title: string;
@@ -78,7 +77,7 @@ interface JobBoardProps {
 export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobBoardProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const assigneeFromUrl = searchParams.get("assignee");
-  
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
@@ -102,59 +101,63 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
-    
+
     // Auto-apply assignee filter when customerEmail is provided (only if no full access)
     if (customerEmail && !hasFullAccess) {
       autoSetAssigneeFilter();
     }
+  }, [customerEmail, hasFullAccess]);
 
+  // Separate effect for realtime subscriptions that doesn't depend on assigneeFilter
+  useEffect(() => {
     // Set up realtime subscriptions for jobs, job_assignments
     const jobsChannel = supabase
-      .channel('jobs-changes')
+      .channel("jobs-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'jobs'
+          event: "*",
+          schema: "public",
+          table: "jobs",
         },
         (payload) => {
-          console.log('Job change detected:', payload);
-          fetchJobs(assigneeFilter);
-        }
+          console.log("Job change detected:", payload);
+          // Don't call fetchJobs here to avoid duplicate calls
+          // Let the assigneeFilter effect handle it
+        },
       )
       .subscribe();
 
     const assignmentsChannel = supabase
-      .channel('assignments-changes')
+      .channel("assignments-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'job_assignments'
+          event: "*",
+          schema: "public",
+          table: "job_assignments",
         },
         (payload) => {
-          console.log('Assignment change detected:', payload);
+          console.log("Assignment change detected:", payload);
           fetchJobAssignments();
-          fetchJobs(assigneeFilter);
-        }
+          // Don't call fetchJobs here to avoid duplicate calls
+        },
       )
       .subscribe();
 
     const quotesChannel = supabase
-      .channel('quotes-changes')
+      .channel("quotes-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'accepted_quotes'
+          event: "*",
+          schema: "public",
+          table: "accepted_quotes",
         },
         (payload) => {
-          console.log('Quote change detected:', payload);
+          console.log("Quote change detected:", payload);
           fetchAcceptedQuotes();
-        }
+        },
       )
       .subscribe();
 
@@ -164,7 +167,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [customerEmail, hasFullAccess, assigneeFilter]);
+  }, []);
+
+  // Fetch jobs once the assignee filter is known (including initial URL value)
+  // This effect will run whenever assigneeFilter changes
+  useEffect(() => {
+    // Only fetch if we're not waiting for user lookup
+    if (!userNotFound || assigneeFilter !== "all") {
+      fetchJobs(assigneeFilter);
+    }
+  }, [assigneeFilter]);
 
   // Fetch jobs once the assignee filter is known (including initial URL value)
   useEffect(() => {
@@ -183,16 +195,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     if (userNotFound) return;
 
     // If assignee filter is applied, switch away from accepted_quotes status
-    if (assigneeFilter !== 'all' && statusFilter === 'accepted_quotes') {
-      setStatusFilter('all');
+    if (assigneeFilter !== "all" && statusFilter === "accepted_quotes") {
+      setStatusFilter("all");
     }
 
     // Update URL query params when assignee filter changes
     const newParams = new URLSearchParams(searchParams);
-    if (assigneeFilter !== 'all') {
-      newParams.set('assignee', assigneeFilter);
+    if (assigneeFilter !== "all") {
+      newParams.set("assignee", assigneeFilter);
     } else {
-      newParams.delete('assignee');
+      newParams.delete("assignee");
     }
     setSearchParams(newParams, { replace: true });
   }, [assigneeFilter, userNotFound, searchParams, setSearchParams]);
@@ -201,10 +213,13 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     try {
       setLoading(true);
       // Update overdue jobs to service_due status first
-      await supabase.rpc('update_overdue_jobs');
+      await supabase.rpc("update_overdue_jobs");
 
       // Fetch jobs, optionally filtered by assignee using the same /jobs API
-      console.log('[JobBoard] Fetching jobs', currentAssigneeFilter !== 'all' ? `for assignee ${currentAssigneeFilter}` : '(all)');
+      console.log(
+        "[JobBoard] Fetching jobs",
+        currentAssigneeFilter !== "all" ? `for assignee ${currentAssigneeFilter}` : "(all)",
+      );
 
       // Limit to a reasonable calendar window to avoid 206 partial content
       const now = new Date();
@@ -213,30 +228,30 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
       // If an assignee is selected, use an inner join to job_assignments and filter by user_id
       let query;
-      if (currentAssigneeFilter !== 'all') {
+      if (currentAssigneeFilter !== "all") {
         query = supabase
-          .from('jobs')
-          .select('*, job_assignments!inner(user_id)', { count: 'exact' })
-          .eq('job_assignments.user_id', currentAssigneeFilter)
-          .not('scheduled_date', 'is', null)
-          .gte('scheduled_date', windowStart.toISOString())
-          .lte('scheduled_date', windowEnd.toISOString())
-          .order('scheduled_date', { ascending: true })
+          .from("jobs")
+          .select("*, job_assignments!inner(user_id)", { count: "exact" })
+          .eq("job_assignments.user_id", currentAssigneeFilter)
+          .not("scheduled_date", "is", null)
+          .gte("scheduled_date", windowStart.toISOString())
+          .lte("scheduled_date", windowEnd.toISOString())
+          .order("scheduled_date", { ascending: true })
           .limit(10000);
       } else {
         query = supabase
-          .from('jobs')
-          .select('*', { count: 'exact' })
-          .not('scheduled_date', 'is', null)
-          .gte('scheduled_date', windowStart.toISOString())
-          .lte('scheduled_date', windowEnd.toISOString())
-          .order('scheduled_date', { ascending: true })
+          .from("jobs")
+          .select("*", { count: "exact" })
+          .not("scheduled_date", "is", null)
+          .gte("scheduled_date", windowStart.toISOString())
+          .lte("scheduled_date", windowEnd.toISOString())
+          .order("scheduled_date", { ascending: true })
           .limit(10000);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      console.log('[JobBoard] Fetched jobs:', (data || []).length);
+      console.log("[JobBoard] Fetched jobs:", (data || []).length);
       // Ensure unique jobs by id (in case of multiple assignments)
       const uniqueJobsMap = new Map<string, any>();
       (data || []).forEach((j: any) => {
@@ -245,9 +260,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       });
       const uniqueJobs = Array.from(uniqueJobsMap.values()) as unknown as Job[];
       setJobs(uniqueJobs);
-
     } catch (error) {
-      console.error('Error fetching jobs:', error);
+      console.error("Error fetching jobs:", error);
       setJobs([]);
     } finally {
       setLoading(false);
@@ -255,43 +269,38 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   };
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name')
-        .eq('active', true);
+      const { data, error } = await supabase.from("users").select("id, name").eq("active", true);
 
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     }
   };
 
   const fetchJobAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('job_assignments')
-        .select('user_id, job_id');
+      const { data, error } = await supabase.from("job_assignments").select("user_id, job_id");
 
       if (error) throw error;
       setJobAssignments(data || []);
     } catch (error) {
-      console.error('Error fetching job assignments:', error);
+      console.error("Error fetching job assignments:", error);
     }
   };
 
   const fetchAcceptedQuotes = async () => {
     try {
       const { data, error } = await supabase
-        .from('accepted_quotes')
-        .select('*')
-        .neq('status', 'converted')
-        .order('created_at', { ascending: false });
+        .from("accepted_quotes")
+        .select("*")
+        .neq("status", "converted")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setAcceptedQuotes(data || []);
     } catch (error) {
-      console.error('Error fetching accepted quotes:', error);
+      console.error("Error fetching accepted quotes:", error);
     }
   };
 
@@ -299,24 +308,25 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     let filtered = jobs;
 
     if (searchTerm) {
-      filtered = filtered.filter(job =>
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.job_type.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (job) =>
+          job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.job_type.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     if (statusFilter !== "all" && statusFilter !== "accepted_quotes") {
-      filtered = filtered.filter(job => job.status === statusFilter);
+      filtered = filtered.filter((job) => job.status === statusFilter);
     }
 
     if (typeFilter !== "all") {
-      filtered = filtered.filter(job => job.job_type === typeFilter);
+      filtered = filtered.filter((job) => job.job_type === typeFilter);
     }
 
     // Assignee filtering is now handled server-side via query params on /jobs
@@ -324,11 +334,15 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     // So we do not perform additional client-side filtering here to avoid mismatches.
 
     if (dateRange?.from || dateRange?.to) {
-      filtered = filtered.filter(job => {
+      filtered = filtered.filter((job) => {
         if (!job.scheduled_date) return false;
-        
+
         const scheduledDate = new Date(job.scheduled_date);
-        const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+        const scheduledDateOnly = new Date(
+          scheduledDate.getFullYear(),
+          scheduledDate.getMonth(),
+          scheduledDate.getDate(),
+        );
 
         if (dateRange.from && dateRange.to) {
           const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
@@ -341,7 +355,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
           return scheduledDateOnly <= toDate;
         }
-        
+
         return true;
       });
     }
@@ -353,20 +367,25 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     let filtered = acceptedQuotes;
 
     if (searchTerm) {
-      filtered = filtered.filter(quote =>
-        quote.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        quote.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        quote.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        quote.customer_email?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (quote) =>
+          quote.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     if (dateRange?.from || dateRange?.to) {
-      filtered = filtered.filter(quote => {
+      filtered = filtered.filter((quote) => {
         if (!quote.scheduled_date) return false;
-        
+
         const scheduledDate = new Date(quote.scheduled_date);
-        const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+        const scheduledDateOnly = new Date(
+          scheduledDate.getFullYear(),
+          scheduledDate.getMonth(),
+          scheduledDate.getDate(),
+        );
 
         if (dateRange.from && dateRange.to) {
           const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
@@ -379,7 +398,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
           return scheduledDateOnly <= toDate;
         }
-        
+
         return true;
       });
     }
@@ -387,7 +406,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     setFilteredQuotes(filtered);
   };
 
-  const jobTypes = [...new Set(jobs.map(job => job.job_type).filter(type => type && type.trim() !== ""))];
+  const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -400,45 +419,45 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   const autoSetAssigneeFilter = async () => {
     if (!customerEmail) return;
-    
+
     try {
-      console.log('[JobBoard] Auto-setting assignee filter for email:', customerEmail);
+      console.log("[JobBoard] Auto-setting assignee filter for email:", customerEmail);
       // Try to find user by email (case-insensitive)
       const { data: userByEmail } = await supabase
-        .from('users')
-        .select('id, name')
-        .ilike('email', customerEmail)
+        .from("users")
+        .select("id, name")
+        .ilike("email", customerEmail)
         .maybeSingle();
-      
+
       if (userByEmail) {
-        console.log('[JobBoard] Found user by email:', userByEmail);
+        console.log("[JobBoard] Found user by email:", userByEmail);
         setAssigneeFilter(userByEmail.id);
         setViewerUserId(userByEmail.id);
         setViewerUserName(userByEmail.name || null);
         setUserNotFound(false);
         return;
       }
-      
+
       // Try to find user by name as fallback
       const { data: userByName } = await supabase
-        .from('users')
-        .select('id, name')
-        .eq('name', customerEmail)
+        .from("users")
+        .select("id, name")
+        .eq("name", customerEmail)
         .maybeSingle();
-      
+
       if (userByName) {
-        console.log('[JobBoard] Found user by name:', userByName);
+        console.log("[JobBoard] Found user by name:", userByName);
         setAssigneeFilter(userByName.id);
         setViewerUserId(userByName.id);
         setViewerUserName(userByName.name || null);
         setUserNotFound(false);
       } else {
-        console.log('[JobBoard] No user found for:', customerEmail);
+        console.log("[JobBoard] No user found for:", customerEmail);
         setUserNotFound(true);
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error setting assignee filter:', error);
+      console.error("Error setting assignee filter:", error);
       setUserNotFound(true);
       setLoading(false);
     }
@@ -452,14 +471,17 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   };
 
   const groupJobsByLocation = (jobs: Job[]) => {
-    const grouped = jobs.reduce((acc, job) => {
-      const location = job.customer_address || 'No Address';
-      if (!acc[location]) {
-        acc[location] = [];
-      }
-      acc[location].push(job);
-      return acc;
-    }, {} as Record<string, Job[]>);
+    const grouped = jobs.reduce(
+      (acc, job) => {
+        const location = job.customer_address || "No Address";
+        if (!acc[location]) {
+          acc[location] = [];
+        }
+        acc[location].push(job);
+        return acc;
+      },
+      {} as Record<string, Job[]>,
+    );
 
     return grouped;
   };
@@ -470,9 +492,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle className="text-destructive">User Not Found</CardTitle>
-            <CardDescription>
-              The user ID provided in the URL does not match any user in the system.
-            </CardDescription>
+            <CardDescription>The user ID provided in the URL does not match any user in the system.</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -510,16 +530,10 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Jobs</h2>
-          <p className="text-muted-foreground">
-            Manage your service jobs and assignments
-          </p>
+          <p className="text-muted-foreground">Manage your service jobs and assignments</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("list")}
-          >
+          <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")}>
             <Grid className="h-4 w-4 mr-2" />
             List
           </Button>
@@ -554,7 +568,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full">
@@ -562,7 +576,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {!customerEmail && assigneeFilter === 'all' && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+                  {!customerEmail && assigneeFilter === "all" && (
+                    <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
+                  )}
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="service_due">Service Due</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
@@ -570,32 +586,42 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Types</SelectItem>
-                  {jobTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {jobTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                 <SelectTrigger className="w-full" disabled={!!customerEmail && !hasFullAccess}>
-                  <SelectValue placeholder={
-                    customerEmail && !hasFullAccess 
-                      ? (viewerUserName ? `Assignee: ${viewerUserName}` : 'Assignee') 
-                      : 'Filter by assignee'
-                  } />
+                  <SelectValue
+                    placeholder={
+                      customerEmail && !hasFullAccess
+                        ? viewerUserName
+                          ? `Assignee: ${viewerUserName}`
+                          : "Assignee"
+                        : "Filter by assignee"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   {(hasFullAccess || !customerEmail) && <SelectItem value="all">All Assignees</SelectItem>}
-                  {(customerEmail && !hasFullAccess ? users.filter(u => u.id === viewerUserId) : users).map(user => (
-                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                  ))}
+                  {(customerEmail && !hasFullAccess ? users.filter((u) => u.id === viewerUserId) : users).map(
+                    (user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
 
@@ -605,15 +631,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                     variant={"outline"}
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !dateRange?.from && !dateRange?.to && "text-muted-foreground"
+                      !dateRange?.from && !dateRange?.to && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
                       dateRange.to ? (
                         <>
-                          {format(dateRange.from, "LLL dd, y")} -{" "}
-                          {format(dateRange.to, "LLL dd, y")}
+                          {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
                         </>
                       ) : (
                         format(dateRange.from, "LLL dd, y")
@@ -622,8 +647,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                       <span>Date range</span>
                     )}
                     {(dateRange?.from || dateRange?.to) && (
-                      <X 
-                        className="ml-auto h-4 w-4 opacity-50 hover:opacity-100" 
+                      <X
+                        className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           setDateRange(undefined);
@@ -646,25 +671,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
               </Popover>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <div className="flex items-center space-x-2">
-              <Switch 
-                id="group-by-location" 
-                checked={groupByLocation}
-                onCheckedChange={setGroupByLocation}
-              />
+              <Switch id="group-by-location" checked={groupByLocation} onCheckedChange={setGroupByLocation} />
               <Label htmlFor="group-by-location" className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4" />
                 Group by Location
               </Label>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearFilters}
-              className="text-muted-foreground"
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters} className="text-muted-foreground">
               Clear Filters
             </Button>
           </div>
@@ -672,24 +688,22 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       </Card>
 
       {viewMode === "calendar" ? (
-        <JobCalendar 
+        <JobCalendar
           jobs={filteredJobs}
           quotes={filteredQuotes}
           statusFilter={statusFilter}
           onRefresh={refreshData}
           hideAcceptedQuotes={
-            statusFilter !== 'accepted_quotes' && 
-            !(statusFilter === 'all' && assigneeFilter === 'all' && hasFullAccess)
+            statusFilter !== "accepted_quotes" && !(statusFilter === "all" && assigneeFilter === "all" && hasFullAccess)
           }
         />
       ) : (
         <>
           <div className="flex justify-between items-center">
             <p className="text-muted-foreground">
-              {statusFilter === "accepted_quotes" 
-                ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? 's' : ''} found`
-                : `${filteredJobs.length} job${filteredJobs.length !== 1 ? 's' : ''} found`
-              }
+              {statusFilter === "accepted_quotes"
+                ? `${filteredQuotes.length} quote${filteredQuotes.length !== 1 ? "s" : ""} found`
+                : `${filteredJobs.length} job${filteredJobs.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
 
@@ -701,7 +715,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                     <CardHeader>
                       <CardTitle className="text-lg">Quote - {quote.customer_name}</CardTitle>
                       <CardDescription>
-                        {quote.scheduled_date ? new Date(quote.scheduled_date).toLocaleString() : 'Not scheduled'}
+                        {quote.scheduled_date ? new Date(quote.scheduled_date).toLocaleString() : "Not scheduled"}
                       </CardDescription>
                       <div className="flex gap-2">
                         <Badge>{quote.status}</Badge>
@@ -716,11 +730,15 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                       {quote.customer_address && (
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <a 
+                          <a
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.customer_address)}`, '_blank', 'noopener,noreferrer');
+                              window.open(
+                                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(quote.customer_address)}`,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
                             }}
                             className="text-primary hover:underline line-clamp-1 cursor-pointer"
                           >
@@ -754,12 +772,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           ) : groupByLocation ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {Object.entries(groupJobsByLocation(filteredJobs)).map(([location, jobs]) => (
-                <LocationCard
-                  key={location}
-                  location={location}
-                  jobs={jobs}
-                  onUpdate={refreshData}
-                />
+                <LocationCard key={location} location={location} jobs={jobs} onUpdate={refreshData} />
               ))}
             </div>
           ) : (
