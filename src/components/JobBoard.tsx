@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,6 +95,17 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
   const [userNotFound, setUserNotFound] = useState(false);
+  
+  // Defer job fetching until the correct assignee is resolved
+  const [readyToFetchJobs, setReadyToFetchJobs] = useState(
+    !!assigneeFromUrl || (!!hasFullAccess && !customerEmail)
+  );
+  
+  // Keep latest assignee in a ref for realtime callbacks
+  const assigneeFilterRef = useRef(assigneeFilter);
+  useEffect(() => {
+    assigneeFilterRef.current = assigneeFilter;
+  }, [assigneeFilter]);
 
   useEffect(() => {
     // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
@@ -103,7 +114,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     fetchAcceptedQuotes();
 
     // Auto-apply assignee filter when customerEmail is provided (only if no full access)
-    if (customerEmail && !hasFullAccess) {
+    if (customerEmail && !hasFullAccess && !assigneeFromUrl) {
       autoSetAssigneeFilter();
     }
 
@@ -119,7 +130,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log("Job change detected:", payload);
-          fetchJobs(assigneeFilter);
+          fetchJobs(assigneeFilterRef.current);
         },
       )
       .subscribe();
@@ -136,7 +147,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         (payload) => {
           console.log("Assignment change detected:", payload);
           fetchJobAssignments();
-          fetchJobs(assigneeFilter);
+          fetchJobs(assigneeFilterRef.current);
         },
       )
       .subscribe();
@@ -163,7 +174,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [customerEmail, hasFullAccess, assigneeFilter]);
+  }, [customerEmail, hasFullAccess]);
 
   // Fetch jobs once the assignee filter is known (including initial URL value)
   useEffect(() => {
