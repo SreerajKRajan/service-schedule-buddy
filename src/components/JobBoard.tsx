@@ -98,8 +98,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // Always fetch all jobs with current filter
-    fetchJobs(assigneeFilter);
+    // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
@@ -166,6 +165,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(quotesChannel);
     };
   }, [customerEmail, hasFullAccess, assigneeFilter]);
+
+  // Fetch jobs once the assignee filter is known (including initial URL value)
+  useEffect(() => {
+    fetchJobs(assigneeFilter);
+  }, [assigneeFilter]);
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
