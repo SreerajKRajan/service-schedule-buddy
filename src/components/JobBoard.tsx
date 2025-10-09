@@ -95,17 +95,24 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
   const [userNotFound, setUserNotFound] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
-    fetchUsers();
-    fetchJobAssignments();
-    fetchAcceptedQuotes();
+    const initialize = async () => {
+      // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
+      fetchUsers();
+      fetchJobAssignments();
+      fetchAcceptedQuotes();
 
-    // Auto-apply assignee filter when customerEmail is provided (only if no full access)
-    if (customerEmail && !hasFullAccess) {
-      autoSetAssigneeFilter();
-    }
+      // Auto-apply assignee filter when customerEmail is provided (only if no full access)
+      if (customerEmail && !hasFullAccess) {
+        await autoSetAssigneeFilter();
+      }
+
+      setIsInitializing(false);
+    };
+
+    initialize();
   }, [customerEmail, hasFullAccess]);
 
   // Separate effect for realtime subscriptions that doesn't depend on assigneeFilter
@@ -172,11 +179,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   // Fetch jobs once the assignee filter is known (including initial URL value)
   // This effect will run whenever assigneeFilter changes
   useEffect(() => {
-    // Only fetch if we're not waiting for user lookup
-    if (!userNotFound || assigneeFilter !== "all") {
+    // Don't fetch jobs until initialization is complete
+    if (isInitializing) return;
+
+    // Only fetch if we're not in an error state
+    if (!userNotFound) {
       fetchJobs(assigneeFilter);
     }
-  }, [assigneeFilter]);
+  }, [assigneeFilter, isInitializing, userNotFound]);
 
   // Fetch jobs once the assignee filter is known (including initial URL value)
   // useEffect(() => {
