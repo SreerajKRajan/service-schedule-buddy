@@ -95,28 +95,18 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
   const [userNotFound, setUserNotFound] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const initialize = async () => {
-      // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
-      fetchUsers();
-      fetchJobAssignments();
-      fetchAcceptedQuotes();
+    // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
+    fetchUsers();
+    fetchJobAssignments();
+    fetchAcceptedQuotes();
 
-      // Auto-apply assignee filter when customerEmail is provided (only if no full access)
-      if (customerEmail && !hasFullAccess) {
-        await autoSetAssigneeFilter();
-      }
+    // Auto-apply assignee filter when customerEmail is provided (only if no full access)
+    if (customerEmail && !hasFullAccess) {
+      autoSetAssigneeFilter();
+    }
 
-      setIsInitializing(false);
-    };
-
-    initialize();
-  }, [customerEmail, hasFullAccess]);
-
-  // Separate effect for realtime subscriptions that doesn't depend on assigneeFilter
-  useEffect(() => {
     // Set up realtime subscriptions for jobs, job_assignments
     const jobsChannel = supabase
       .channel("jobs-changes")
@@ -129,8 +119,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log("Job change detected:", payload);
-          // Don't call fetchJobs here to avoid duplicate calls
-          // Let the assigneeFilter effect handle it
+          fetchJobs(assigneeFilter);
         },
       )
       .subscribe();
@@ -147,7 +136,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         (payload) => {
           console.log("Assignment change detected:", payload);
           fetchJobAssignments();
-          // Don't call fetchJobs here to avoid duplicate calls
+          fetchJobs(assigneeFilter);
         },
       )
       .subscribe();
@@ -174,24 +163,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, []);
+  }, [customerEmail, hasFullAccess, assigneeFilter]);
 
   // Fetch jobs once the assignee filter is known (including initial URL value)
-  // This effect will run whenever assigneeFilter changes
   useEffect(() => {
-    // Don't fetch jobs until initialization is complete
-    if (isInitializing) return;
-
-    // Only fetch if we're not in an error state
-    if (!userNotFound) {
-      fetchJobs(assigneeFilter);
-    }
-  }, [assigneeFilter, isInitializing, userNotFound]);
-
-  // Fetch jobs once the assignee filter is known (including initial URL value)
-  // useEffect(() => {
-  //   fetchJobs(assigneeFilter);
-  // }, [assigneeFilter]);
+    fetchJobs(assigneeFilter);
+  }, [assigneeFilter]);
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
