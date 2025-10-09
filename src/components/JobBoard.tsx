@@ -110,7 +110,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   useEffect(() => {
     // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
     fetchUsers();
-    fetchJobAssignments();
+    if (!assigneeFromUrl) {
+      fetchJobAssignments();
+    }
     fetchAcceptedQuotes();
 
     // Auto-apply assignee filter when customerEmail is provided (only if no full access)
@@ -145,8 +147,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           table: "job_assignments",
         },
         (payload) => {
-          console.log("Assignment change detected:", payload);
-          fetchJobAssignments();
+          if (assigneeFilterRef.current === "all") {
+            fetchJobAssignments();
+          }
           fetchJobs(assigneeFilterRef.current);
         },
       )
@@ -464,7 +467,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const refreshData = () => {
     fetchJobs(assigneeFilter);
     fetchUsers();
-    fetchJobAssignments();
+    if (assigneeFilter === "all") {
+      fetchJobAssignments();
+    }
     fetchAcceptedQuotes();
   };
 
