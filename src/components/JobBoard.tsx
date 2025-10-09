@@ -99,16 +99,16 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   useEffect(() => {
     const initialize = async () => {
+      // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
       fetchUsers();
       fetchJobAssignments();
       fetchAcceptedQuotes();
 
-      // ✅ Wait for this to complete (if applicable)
+      // Auto-apply assignee filter when customerEmail is provided (only if no full access)
       if (customerEmail && !hasFullAccess) {
         await autoSetAssigneeFilter();
       }
 
-      // ✅ Now it's safe to mark initialization done
       setIsInitializing(false);
     };
 
