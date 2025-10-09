@@ -19,7 +19,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoadingRole, setIsLoadingRole] = useState(true);
   
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(isFiltered ? "jobs" : "dashboard");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
   const [quoteConversionCallback, setQuoteConversionCallback] = useState<{ onSuccess: () => void; onError: () => void } | null>(null);
@@ -129,7 +129,7 @@ const Index = () => {
 
             {hasFullAccess && (
               <TabsContent value="dashboard" className="space-y-6">
-                <Dashboard customerEmail={isFiltered ? customerEmail : null} />
+                <Dashboard customerEmail={isFiltered ? customerEmail : null} enabled={activeTab === 'dashboard'} />
               </TabsContent>
             )}
 

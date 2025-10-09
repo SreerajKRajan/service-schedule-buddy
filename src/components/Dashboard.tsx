@@ -16,9 +16,10 @@ interface DashboardStats {
 
 interface DashboardProps {
   customerEmail?: string | null;
+  enabled?: boolean;
 }
 
-export function Dashboard({ customerEmail }: DashboardProps) {
+export function Dashboard({ customerEmail, enabled = true }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
     pendingJobs: 0,
@@ -31,8 +32,9 @@ export function Dashboard({ customerEmail }: DashboardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchDashboardStats();
-  }, [customerEmail]);
+  }, [customerEmail, enabled]);
 
   const fetchDashboardStats = async () => {
     try {
