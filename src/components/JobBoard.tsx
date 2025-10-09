@@ -98,8 +98,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [userNotFound, setUserNotFound] = useState(false);
 
   useEffect(() => {
-    // Always fetch all jobs
-    fetchJobs();
+    // Always fetch all jobs with current filter
+    fetchJobs(assigneeFilter);
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
@@ -121,7 +121,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log('Job change detected:', payload);
-          fetchJobs();
+          fetchJobs(assigneeFilter);
         }
       )
       .subscribe();
@@ -138,7 +138,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         (payload) => {
           console.log('Assignment change detected:', payload);
           fetchJobAssignments();
-          fetchJobs();
+          fetchJobs(assigneeFilter);
         }
       )
       .subscribe();
@@ -193,35 +193,36 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     setSearchParams(newParams, { replace: true });
   }, [assigneeFilter, userNotFound, searchParams, setSearchParams]);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (currentAssigneeFilter: string = assigneeFilter) => {
     try {
       setLoading(true);
       // Update overdue jobs to service_due status first
       await supabase.rpc('update_overdue_jobs');
 
       // Fetch jobs, optionally filtered by assignee using the same /jobs API
-      console.log('[JobBoard] Fetching jobs', assigneeFilter !== 'all' ? `for assignee ${assigneeFilter}` : '(all)');
+      console.log('[JobBoard] Fetching jobs', currentAssigneeFilter !== 'all' ? `for assignee ${currentAssigneeFilter}` : '(all)');
 
       // Limit to a reasonable calendar window to avoid 206 partial content
       const now = new Date();
       const windowStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
       const windowEnd = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
 
-      let query = supabase
-        .from('jobs')
-        .select('*', { count: 'exact' })
-        .not('scheduled_date', 'is', null)
-        .gte('scheduled_date', windowStart.toISOString())
-        .lte('scheduled_date', windowEnd.toISOString())
-        .order('scheduled_date', { ascending: true })
-        .limit(10000);
-
       // If an assignee is selected, use an inner join to job_assignments and filter by user_id
-      if (assigneeFilter !== 'all') {
+      let query;
+      if (currentAssigneeFilter !== 'all') {
         query = supabase
           .from('jobs')
           .select('*, job_assignments!inner(user_id)', { count: 'exact' })
-          .eq('job_assignments.user_id', assigneeFilter)
+          .eq('job_assignments.user_id', currentAssigneeFilter)
+          .not('scheduled_date', 'is', null)
+          .gte('scheduled_date', windowStart.toISOString())
+          .lte('scheduled_date', windowEnd.toISOString())
+          .order('scheduled_date', { ascending: true })
+          .limit(10000);
+      } else {
+        query = supabase
+          .from('jobs')
+          .select('*', { count: 'exact' })
           .not('scheduled_date', 'is', null)
           .gte('scheduled_date', windowStart.toISOString())
           .lte('scheduled_date', windowEnd.toISOString())
@@ -440,7 +441,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   };
 
   const refreshData = () => {
-    fetchJobs();
+    fetchJobs(assigneeFilter);
     fetchUsers();
     fetchJobAssignments();
     fetchAcceptedQuotes();
