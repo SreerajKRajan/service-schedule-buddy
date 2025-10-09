@@ -171,14 +171,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   // Fetch jobs once the assignee filter is known (including initial URL value)
   // This effect will run whenever assigneeFilter changes
-  // useEffect(() => {
-  //   // Only fetch if we're not waiting for user lookup
-  //   if (!userNotFound || assigneeFilter !== "all") {
-  //     fetchJobs(assigneeFilter);
-  //   }
-  // }, [assigneeFilter]);
+  useEffect(() => {
+    // Only fetch if we're not waiting for user lookup
+    if (!userNotFound || assigneeFilter !== "all") {
+      fetchJobs(assigneeFilter);
+    }
+  }, [assigneeFilter]);
 
-  // // Fetch jobs once the assignee filter is known (including initial URL value)
+  // Fetch jobs once the assignee filter is known (including initial URL value)
   // useEffect(() => {
   //   fetchJobs(assigneeFilter);
   // }, [assigneeFilter]);
