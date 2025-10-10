@@ -509,7 +509,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {!assigneeEmailFromUrl && (
+                  {hasFullAccess && (
                     <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
                   )}
                   <SelectItem value="pending">Pending</SelectItem>
@@ -602,7 +602,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           quotes={filteredQuotes}
           statusFilter={statusFilter}
           onRefresh={refreshData}
-          hideAcceptedQuotes={statusFilter !== "accepted_quotes" && !(statusFilter === "all" && !assigneeEmailFromUrl && hasFullAccess)}
+          hideAcceptedQuotes={statusFilter !== "accepted_quotes" && !(statusFilter === "all" && hasFullAccess)}
         />
       ) : (
         <>
