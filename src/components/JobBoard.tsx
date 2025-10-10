@@ -171,10 +171,10 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       // Update overdue jobs to service_due status first
       await supabase.rpc("update_overdue_jobs");
 
-      // Check if URL has ?id=email parameter
+      // Check if URL has ?id=email parameter and user doesn't have full access
       let assigneeUserId: string | null = null;
       
-      if (assigneeEmailFromUrl) {
+      if (assigneeEmailFromUrl && !hasFullAccess) {
         console.log("[JobBoard] Fetching jobs for email:", assigneeEmailFromUrl);
         
         // Look up user by email
@@ -196,6 +196,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           setJobs([]);
           return;
         }
+      } else if (hasFullAccess) {
+        console.log("[JobBoard] Fetching all jobs (full access)");
       }
 
       // Limit to a reasonable calendar window to avoid 206 partial content
