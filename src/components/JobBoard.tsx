@@ -75,8 +75,8 @@ interface JobBoardProps {
 }
 
 export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobBoardProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const assigneeFromUrl = searchParams.get("assignee");
+  const [searchParams] = useSearchParams();
+  const assigneeEmailFromUrl = searchParams.get("id"); // Get ?id=email parameter
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -86,39 +86,19 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [assigneeFilter, setAssigneeFilter] = useState(assigneeFromUrl || "all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [groupByLocation, setGroupByLocation] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [viewerUserId, setViewerUserId] = useState<string | null>(null);
-  const [viewerUserName, setViewerUserName] = useState<string | null>(null);
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
   const [userNotFound, setUserNotFound] = useState(false);
-  
-  // Defer job fetching until the correct assignee is resolved
-  const [readyToFetchJobs, setReadyToFetchJobs] = useState(
-    !!assigneeFromUrl || (!!hasFullAccess && !customerEmail)
-  );
-  
-  // Keep latest assignee in a ref for realtime callbacks
-  const assigneeFilterRef = useRef(assigneeFilter);
-  useEffect(() => {
-    assigneeFilterRef.current = assigneeFilter;
-  }, [assigneeFilter]);
 
   useEffect(() => {
-    // Initial data (exclude jobs here to avoid unfiltered first fetch when URL has assignee)
+    // Initial data fetch
     fetchUsers();
-    if (!assigneeFromUrl) {
-      fetchJobAssignments();
-    }
+    fetchJobAssignments();
     fetchAcceptedQuotes();
-
-    // Auto-apply assignee filter when customerEmail is provided (only if no full access)
-    if (customerEmail && !hasFullAccess && !assigneeFromUrl) {
-      autoSetAssigneeFilter();
-    }
+    fetchJobs(); // Single fetch on mount
 
     // Set up realtime subscriptions for jobs, job_assignments
     const jobsChannel = supabase
@@ -132,7 +112,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
         },
         (payload) => {
           console.log("Job change detected:", payload);
-          fetchJobs(assigneeFilterRef.current);
+          fetchJobs();
         },
       )
       .subscribe();
@@ -147,10 +127,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           table: "job_assignments",
         },
         (payload) => {
-          if (assigneeFilterRef.current === "all") {
-            fetchJobAssignments();
-          }
-          fetchJobs(assigneeFilterRef.current);
+          fetchJobAssignments();
+          fetchJobs();
         },
       )
       .subscribe();
@@ -177,12 +155,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [customerEmail, hasFullAccess]);
-
-  // Fetch jobs once the assignee filter is known (including initial URL value)
-  useEffect(() => {
-    fetchJobs(assigneeFilter);
-  }, [assigneeFilter]);
+  }, [assigneeEmailFromUrl]); // Re-fetch when URL parameter changes
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
@@ -190,50 +163,53 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     } else {
       filterJobs();
     }
-  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments, assigneeFilter]);
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
 
-  useEffect(() => {
-    if (userNotFound) return;
-
-    // If assignee filter is applied, switch away from accepted_quotes status
-    if (assigneeFilter !== "all" && statusFilter === "accepted_quotes") {
-      setStatusFilter("all");
-    }
-
-    // Update URL query params when assignee filter changes
-    const newParams = new URLSearchParams(searchParams);
-    if (assigneeFilter !== "all") {
-      newParams.set("assignee", assigneeFilter);
-    } else {
-      newParams.delete("assignee");
-    }
-    setSearchParams(newParams, { replace: true });
-  }, [assigneeFilter, userNotFound, searchParams, setSearchParams]);
-
-  const fetchJobs = async (currentAssigneeFilter: string = assigneeFilter) => {
+  const fetchJobs = async () => {
     try {
       setLoading(true);
       // Update overdue jobs to service_due status first
       await supabase.rpc("update_overdue_jobs");
 
-      // Fetch jobs, optionally filtered by assignee using the same /jobs API
-      console.log(
-        "[JobBoard] Fetching jobs",
-        currentAssigneeFilter !== "all" ? `for assignee ${currentAssigneeFilter}` : "(all)",
-      );
+      // Check if URL has ?id=email parameter
+      let assigneeUserId: string | null = null;
+      
+      if (assigneeEmailFromUrl) {
+        console.log("[JobBoard] Fetching jobs for email:", assigneeEmailFromUrl);
+        
+        // Look up user by email
+        const { data: user, error: userError } = await supabase
+          .from("users")
+          .select("id, name")
+          .ilike("email", assigneeEmailFromUrl)
+          .maybeSingle();
+
+        if (userError) {
+          console.error("Error fetching user by email:", userError);
+        } else if (user) {
+          assigneeUserId = user.id;
+          console.log("[JobBoard] Found user:", user.name);
+        } else {
+          console.log("[JobBoard] No user found for email:", assigneeEmailFromUrl);
+          setUserNotFound(true);
+          setLoading(false);
+          setJobs([]);
+          return;
+        }
+      }
 
       // Limit to a reasonable calendar window to avoid 206 partial content
       const now = new Date();
       const windowStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
       const windowEnd = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
 
-      // If an assignee is selected, use an inner join to job_assignments and filter by user_id
+      // Build query - if assigneeUserId exists, filter by it
       let query;
-      if (currentAssigneeFilter !== "all") {
+      if (assigneeUserId) {
         query = supabase
           .from("jobs")
           .select("*, job_assignments!inner(user_id)", { count: "exact" })
-          .eq("job_assignments.user_id", currentAssigneeFilter)
+          .eq("job_assignments.user_id", assigneeUserId)
           .not("scheduled_date", "is", null)
           .gte("scheduled_date", windowStart.toISOString())
           .lte("scheduled_date", windowEnd.toISOString())
@@ -252,7 +228,9 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
       const { data, error } = await query;
       if (error) throw error;
+      
       console.log("[JobBoard] Fetched jobs:", (data || []).length);
+      
       // Ensure unique jobs by id (in case of multiple assignments)
       const uniqueJobsMap = new Map<string, any>();
       (data || []).forEach((j: any) => {
@@ -261,6 +239,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       });
       const uniqueJobs = Array.from(uniqueJobsMap.values()) as unknown as Job[];
       setJobs(uniqueJobs);
+      setUserNotFound(false);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       setJobs([]);
@@ -330,9 +309,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       filtered = filtered.filter((job) => job.job_type === typeFilter);
     }
 
-    // Assignee filtering is now handled server-side via query params on /jobs
-    // (joining job_assignments!inner and filtering by job_assignments.user_id)
-    // So we do not perform additional client-side filtering here to avoid mismatches.
+    // Assignee filtering is now handled at fetch time based on URL ?id= parameter
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter((job) => {
@@ -413,63 +390,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     setSearchTerm("");
     setStatusFilter("all");
     setTypeFilter("all");
-    setAssigneeFilter("all");
     setDateRange(undefined);
     setGroupByLocation(false);
   };
 
-  const autoSetAssigneeFilter = async () => {
-    if (!customerEmail) return;
-
-    try {
-      console.log("[JobBoard] Auto-setting assignee filter for email:", customerEmail);
-      // Try to find user by email (case-insensitive)
-      const { data: userByEmail } = await supabase
-        .from("users")
-        .select("id, name")
-        .ilike("email", customerEmail)
-        .maybeSingle();
-
-      if (userByEmail) {
-        console.log("[JobBoard] Found user by email:", userByEmail);
-        setAssigneeFilter(userByEmail.id);
-        setViewerUserId(userByEmail.id);
-        setViewerUserName(userByEmail.name || null);
-        setUserNotFound(false);
-        return;
-      }
-
-      // Try to find user by name as fallback
-      const { data: userByName } = await supabase
-        .from("users")
-        .select("id, name")
-        .eq("name", customerEmail)
-        .maybeSingle();
-
-      if (userByName) {
-        console.log("[JobBoard] Found user by name:", userByName);
-        setAssigneeFilter(userByName.id);
-        setViewerUserId(userByName.id);
-        setViewerUserName(userByName.name || null);
-        setUserNotFound(false);
-      } else {
-        console.log("[JobBoard] No user found for:", customerEmail);
-        setUserNotFound(true);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Error setting assignee filter:", error);
-      setUserNotFound(true);
-      setLoading(false);
-    }
-  };
-
   const refreshData = () => {
-    fetchJobs(assigneeFilter);
+    fetchJobs();
     fetchUsers();
-    if (assigneeFilter === "all") {
-      fetchJobAssignments();
-    }
+    fetchJobAssignments();
     fetchAcceptedQuotes();
   };
 
@@ -572,14 +500,14 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border z-50">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {!customerEmail && assigneeFilter === "all" && (
+                  {!assigneeEmailFromUrl && (
                     <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
                   )}
                   <SelectItem value="pending">Pending</SelectItem>
@@ -601,30 +529,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
                       {type}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="w-full" disabled={!!customerEmail && !hasFullAccess}>
-                  <SelectValue
-                    placeholder={
-                      customerEmail && !hasFullAccess
-                        ? viewerUserName
-                          ? `Assignee: ${viewerUserName}`
-                          : "Assignee"
-                        : "Filter by assignee"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border z-50">
-                  {(hasFullAccess || !customerEmail) && <SelectItem value="all">All Assignees</SelectItem>}
-                  {(customerEmail && !hasFullAccess ? users.filter((u) => u.id === viewerUserId) : users).map(
-                    (user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ),
-                  )}
                 </SelectContent>
               </Select>
 
@@ -696,9 +600,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           quotes={filteredQuotes}
           statusFilter={statusFilter}
           onRefresh={refreshData}
-          hideAcceptedQuotes={
-            statusFilter !== "accepted_quotes" && !(statusFilter === "all" && assigneeFilter === "all" && hasFullAccess)
-          }
+          hideAcceptedQuotes={statusFilter !== "accepted_quotes" && !(statusFilter === "all" && !assigneeEmailFromUrl && hasFullAccess)}
         />
       ) : (
         <>
