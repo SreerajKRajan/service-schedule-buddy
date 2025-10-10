@@ -80,7 +80,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,7 +95,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   useEffect(() => {
     // Initial data fetch
     fetchUsers();
-    fetchJobAssignments();
     fetchAcceptedQuotes();
     fetchJobs(); // Single fetch on mount
 
@@ -127,7 +125,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           table: "job_assignments",
         },
         (payload) => {
-          fetchJobAssignments();
           fetchJobs();
         },
       )
@@ -163,7 +160,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
     } else {
       filterJobs();
     }
-  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange, jobAssignments]);
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange]);
 
   const fetchJobs = async () => {
     try {
@@ -257,17 +254,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
       setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
-    }
-  };
-
-  const fetchJobAssignments = async () => {
-    try {
-      const { data, error } = await supabase.from("job_assignments").select("user_id, job_id");
-
-      if (error) throw error;
-      setJobAssignments(data || []);
-    } catch (error) {
-      console.error("Error fetching job assignments:", error);
     }
   };
 
@@ -399,7 +385,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
   const refreshData = () => {
     fetchJobs();
     fetchUsers();
-    fetchJobAssignments();
     fetchAcceptedQuotes();
   };
 
