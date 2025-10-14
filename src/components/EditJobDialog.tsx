@@ -305,7 +305,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         customer_phone: formData.customer_phone || null,
         customer_email: formData.customer_email || null,
         notes: formData.notes || null,
-        status: formData.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+        status: (formData.status || job.status) as 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'on_the_way' | 'service_due',
         price: formData.price ? parseFloat(formData.price) : null,
         first_time: formData.first_time,
         quoted_by: formData.quoted_by || null,
