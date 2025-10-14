@@ -475,13 +475,19 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     }));
   };
 
-  // useEffect to update total price when service prices change
+  // Update total price when service prices change, but don't override
+  // an existing price (e.g., one saved on the job already)
   useEffect(() => {
     const total = Object.values(servicePrices).reduce((sum: number, price: number) => sum + price, 0);
-    setFormData(prev => ({
-      ...prev,
-      price: total > 0 ? total.toString() : ""
-    }));
+    setFormData(prev => {
+      if (!prev.price) {
+        return {
+          ...prev,
+          price: total > 0 ? total.toString() : ""
+        };
+      }
+      return prev;
+    });
   }, [servicePrices]);
 
   const jobTypes = [
