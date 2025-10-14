@@ -312,12 +312,18 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         ghl_contact_id: formData.ghl_contact_id || null,
       };
 
-      const { error: jobError } = await supabase
+      const { data: updatedJob, error: jobError } = await supabase
         .from('jobs')
         .update(jobData)
-        .eq('id', job.id);
+        .eq('id', job.id)
+        .select()
+        .single();
 
       if (jobError) throw jobError;
+      
+      if (!updatedJob) {
+        throw new Error('Failed to update job - no data returned');
+      }
 
       // Update assignments
       // First, remove all existing assignments
