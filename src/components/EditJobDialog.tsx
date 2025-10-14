@@ -110,7 +110,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     if (open && job && services.length > 0 && users.length > 0) {
       populateFormData();
     }
-  }, [open, job, services, users]);
+  }, [open, job.id, job.price, job.updated_at, services.length, users.length]);
 
   const populateFormData = async () => {
     const scheduledDate = job.scheduled_date 
