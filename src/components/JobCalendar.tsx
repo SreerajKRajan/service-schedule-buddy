@@ -636,17 +636,21 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                   <div className="pt-2">
                     <Button
                       onClick={() => {
+                        const quoteToConvert = selectedQuote;
+                        
+                        // Close the modal immediately
+                        setSelectedQuote(null);
+                        
                         const onSuccess = async () => {
                           try {
                             const { error } = await supabase
                               .from('accepted_quotes')
                               .update({ status: 'converted' })
-                              .eq('id', selectedQuote.id);
+                              .eq('id', quoteToConvert.id);
 
                             if (error) throw error;
 
                             toast.success("Quote converted to job successfully");
-                            setSelectedQuote(null);
                             fetchAcceptedQuotes();
                             onRefresh();
                           } catch (error) {
@@ -661,7 +665,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                           fetchAcceptedQuotes();
                         };
                         
-                        onConvertToJob(selectedQuote, onSuccess, onError);
+                        onConvertToJob(quoteToConvert, onSuccess, onError);
                       }}
                       className="w-full"
                     >
