@@ -138,6 +138,24 @@ const Index = () => {
                 customerEmail={customerEmail} 
                 userRole={userRole}
                 hasFullAccess={hasFullAccess}
+                onConvertToJob={(quote, onSuccess, onError) => {
+                  setCreateJobData({
+                    customer_name: quote.customer_name,
+                    customer_phone: quote.customer_phone,
+                    customer_email: quote.customer_email,
+                    customer_address: quote.customer_address,
+                    quoted_by: quote.quoted_by,
+                    scheduled_date: quote.scheduled_date,
+                    first_time: quote.first_time,
+                    jobs_selected: quote.jobs_selected,
+                    ghl_contact_id: quote.ghl_contact_id,
+                  });
+                  setQuoteConversionCallback(() => ({
+                    onSuccess,
+                    onError
+                  }));
+                  setShowCreateForm(true);
+                }}
               />
             </TabsContent>
 

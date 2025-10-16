@@ -72,9 +72,10 @@ interface JobBoardProps {
   customerEmail?: string | null;
   userRole?: string | null;
   hasFullAccess?: boolean;
+  onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => void;
 }
 
-export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobBoardProps) {
+export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConvertToJob }: JobBoardProps) {
   const [searchParams] = useSearchParams();
   const assigneeEmailFromUrl = searchParams.get("id"); // Get ?id=email parameter
 
@@ -588,6 +589,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true }: JobB
           statusFilter={statusFilter}
           onRefresh={refreshData}
           hideAcceptedQuotes={statusFilter !== "accepted_quotes" && !(statusFilter === "all" && hasFullAccess)}
+          onConvertToJob={onConvertToJob}
         />
       ) : (
         <>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar as BigCalendar, momentLocalizer, View } from "react-big-calendar";
 import moment from "moment";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
   Mail,
   UserCheck,
   Calendar,
+  Edit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JobCard } from "./JobCard";
@@ -91,9 +93,10 @@ interface JobCalendarProps {
   statusFilter?: string;
   onRefresh: () => void;
   hideAcceptedQuotes?: boolean;
+  onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => void;
 }
 
-export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false }: JobCalendarProps) {
+export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false, onConvertToJob }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
@@ -627,6 +630,46 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                       </div>
                     </div>
                   )}
+
+                {/* Convert to Job Button */}
+                {selectedQuote.status === 'pending' && onConvertToJob && (
+                  <div className="pt-2">
+                    <Button
+                      onClick={() => {
+                        const onSuccess = async () => {
+                          try {
+                            const { error } = await supabase
+                              .from('accepted_quotes')
+                              .update({ status: 'converted' })
+                              .eq('id', selectedQuote.id);
+
+                            if (error) throw error;
+
+                            toast.success("Quote converted to job successfully");
+                            setSelectedQuote(null);
+                            fetchAcceptedQuotes();
+                            onRefresh();
+                          } catch (error) {
+                            console.error('Error updating quote status:', error);
+                            toast.error("Failed to update quote status. Please try again.");
+                            fetchAcceptedQuotes();
+                          }
+                        };
+
+                        const onError = async () => {
+                          toast.error("Failed to convert quote to job. Please try again.");
+                          fetchAcceptedQuotes();
+                        };
+                        
+                        onConvertToJob(selectedQuote, onSuccess, onError);
+                      }}
+                      className="w-full"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Convert to Job{selectedQuote.jobs_selected.length > 1 ? 's' : ''}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
