@@ -531,8 +531,8 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               <Label>Services *</Label>
               <Card>
                 <CardContent className="pt-4">
-                  <ScrollArea className="max-h-[400px] pr-4">
-                    <div className="space-y-4">
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-4 pr-4">
                       {/* Database Services */}
                       <div className="space-y-3">
                         {services.map((service) => (
