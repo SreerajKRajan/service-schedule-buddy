@@ -404,11 +404,14 @@ export type Database = {
           updated_at: string
           webhook_sent_at: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      update_overdue_jobs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      update_overdue_jobs: { Args: never; Returns: number }
     }
     Enums: {
       frequency_type:
