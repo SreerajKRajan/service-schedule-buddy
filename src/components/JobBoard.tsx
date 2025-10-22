@@ -532,19 +532,21 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
                 </SelectContent>
               </Select>
 
-              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filter by assignee" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border z-50">
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {hasFullAccess && (
+                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by assignee" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    <SelectItem value="all">All Assignees</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               <Popover>
                 <PopoverTrigger asChild>
