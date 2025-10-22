@@ -200,10 +200,14 @@ export function JobCalendar({
         const endDate = new Date(startDate);
 
         // Default to 2 hours for quotes
-        endDate.setHours(startDate.getHours() + 2);
+        endDate.setUTCHours(startDate.getUTCHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
+        });
 
         calendarEvents.push({
           id: quote.id,
@@ -223,10 +227,14 @@ export function JobCalendar({
         const endDate = new Date(startDate);
 
         // Default to 2 hours for quotes
-        endDate.setHours(startDate.getHours() + 2);
+        endDate.setUTCHours(startDate.getUTCHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
+        });
 
         calendarEvents.push({
           id: quote.id,
@@ -251,10 +259,14 @@ export function JobCalendar({
 
         // Add estimated duration or default to 2 hours
         const duration = job.estimated_duration || 2;
-        endDate.setHours(startDate.getHours() + duration);
+        endDate.setUTCHours(startDate.getUTCHours() + duration);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
+        });
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -282,10 +294,14 @@ export function JobCalendar({
           const endDate = new Date(startDate);
 
           // Default to 2 hours for quotes
-          endDate.setHours(startDate.getHours() + 2);
+          endDate.setUTCHours(startDate.getUTCHours() + 2);
 
           // Format time for display
-          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+          const timeStr = startDate.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: false,
+          });
 
           calendarEvents.push({
             id: quote.id,
@@ -687,7 +703,7 @@ export function JobCalendar({
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatUTCDateTime(selectedQuote.scheduled_date)}</span>
+                      <span>formatUTCDateTime(job.scheduled_date)</span>
                     </div>
                   )}
                 </div>
