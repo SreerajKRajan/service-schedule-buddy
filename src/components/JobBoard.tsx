@@ -198,11 +198,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
         console.log("[JobBoard] Fetching all jobs (full access)");
       }
 
-      // Limit to a reasonable calendar window to avoid 206 partial content
-      const now = new Date();
-      const windowStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-      const windowEnd = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
-
       // Build query - if assigneeUserId exists, filter by it
       let query;
       if (assigneeUserId) {
@@ -211,8 +206,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
           .select("*, job_assignments!inner(user_id)", { count: "exact" })
           .eq("job_assignments.user_id", assigneeUserId)
           .not("scheduled_date", "is", null)
-          .gte("scheduled_date", windowStart.toISOString())
-          .lte("scheduled_date", windowEnd.toISOString())
           .order("scheduled_date", { ascending: true })
           .limit(10000);
       } else {
@@ -220,8 +213,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
           .from("jobs")
           .select("*", { count: "exact" })
           .not("scheduled_date", "is", null)
-          .gte("scheduled_date", windowStart.toISOString())
-          .lte("scheduled_date", windowEnd.toISOString())
           .order("scheduled_date", { ascending: true })
           .limit(10000);
       }
