@@ -148,14 +148,21 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
-        calendarEvents.push({
-          id: quote.id,
-          title: `Quote - ${quote.customer_name || "Customer"}`,
-          start: startDate,
-          end: endDate,
-          resource: quote,
-          type: "quote",
-        });
+          // Format time for display
+          const timeStr = startDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          
+          calendarEvents.push({
+            id: quote.id,
+            title: `${timeStr} ${quote.customer_name || "Customer"}`,
+            start: startDate,
+            end: endDate,
+            resource: quote,
+            type: "quote",
+          });
       });
     } else if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
       // Only show accepted quotes from calendar's own filter
@@ -168,14 +175,21 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
-        calendarEvents.push({
-          id: quote.id,
-          title: `Quote - ${quote.customer_name || "Customer"}`,
-          start: startDate,
-          end: endDate,
-          resource: quote,
-          type: "quote",
-        });
+          // Format time for display
+          const timeStr = startDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          
+          calendarEvents.push({
+            id: quote.id,
+            title: `${timeStr} ${quote.customer_name || "Customer"}`,
+            start: startDate,
+            end: endDate,
+            resource: quote,
+            type: "quote",
+          });
       });
     } else {
       // Show jobs (filtered by status if not "all")
@@ -193,9 +207,19 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         const duration = job.estimated_duration || 2;
         endDate.setHours(startDate.getHours() + duration);
 
+        // Format time for display
+        const timeStr = startDate.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: false 
+        });
+        
+        // Add (R) indicator for recurring jobs
+        const recurringIndicator = job.is_recurring ? ' (R)' : '';
+        
         calendarEvents.push({
           id: job.id,
-          title: `${job.title} - ${job.customer_name || "Customer"}`,
+          title: `${timeStr} ${job.customer_name || "Customer"}${recurringIndicator}`,
           start: startDate,
           end: endDate,
           resource: job,
@@ -219,9 +243,16 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           // Default to 2 hours for quotes
           endDate.setHours(startDate.getHours() + 2);
 
+          // Format time for display
+          const timeStr = startDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          
           calendarEvents.push({
             id: quote.id,
-            title: `Quote - ${quote.customer_name || "Customer"}`,
+            title: `${timeStr} ${quote.customer_name || "Customer"}`,
             start: startDate,
             end: endDate,
             resource: quote,
@@ -466,7 +497,6 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               style={{ height: "100%" }}
-              popup
               toolbar={false}
               formats={{
                 timeGutterFormat: "HH:mm",

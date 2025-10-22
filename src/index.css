@@ -104,15 +104,91 @@ All colors MUST be HSL.
   }
 }
 
+/* Calendar customizations - Show all events with expandable day cells */
+.rbc-month-view {
+  border: 1px solid hsl(var(--border));
+}
+
+.rbc-month-row {
+  min-height: 120px !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.rbc-row-content {
+  flex: 1;
+  min-height: 120px !important;
+}
+
+.rbc-day-bg {
+  border-left: 1px solid hsl(var(--border));
+}
+
+.rbc-month-row + .rbc-month-row {
+  border-top: 1px solid hsl(var(--border));
+}
+
+.rbc-row-segment {
+  padding: 1px 2px;
+}
+
+.rbc-event {
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  line-height: 1.3;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.rbc-event-content {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  white-space: normal;
+  overflow: visible;
+}
+
+.rbc-date-cell {
+  padding: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.rbc-header {
+  padding: 8px 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 2px solid hsl(var(--border));
+}
+
+/* Remove the popup/show more functionality */
+.rbc-show-more {
+  display: none !important;
+}
+
+.rbc-overlay {
+  display: none !important;
+}
+
 /* Mobile optimizations for react-big-calendar */
 @media (max-width: 768px) {
   .rbc-calendar {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+  }
+  
+  .rbc-month-row {
+    min-height: 100px !important;
+  }
+  
+  .rbc-row-content {
+    min-height: 100px !important;
   }
   
   .rbc-header {
     padding: 4px 2px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
   }
   
@@ -121,37 +197,16 @@ All colors MUST be HSL.
     font-size: 0.7rem;
   }
   
-  .rbc-day-bg + .rbc-day-bg {
-    border-left: 1px solid hsl(var(--border));
-  }
-  
-  .rbc-month-row + .rbc-month-row {
-    border-top: 1px solid hsl(var(--border));
-  }
-  
   .rbc-event {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     padding: 1px 2px;
     border-radius: 2px;
+    margin-bottom: 1px;
   }
   
   .rbc-event-content {
-    font-size: 0.65rem;
-    line-height: 1.2;
-  }
-  
-  .rbc-show-more {
     font-size: 0.6rem;
-    background: hsl(var(--muted));
-    color: hsl(var(--muted-foreground));
-    border: 1px solid hsl(var(--border));
-    border-radius: 2px;
-    padding: 1px 3px;
-    margin: 1px;
-  }
-  
-  .rbc-month-view {
-    border: 1px solid hsl(var(--border));
+    line-height: 1.2;
   }
   
   .rbc-time-view .rbc-time-gutter,
