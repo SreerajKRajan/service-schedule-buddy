@@ -74,7 +74,6 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
           *,
           quoted_by_user:users!quoted_by(name)
         `)
-        .neq('status', 'converted')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -252,6 +251,7 @@ export default function AcceptedQuotes({ onConvertToJob }: AcceptedQuotesProps) 
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
