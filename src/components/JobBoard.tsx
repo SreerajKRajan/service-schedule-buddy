@@ -86,8 +86,10 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [groupByLocation, setGroupByLocation] = useState(true);
+  const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<AcceptedQuote[]>([]);
@@ -97,6 +99,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
     // Initial data fetch
     fetchUsers();
     fetchAcceptedQuotes();
+    fetchJobAssignments();
     fetchJobs(); // Single fetch on mount
 
     // Set up realtime subscriptions for jobs, job_assignments
@@ -161,7 +164,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
     } else {
       filterJobs();
     }
-  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, dateRange]);
+  }, [jobs, acceptedQuotes, searchTerm, statusFilter, typeFilter, assigneeFilter, dateRange]);
 
   const fetchJobs = async () => {
     try {
@@ -249,6 +252,17 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
     }
   };
 
+  const fetchJobAssignments = async () => {
+    try {
+      const { data, error } = await supabase.from("job_assignments").select("job_id, user_id");
+
+      if (error) throw error;
+      setJobAssignments(data || []);
+    } catch (error) {
+      console.error("Error fetching job assignments:", error);
+    }
+  };
+
   const fetchAcceptedQuotes = async () => {
     try {
       const { data, error } = await supabase
@@ -289,7 +303,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       filtered = filtered.filter((job) => job.job_type === typeFilter);
     }
 
-    // Assignee filtering is now handled at fetch time based on URL ?id= parameter
+    if (assigneeFilter !== "all") {
+      const assignedJobIds = jobAssignments
+        .filter((assignment) => assignment.user_id === assigneeFilter)
+        .map((assignment) => assignment.job_id);
+      filtered = filtered.filter((job) => assignedJobIds.includes(job.id));
+    }
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter((job) => {
@@ -370,6 +389,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
     setSearchTerm("");
     setStatusFilter("all");
     setTypeFilter("all");
+    setAssigneeFilter("all");
     setDateRange(undefined);
     setGroupByLocation(false);
   };
@@ -377,6 +397,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
   const refreshData = () => {
     fetchJobs();
     fetchUsers();
+    fetchJobAssignments();
     fetchAcceptedQuotes();
   };
 
@@ -479,7 +500,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Filter by status" />
@@ -506,6 +527,20 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
                   {jobTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by assignee" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border z-50">
+                  <SelectItem value="all">All Assignees</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
