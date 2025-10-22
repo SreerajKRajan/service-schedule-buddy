@@ -855,25 +855,25 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                     </div>
                   )}
 
+                  {/* Add Custom Service Button - Inside scroll area */}
+                  {!showCustomServiceForm && (
+                    <div className="border-t pt-4 mt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setShowCustomServiceForm(true)}
+                        className="w-full"
+                      >
+                        + Add Custom Service
+                      </Button>
+                    </div>
+                  )}
+
                   {formData.selected_services.length === 0 && (
                     <p className="text-sm text-destructive mt-2">Please select at least one service</p>
                   )}
                 </div>
               </ScrollArea>
-
-              {/* Add Custom Service Button - Outside scroll area */}
-              {!showCustomServiceForm && (
-                <div className="border-t pt-4 mt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowCustomServiceForm(true)}
-                    className="w-full"
-                  >
-                    + Add Custom Service
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
