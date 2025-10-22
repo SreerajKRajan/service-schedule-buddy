@@ -141,10 +141,18 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
     });
 
     const maxCount = Object.values(counts).reduce((a, b) => Math.max(a, b), 0);
-    const base = 36; // space for date label
-    const per = 22; // per-event line height
+    const base = 44; // space for date label and padding
+    const per = 26; // per-event line height (safer buffer)
     setMonthRowHeight(base + Math.max(maxCount, 1) * per);
   }, [events, view, currentDate]);
+
+  const weeksInMonth = view === 'month'
+    ? Math.ceil(((new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)).getDay() + (new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getDate()) / 7)
+    : 0;
+
+  const monthTotalHeight = view === 'month'
+    ? 64 + weeksInMonth * monthRowHeight // header + rows
+    : 600;
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -510,7 +518,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           <div
             className="min-h-[320px]"
             style={{
-              ...(view === 'month' ? { height: 'auto' } : { height: 600 }),
+              height: view === 'month' ? monthTotalHeight : 600,
               // @ts-ignore - CSS variable for month row height
               ['--month-row-height' as any]: `${monthRowHeight}px`,
             }}
@@ -526,7 +534,8 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
               onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
-              style={{ height: view === 'month' ? 'auto' : '100%' }}
+              key={view === 'month' ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}` : `view-${view}`}
+              style={{ height: '100%' }}
               popup={false}
               toolbar={false}
               formats={{
