@@ -120,6 +120,11 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
   }, [hideAcceptedQuotes]);
 
   useEffect(() => {
+    console.log('[JobCalendar] Filters changed:', { 
+      assigneeFilter, 
+      jobAssignmentsCount: jobAssignments.length,
+      jobsCount: jobs.length 
+    });
     convertJobsToEvents();
   }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter, assigneeFilter, jobAssignments]);
 
@@ -190,6 +195,12 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           const isAssigned = jobAssignments.some(
             (assignment) => assignment.job_id === job.id && assignment.user_id === assigneeFilter
           );
+          console.log('[JobCalendar] Checking job:', job.title, {
+            jobId: job.id,
+            assigneeFilter,
+            isAssigned,
+            matchingAssignments: jobAssignments.filter(a => a.job_id === job.id)
+          });
           if (!isAssigned) return;
         }
 

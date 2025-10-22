@@ -129,6 +129,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
           table: "job_assignments",
         },
         (payload) => {
+          fetchJobAssignments();
           fetchJobs();
         },
       )
@@ -257,6 +258,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       const { data, error } = await supabase.from("job_assignments").select("job_id, user_id");
 
       if (error) throw error;
+      console.log('[JobBoard] Fetched job assignments:', data);
       setJobAssignments(data || []);
     } catch (error) {
       console.error("Error fetching job assignments:", error);
@@ -307,6 +309,12 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       const assignedJobIds = jobAssignments
         .filter((assignment) => assignment.user_id === assigneeFilter)
         .map((assignment) => assignment.job_id);
+      console.log('[JobBoard] Filtering by assignee:', {
+        assigneeFilter,
+        totalAssignments: jobAssignments.length,
+        matchingAssignments: jobAssignments.filter(a => a.user_id === assigneeFilter),
+        assignedJobIds
+      });
       filtered = filtered.filter((job) => assignedJobIds.includes(job.id));
     }
 
