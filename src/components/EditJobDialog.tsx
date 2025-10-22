@@ -350,6 +350,32 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         if (assignError) throw assignError;
       }
 
+      // First, create any custom services in the services table to get real UUIDs
+      const customServiceIdMap: Record<string, string> = {};
+      
+      for (const customService of customServices) {
+        if (formData.selected_services.includes(customService.id)) {
+          const { data: newService, error: serviceCreateError } = await supabase
+            .from('services')
+            .insert({
+              name: customService.name,
+              description: null,
+              default_duration: customService.duration,
+              default_price: customService.price,
+              active: true
+            })
+            .select()
+            .single();
+
+          if (serviceCreateError) throw serviceCreateError;
+          
+          if (newService) {
+            // Map the temporary custom ID to the real UUID
+            customServiceIdMap[customService.id] = newService.id;
+          }
+        }
+      }
+
       // Update job services
       // First, remove all existing job services
       const { error: deleteServicesError } = await supabase
@@ -362,8 +388,11 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       // Then, add new services with custom prices
       if (formData.selected_services.length > 0) {
         const jobServices = formData.selected_services.map(serviceId => {
+          // Check if this is a custom service that was just created
+          const realServiceId = customServiceIdMap[serviceId] || serviceId;
+          
           // Find service details (either from services list or custom services)
-          const service = services.find(s => s.id === serviceId);
+          const service = services.find(s => s.id === realServiceId);
           const customService = customServices.find(s => s.id === serviceId);
           
           if (service) {
@@ -372,16 +401,17 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               service_id: service.id,
               service_name: service.name,
               service_description: service.description,
-              price: servicePrices[service.id] ?? service.default_price,
+              price: servicePrices[serviceId] ?? service.default_price,
               duration: service.default_duration,
             };
-          } else if (customService) {
+          } else if (customService && customServiceIdMap[serviceId]) {
+            // Use the real UUID for custom services
             return {
               job_id: job.id,
-              service_id: customService.id,
+              service_id: customServiceIdMap[serviceId],
               service_name: customService.name,
               service_description: null,
-              price: servicePrices[customService.id] ?? customService.price,
+              price: servicePrices[serviceId] ?? customService.price,
               duration: customService.duration,
             };
           }
