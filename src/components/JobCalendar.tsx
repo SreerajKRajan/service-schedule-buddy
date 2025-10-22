@@ -103,7 +103,16 @@ interface JobCalendarProps {
   jobAssignments?: JobAssignment[];
 }
 
-export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false, onConvertToJob, assigneeFilter = "all", jobAssignments = [] }: JobCalendarProps) {
+export function JobCalendar({
+  jobs,
+  quotes = [],
+  statusFilter: parentStatusFilter,
+  onRefresh,
+  hideAcceptedQuotes = false,
+  onConvertToJob,
+  assigneeFilter = "all",
+  jobAssignments = [],
+}: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
@@ -146,13 +155,19 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
     setMonthRowHeight(base + Math.max(maxCount, 1) * per);
   }, [events, view, currentDate]);
 
-  const weeksInMonth = view === 'month'
-    ? Math.ceil(((new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)).getDay() + (new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getDate()) / 7)
-    : 0;
+  const weeksInMonth =
+    view === "month"
+      ? Math.ceil(
+          (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() +
+            new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()) /
+            7,
+        )
+      : 0;
 
-  const monthTotalHeight = view === 'month'
-    ? 64 + weeksInMonth * monthRowHeight // header + rows
-    : 600;
+  const monthTotalHeight =
+    view === "month"
+      ? 64 + weeksInMonth * monthRowHeight // header + rows
+      : 600;
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -163,6 +178,14 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
     } catch (error) {
       console.error("Error fetching accepted quotes:", error);
     }
+  };
+
+  const formatUTCDateTime = (dateStr) => {
+    const dateObj = new Date(dateStr);
+    return (
+      `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, "0")}-${String(dateObj.getUTCDate()).padStart(2, "0")} ` +
+      `${String(dateObj.getUTCHours()).padStart(2, "0")}:${String(dateObj.getUTCMinutes()).padStart(2, "0")}`
+    );
   };
 
   const convertJobsToEvents = () => {
@@ -179,21 +202,21 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
-          // Format time for display
-          const timeStr = startDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: false 
-          });
-          
-          calendarEvents.push({
-            id: quote.id,
-            title: `${timeStr} ${quote.customer_name || "Customer"}`,
-            start: startDate,
-            end: endDate,
-            resource: quote,
-            type: "quote",
-          });
+        // Format time for display
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
+        });
+
+        calendarEvents.push({
+          id: quote.id,
+          title: `${timeStr} ${quote.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: quote,
+          type: "quote",
+        });
       });
     } else if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
       // Only show accepted quotes from calendar's own filter
@@ -206,27 +229,27 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
-          // Format time for display
-          const timeStr = startDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: false 
-          });
-          
-          calendarEvents.push({
-            id: quote.id,
-            title: `${timeStr} ${quote.customer_name || "Customer"}`,
-            start: startDate,
-            end: endDate,
-            resource: quote,
-            type: "quote",
-          });
+        // Format time for display
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
+        });
+
+        calendarEvents.push({
+          id: quote.id,
+          title: `${timeStr} ${quote.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: quote,
+          type: "quote",
+        });
       });
     } else {
       // Show jobs (filtered by status if not "all")
       jobs.forEach((job) => {
         if (!job.scheduled_date) return;
-        
+
         // Apply status filter for jobs
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
@@ -239,15 +262,15 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         endDate.setHours(startDate.getHours() + duration);
 
         // Format time for display
-        const timeStr = startDate.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: false 
+        const timeStr = startDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: false,
         });
-        
+
         // Add (R) indicator for recurring jobs
-        const recurringIndicator = job.is_recurring ? ' (R)' : '';
-        
+        const recurringIndicator = job.is_recurring ? " (R)" : "";
+
         calendarEvents.push({
           id: job.id,
           title: `${timeStr} ${job.customer_name || "Customer"}${recurringIndicator}`,
@@ -260,10 +283,9 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
 
       // Add accepted quotes only if parent filter is not set to a specific job status
       // and calendar's own filter allows it
-      const parentIsJobStatus = parentStatusFilter && 
-        parentStatusFilter !== "all" && 
-        parentStatusFilter !== "accepted_quotes";
-      
+      const parentIsJobStatus =
+        parentStatusFilter && parentStatusFilter !== "all" && parentStatusFilter !== "accepted_quotes";
+
       if (statusFilter === "all" && !hideAcceptedQuotes && !parentIsJobStatus) {
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
@@ -275,12 +297,12 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           endDate.setHours(startDate.getHours() + 2);
 
           // Format time for display
-          const timeStr = startDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: false 
+          const timeStr = startDate.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: false,
           });
-          
+
           calendarEvents.push({
             id: quote.id,
             title: `${timeStr} ${quote.customer_name || "Customer"}`,
@@ -436,9 +458,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                  {!hideAcceptedQuotes && (
-                    <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
-                  )}
+                  {!hideAcceptedQuotes && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
                 </SelectContent>
               </Select>
 
@@ -518,9 +538,9 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           <div
             className="min-h-[320px]"
             style={{
-              height: view === 'month' ? monthTotalHeight : 600,
+              height: view === "month" ? monthTotalHeight : 600,
               // @ts-ignore - CSS variable for month row height
-              ['--month-row-height' as any]: `${monthRowHeight}px`,
+              ["--month-row-height" as any]: `${monthRowHeight}px`,
             }}
           >
             <BigCalendar
@@ -534,8 +554,12 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
               onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
-              key={view === 'month' ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}` : `view-${view}`}
-              style={{ height: '100%' }}
+              key={
+                view === "month"
+                  ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
+                  : `view-${view}`
+              }
+              style={{ height: "100%" }}
               popup={false}
               toolbar={false}
               formats={{
@@ -679,7 +703,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(selectedQuote.scheduled_date).toLocaleString()}</span>
+                      <span>formatUTCDateTime(job.scheduled_date)</span>
                     </div>
                   )}
                 </div>
@@ -710,21 +734,21 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                   )}
 
                 {/* Convert to Job Button */}
-                {selectedQuote.status === 'pending' && onConvertToJob && (
+                {selectedQuote.status === "pending" && onConvertToJob && (
                   <div className="pt-2">
                     <Button
                       onClick={() => {
                         const quoteToConvert = selectedQuote;
-                        
+
                         // Close the modal immediately
                         setSelectedQuote(null);
-                        
+
                         const onSuccess = async () => {
                           try {
                             const { error } = await supabase
-                              .from('accepted_quotes')
-                              .update({ status: 'converted' })
-                              .eq('id', quoteToConvert.id);
+                              .from("accepted_quotes")
+                              .update({ status: "converted" })
+                              .eq("id", quoteToConvert.id);
 
                             if (error) throw error;
 
@@ -732,7 +756,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                             fetchAcceptedQuotes();
                             onRefresh();
                           } catch (error) {
-                            console.error('Error updating quote status:', error);
+                            console.error("Error updating quote status:", error);
                             toast.error("Failed to update quote status. Please try again.");
                             fetchAcceptedQuotes();
                           }
@@ -742,13 +766,13 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
                           toast.error("Failed to convert quote to job. Please try again.");
                           fetchAcceptedQuotes();
                         };
-                        
+
                         onConvertToJob(quoteToConvert, onSuccess, onError);
                       }}
                       className="w-full"
                     >
                       <Edit className="h-4 w-4 mr-2" />
-                      Convert to Job{selectedQuote.jobs_selected.length > 1 ? 's' : ''}
+                      Convert to Job{selectedQuote.jobs_selected.length > 1 ? "s" : ""}
                     </Button>
                   </div>
                 )}
