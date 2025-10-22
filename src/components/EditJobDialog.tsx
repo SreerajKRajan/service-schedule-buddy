@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     duration: "",
     price: ""
   });
+  const customServiceSectionRef = useRef<HTMLDivElement | null>(null);
   const [currentAssignments, setCurrentAssignments] = useState<string[]>([]);
   const [jobSchedule, setJobSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -631,69 +632,67 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                         </div>
                       )}
 
-                      {/* Add Custom Service Form */}
-                      {showCustomServiceForm && (
-                        <div className="border-t pt-4">
-                          <h4 className="text-sm font-medium mb-3">Add Custom Service</h4>
-                          <div className="grid gap-3">
-                            <div className="grid gap-2 md:grid-cols-3">
-                              <Input
-                                placeholder="Service name"
-                                value={customServiceData.name}
-                                onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Duration (hours)"
-                                value={customServiceData.duration}
-                                onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Price ($)"
-                                value={customServiceData.price}
-                                onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button type="button" onClick={addCustomService} size="sm">
-                                Add Service
-                              </Button>
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => {
-                                  setShowCustomServiceForm(false);
-                                  setCustomServiceData({ name: "", duration: "", price: "" });
-                                }} 
-                                size="sm"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
+                      {/* End of services list */}
+                    </div>
+                  </ScrollArea>
+                  {/* Add Custom Service Section - Outside scroll area */}
+                  {showCustomServiceForm ? (
+                    <div ref={customServiceSectionRef} className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-medium mb-3">Add Custom Service</h4>
+                      <div className="grid gap-3">
+                        <div className="grid gap-2 md:grid-cols-3">
+                          <Input
+                            placeholder="Service name"
+                            value={customServiceData.name}
+                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
+                            autoFocus
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Duration (hours)"
+                            value={customServiceData.duration}
+                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Price ($)"
+                            value={customServiceData.price}
+                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
+                          />
                         </div>
-                      )}
-
-                      {/* Add Custom Service Button - Inside scroll area */}
-                      {!showCustomServiceForm && (
-                        <div className="border-t pt-4 mt-4">
+                        <div className="flex gap-2">
+                          <Button type="button" onClick={addCustomService} size="sm">
+                            Add Service
+                          </Button>
                           <Button 
                             type="button" 
                             variant="outline" 
-                            onClick={() => setShowCustomServiceForm(true)}
-                            className="w-full"
+                            onClick={() => {
+                              setShowCustomServiceForm(false);
+                              setCustomServiceData({ name: "", duration: "", price: "" });
+                            }} 
+                            size="sm"
                           >
-                            + Add Custom Service
+                            Cancel
                           </Button>
                         </div>
-                      )}
-
-                      {formData.selected_services.length === 0 && (
-                        <p className="text-sm text-destructive mt-2">Please select at least one service</p>
-                      )}
+                      </div>
                     </div>
-                  </ScrollArea>
+                  ) : (
+                    <div className="border-t pt-4 mt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowCustomServiceForm(true);
+                          setTimeout(() => customServiceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+                        }}
+                        className="w-full"
+                      >
+                        + Add Custom Service
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
