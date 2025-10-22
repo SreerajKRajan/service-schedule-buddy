@@ -120,13 +120,8 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
   }, [hideAcceptedQuotes]);
 
   useEffect(() => {
-    console.log('[JobCalendar] Filters changed:', { 
-      assigneeFilter, 
-      jobAssignmentsCount: jobAssignments.length,
-      jobsCount: jobs.length 
-    });
     convertJobsToEvents();
-  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter, assigneeFilter, jobAssignments]);
+  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -190,20 +185,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         // Apply status filter for jobs
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
-        // Apply assignee filter
-        if (assigneeFilter && assigneeFilter !== "all") {
-          const isAssigned = jobAssignments.some(
-            (assignment) => assignment.job_id === job.id && assignment.user_id === assigneeFilter
-          );
-          console.log('[JobCalendar] Checking job:', job.title, {
-            jobId: job.id,
-            assigneeFilter,
-            isAssigned,
-            matchingAssignments: jobAssignments.filter(a => a.job_id === job.id)
-          });
-          if (!isAssigned) return;
-        }
-
+        // Assignee filtering is now done at the API level in JobBoard
         const startDate = new Date(job.scheduled_date);
         const endDate = new Date(startDate);
 

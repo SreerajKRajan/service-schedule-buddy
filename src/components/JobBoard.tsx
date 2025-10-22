@@ -100,7 +100,11 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
     fetchUsers();
     fetchAcceptedQuotes();
     fetchJobAssignments();
-    fetchJobs(); // Single fetch on mount
+  }, []);
+
+  // Fetch jobs when assignee filter changes
+  useEffect(() => {
+    fetchJobs();
 
     // Set up realtime subscriptions for jobs, job_assignments
     const jobsChannel = supabase
@@ -157,7 +161,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       supabase.removeChannel(assignmentsChannel);
       supabase.removeChannel(quotesChannel);
     };
-  }, [assigneeEmailFromUrl]); // Re-fetch when URL parameter changes
+  }, [assigneeEmailFromUrl, assigneeFilter]); // Re-fetch when URL parameter or assignee filter changes
 
   useEffect(() => {
     if (statusFilter === "accepted_quotes") {
@@ -202,13 +206,15 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
         console.log("[JobBoard] Fetching all jobs (full access)");
       }
 
-      // Build query - if assigneeUserId exists, filter by it
+      // Build query - filter by assigneeUserId (from URL) or assigneeFilter (from dropdown)
       let query;
-      if (assigneeUserId) {
+      const filterByUserId = assigneeUserId || (assigneeFilter !== "all" ? assigneeFilter : null);
+      
+      if (filterByUserId) {
         query = supabase
           .from("jobs")
           .select("*, job_assignments!inner(user_id)", { count: "exact" })
-          .eq("job_assignments.user_id", assigneeUserId)
+          .eq("job_assignments.user_id", filterByUserId)
           .not("scheduled_date", "is", null)
           .order("scheduled_date", { ascending: true })
           .limit(10000);
@@ -258,7 +264,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       const { data, error } = await supabase.from("job_assignments").select("job_id, user_id");
 
       if (error) throw error;
-      console.log('[JobBoard] Fetched job assignments:', data);
       setJobAssignments(data || []);
     } catch (error) {
       console.error("Error fetching job assignments:", error);
@@ -305,18 +310,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
       filtered = filtered.filter((job) => job.job_type === typeFilter);
     }
 
-    if (assigneeFilter !== "all") {
-      const assignedJobIds = jobAssignments
-        .filter((assignment) => assignment.user_id === assigneeFilter)
-        .map((assignment) => assignment.job_id);
-      console.log('[JobBoard] Filtering by assignee:', {
-        assigneeFilter,
-        totalAssignments: jobAssignments.length,
-        matchingAssignments: jobAssignments.filter(a => a.user_id === assigneeFilter),
-        assignedJobIds
-      });
-      filtered = filtered.filter((job) => assignedJobIds.includes(job.id));
-    }
+    // Assignee filtering is now done at the API level in fetchJobs
 
     if (dateRange?.from || dateRange?.to) {
       filtered = filtered.filter((job) => {
