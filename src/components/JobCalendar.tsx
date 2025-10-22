@@ -527,7 +527,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               style={{ height: view === 'month' ? 'auto' : '100%' }}
-              popup
+              popup={false}
               toolbar={false}
               formats={{
                 timeGutterFormat: "HH:mm",

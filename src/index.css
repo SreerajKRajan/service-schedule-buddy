@@ -163,7 +163,19 @@ All colors MUST be HSL.
   border-bottom: 2px solid hsl(var(--border));
 }
 
-/* Keep default show-more behavior as fallback; ideally not shown if all events fit */
+/* Force hide show-more to display all events */
+.rbc-show-more {
+  display: none !important;
+}
+
+.rbc-overlay {
+  display: none !important;
+}
+
+.rbc-row-content-scroll-container {
+  overflow: visible !important;
+  max-height: none !important;
+}
 
 /* Mobile optimizations for react-big-calendar */
 @media (max-width: 768px) {
