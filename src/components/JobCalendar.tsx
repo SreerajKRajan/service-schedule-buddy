@@ -203,7 +203,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")} UTC`;
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -226,7 +226,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")} UTC`;
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -254,7 +254,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + duration);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")} UTC`;
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -285,7 +285,7 @@ export function JobCalendar({
           endDate.setHours(startDate.getHours() + 2);
 
           // Format time for display
-          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")} UTC`;
+          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
           calendarEvents.push({
             id: quote.id,
