@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, RotateCcw } from "lucide-react";
+import { CalendarDays, Users, RotateCcw, Plus } from "lucide-react";
 
 interface User {
   id: string;
@@ -815,6 +815,79 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                   {/* End of services list */}
                 </div>
               </ScrollArea>
+
+              {/* Add Custom Service Section - Outside ScrollArea */}
+              <div ref={customServiceSectionRef} className="mt-4 pt-4 border-t">
+                {!showCustomServiceForm ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCustomServiceForm(true);
+                      setTimeout(() => {
+                        customServiceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }, 100);
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Custom Service
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">New Custom Service</h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowCustomServiceForm(false);
+                          setCustomServiceData({ name: "", duration: "", price: "" });
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Service name"
+                        value={customServiceData.name}
+                        onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
+                        autoFocus
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Duration (hours)"
+                          value={customServiceData.duration}
+                          onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
+                          step="0.5"
+                          min="0"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Price ($)"
+                          value={customServiceData.price}
+                          onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
+                          step="0.01"
+                          min="0"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={addCustomService}
+                        size="sm"
+                        className="w-full"
+                      >
+                        Add Service
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
