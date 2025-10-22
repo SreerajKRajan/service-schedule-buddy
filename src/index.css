@@ -110,7 +110,7 @@ All colors MUST be HSL.
 }
 
 .rbc-month-row {
-  min-height: 120px !important;
+  min-height: var(--month-row-height, 120px) !important;
   overflow: visible !important;
   display: flex;
   flex-direction: column;
@@ -118,7 +118,7 @@ All colors MUST be HSL.
 
 .rbc-row-content {
   flex: 1;
-  min-height: 120px !important;
+  min-height: var(--month-row-height, 120px) !important;
 }
 
 .rbc-day-bg {
@@ -163,14 +163,7 @@ All colors MUST be HSL.
   border-bottom: 2px solid hsl(var(--border));
 }
 
-/* Remove the popup/show more functionality */
-.rbc-show-more {
-  display: none !important;
-}
-
-.rbc-overlay {
-  display: none !important;
-}
+/* Keep default show-more behavior as fallback; ideally not shown if all events fit */
 
 /* Mobile optimizations for react-big-calendar */
 @media (max-width: 768px) {

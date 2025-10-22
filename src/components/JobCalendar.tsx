@@ -112,6 +112,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
   const [currentDate, setCurrentDate] = useState(new Date());
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [monthRowHeight, setMonthRowHeight] = useState<number>(140);
 
   useEffect(() => {
     if (!hideAcceptedQuotes) {
@@ -122,6 +123,28 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
   useEffect(() => {
     convertJobsToEvents();
   }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter]);
+
+  // Dynamically set month row height so all events fit without "+X more"
+  useEffect(() => {
+    if (view !== "month") return;
+
+    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const counts: Record<string, number> = {};
+    events.forEach((ev) => {
+      const d = ev.start;
+      if (d >= monthStart && d <= monthEnd) {
+        const key = d.toISOString().slice(0, 10);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+
+    const maxCount = Object.values(counts).reduce((a, b) => Math.max(a, b), 0);
+    const base = 36; // space for date label
+    const per = 22; // per-event line height
+    setMonthRowHeight(base + Math.max(maxCount, 1) * per);
+  }, [events, view, currentDate]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -484,7 +507,14 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
-          <div className="h-[400px] sm:h-96 md:h-[600px]">
+          <div
+            className="min-h-[320px]"
+            style={{
+              ...(view === 'month' ? { height: 'auto' } : { height: 600 }),
+              // @ts-ignore - CSS variable for month row height
+              ['--month-row-height' as any]: `${monthRowHeight}px`,
+            }}
+          >
             <BigCalendar
               localizer={localizer}
               events={events}
@@ -496,7 +526,8 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
               onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
-              style={{ height: "100%" }}
+              style={{ height: view === 'month' ? 'auto' : '100%' }}
+              popup
               toolbar={false}
               formats={{
                 timeGutterFormat: "HH:mm",
