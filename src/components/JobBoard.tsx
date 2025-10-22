@@ -618,6 +618,8 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
           onRefresh={refreshData}
           hideAcceptedQuotes={statusFilter !== "accepted_quotes" && !(statusFilter === "all" && hasFullAccess)}
           onConvertToJob={onConvertToJob}
+          assigneeFilter={assigneeFilter}
+          jobAssignments={jobAssignments}
         />
       ) : (
         <>

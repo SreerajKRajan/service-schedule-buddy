@@ -87,6 +87,11 @@ interface CalendarEvent {
   type: "job" | "quote";
 }
 
+interface JobAssignment {
+  user_id: string;
+  job_id: string;
+}
+
 interface JobCalendarProps {
   jobs: Job[];
   quotes?: AcceptedQuote[];
@@ -94,9 +99,11 @@ interface JobCalendarProps {
   onRefresh: () => void;
   hideAcceptedQuotes?: boolean;
   onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => void;
+  assigneeFilter?: string;
+  jobAssignments?: JobAssignment[];
 }
 
-export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false, onConvertToJob }: JobCalendarProps) {
+export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilter, onRefresh, hideAcceptedQuotes = false, onConvertToJob, assigneeFilter = "all", jobAssignments = [] }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<AcceptedQuote | null>(null);
@@ -114,7 +121,7 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter]);
+  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter, assigneeFilter, jobAssignments]);
 
   const fetchAcceptedQuotes = async () => {
     try {
@@ -177,6 +184,14 @@ export function JobCalendar({ jobs, quotes = [], statusFilter: parentStatusFilte
         
         // Apply status filter for jobs
         if (statusFilter !== "all" && job.status !== statusFilter) return;
+
+        // Apply assignee filter
+        if (assigneeFilter && assigneeFilter !== "all") {
+          const isAssigned = jobAssignments.some(
+            (assignment) => assignment.job_id === job.id && assignment.user_id === assigneeFilter
+          );
+          if (!isAssigned) return;
+        }
 
         const startDate = new Date(job.scheduled_date);
         const endDate = new Date(startDate);
