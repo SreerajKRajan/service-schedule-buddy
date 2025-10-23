@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import {
   CalendarDays,
   Grid,
@@ -180,11 +181,12 @@ export function JobCalendar({
     }
   };
 
-  const formatLocalDateTime = (dateStr) => {
+  const formatCDTDateTime = (dateStr) => {
     const dateObj = new Date(dateStr);
+    const cdtDate = toZonedTime(dateObj, "America/Chicago");
     return (
-      `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")} ` +
-      `${String(dateObj.getHours()).padStart(2, "0")}:${String(dateObj.getMinutes()).padStart(2, "0")}`
+      `${cdtDate.getFullYear()}-${String(cdtDate.getMonth() + 1).padStart(2, "0")}-${String(cdtDate.getDate()).padStart(2, "0")} ` +
+      `${String(cdtDate.getHours()).padStart(2, "0")}:${String(cdtDate.getMinutes()).padStart(2, "0")}`
     );
   };
 
@@ -197,13 +199,14 @@ export function JobCalendar({
         if (!quote.scheduled_date) return;
 
         const startDate = new Date(quote.scheduled_date);
+        const cdtStartDate = toZonedTime(startDate, "America/Chicago");
         const endDate = new Date(startDate);
 
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(cdtStartDate.getHours()).padStart(2, "0")}:${String(cdtStartDate.getMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -220,13 +223,14 @@ export function JobCalendar({
         if (!quote.scheduled_date) return;
 
         const startDate = new Date(quote.scheduled_date);
+        const cdtStartDate = toZonedTime(startDate, "America/Chicago");
         const endDate = new Date(startDate);
 
         // Default to 2 hours for quotes
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(cdtStartDate.getHours()).padStart(2, "0")}:${String(cdtStartDate.getMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -247,6 +251,7 @@ export function JobCalendar({
 
         // Assignee filtering is now done at the API level in JobBoard
         const startDate = new Date(job.scheduled_date);
+        const cdtStartDate = toZonedTime(startDate, "America/Chicago");
         const endDate = new Date(startDate);
 
         // Add estimated duration or default to 2 hours
@@ -254,7 +259,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + duration);
 
         // Format time for display
-        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(cdtStartDate.getHours()).padStart(2, "0")}:${String(cdtStartDate.getMinutes()).padStart(2, "0")}`;
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -279,13 +284,14 @@ export function JobCalendar({
           if (!quote.scheduled_date) return;
 
           const startDate = new Date(quote.scheduled_date);
+          const cdtStartDate = toZonedTime(startDate, "America/Chicago");
           const endDate = new Date(startDate);
 
           // Default to 2 hours for quotes
           endDate.setHours(startDate.getHours() + 2);
 
           // Format time for display
-          const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+          const timeStr = `${String(cdtStartDate.getHours()).padStart(2, "0")}:${String(cdtStartDate.getMinutes()).padStart(2, "0")}`;
 
           calendarEvents.push({
             id: quote.id,
@@ -687,7 +693,7 @@ export function JobCalendar({
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatLocalDateTime(selectedQuote.scheduled_date)}</span>
+                      <span>{formatCDTDateTime(selectedQuote.scheduled_date)}</span>
                     </div>
                   )}
                 </div>
