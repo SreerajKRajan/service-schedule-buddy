@@ -180,11 +180,11 @@ export function JobCalendar({
     }
   };
 
-  const formatUTCDateTime = (dateStr) => {
+  const formatLocalDateTime = (dateStr) => {
     const dateObj = new Date(dateStr);
     return (
-      `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, "0")}-${String(dateObj.getUTCDate()).padStart(2, "0")} ` +
-      `${String(dateObj.getUTCHours()).padStart(2, "0")}:${String(dateObj.getUTCMinutes()).padStart(2, "0")}`
+      `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")} ` +
+      `${String(dateObj.getHours()).padStart(2, "0")}:${String(dateObj.getMinutes()).padStart(2, "0")}`
     );
   };
 
@@ -203,7 +203,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -226,7 +226,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -254,7 +254,7 @@ export function JobCalendar({
         endDate.setHours(startDate.getHours() + duration);
 
         // Format time for display
-        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+        const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -285,7 +285,7 @@ export function JobCalendar({
           endDate.setHours(startDate.getHours() + 2);
 
           // Format time for display
-          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
+          const timeStr = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
 
           calendarEvents.push({
             id: quote.id,
@@ -687,7 +687,7 @@ export function JobCalendar({
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatUTCDateTime(selectedQuote.scheduled_date)}</span>
+                      <span>{formatLocalDateTime(selectedQuote.scheduled_date)}</span>
                     </div>
                   )}
                 </div>
