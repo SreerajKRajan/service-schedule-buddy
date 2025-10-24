@@ -183,7 +183,7 @@ export function JobCalendar({
   const accountTimezone = "America/Chicago";
 
   const formatCDTDateTime = (dateStr) => {
-    return moment.utc(dateStr).tz(accountTimezone).format("YYYY-MM-DD HH:mm");
+    return moment.tz(dateStr, accountTimezone).format("YYYY-MM-DD HH:mm");
   };
 
   const convertJobsToEvents = () => {
@@ -194,9 +194,9 @@ export function JobCalendar({
       quotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const start = moment.utc(quote.scheduled_date).tz(accountTimezone).toDate();
-        const end = moment.utc(quote.scheduled_date).tz(accountTimezone).add(2, 'hours').toDate();
-        const timeStr = moment.utc(quote.scheduled_date).tz(accountTimezone).format("HH:mm");
+        const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
+        const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
+        const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
 
         calendarEvents.push({
           id: quote.id,
@@ -212,9 +212,9 @@ export function JobCalendar({
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const start = moment.utc(quote.scheduled_date).tz(accountTimezone).toDate();
-        const end = moment.utc(quote.scheduled_date).tz(accountTimezone).add(2, 'hours').toDate();
-        const timeStr = moment.utc(quote.scheduled_date).tz(accountTimezone).format("HH:mm");
+        const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
+        const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
+        const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
 
         calendarEvents.push({
           id: quote.id,
@@ -235,9 +235,9 @@ export function JobCalendar({
 
         // Assignee filtering is now done at the API level in JobBoard
         const duration = job.estimated_duration || 2;
-        const start = moment.utc(job.scheduled_date).tz(accountTimezone).toDate();
-        const end = moment.utc(job.scheduled_date).tz(accountTimezone).add(duration, 'hours').toDate();
-        const timeStr = moment.utc(job.scheduled_date).tz(accountTimezone).format("HH:mm");
+        const start = moment.tz(job.scheduled_date, accountTimezone).toDate();
+        const end = moment.tz(job.scheduled_date, accountTimezone).add(duration, 'hours').toDate();
+        const timeStr = moment.tz(job.scheduled_date, accountTimezone).format("HH:mm");
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -261,9 +261,9 @@ export function JobCalendar({
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
-          const start = moment.utc(quote.scheduled_date).tz(accountTimezone).toDate();
-          const end = moment.utc(quote.scheduled_date).tz(accountTimezone).add(2, 'hours').toDate();
-          const timeStr = moment.utc(quote.scheduled_date).tz(accountTimezone).format("HH:mm");
+          const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
+          const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
+          const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
 
           calendarEvents.push({
             id: quote.id,
