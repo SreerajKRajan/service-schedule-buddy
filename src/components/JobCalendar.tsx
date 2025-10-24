@@ -183,11 +183,10 @@ export function JobCalendar({
   };
 
   const formatUTCDateTime = (dateStr) => {
-    const dateObj = new Date(dateStr);
-    return (
-      `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, "0")}-${String(dateObj.getUTCDate()).padStart(2, "0")} ` +
-      `${String(dateObj.getUTCHours()).padStart(2, "0")}:${String(dateObj.getUTCMinutes()).padStart(2, "0")}`
-    );
+    // Parse the UTC date and convert to CDT timezone
+    const m = moment.parseZone(dateStr).tz(accountTimezone, true);
+    // Format as: YYYY-MM-DD h:mm AM/PM
+    return m.format("YYYY-MM-DD h:mm A");
   };
 
   const convertJobsToEvents = () => {

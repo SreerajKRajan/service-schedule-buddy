@@ -9,6 +9,7 @@ import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EditJobDialog } from "./EditJobDialog";
 import { DeleteJobDialog } from "./DeleteJobDialog";
+import moment from "moment-timezone";
 
 interface Job {
   id: string;
@@ -221,11 +222,9 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not scheduled';
-    // Display exactly as received (no timezone conversion)
-    // Support values with seconds/timezone or simple datetime-local strings
-    const base = dateString.replace('Z', '');
-    const trimmed = base.length >= 16 ? base.slice(0, 16) : base;
-    return trimmed.replace('T', ', ');
+    // Parse the UTC date and convert to CDT timezone, then format as 12-hour time
+    const m = moment.parseZone(dateString).tz("America/Chicago", true);
+    return m.format("YYYY-MM-DD, h:mm A");
   };
 
   const formatPrice = (price: number) => {

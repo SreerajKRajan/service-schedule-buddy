@@ -1038,9 +1038,10 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                   <SelectValue placeholder="Min" />
                 </SelectTrigger>
                 <SelectContent>
-                  {['00', '15', '30', '45'].map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
+                  <SelectItem value="00">00</SelectItem>
+                  <SelectItem value="15">15</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="45">45</SelectItem>
                 </SelectContent>
               </Select>
               
