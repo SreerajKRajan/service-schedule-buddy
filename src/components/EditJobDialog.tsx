@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Users, RotateCcw } from "lucide-react";
@@ -73,7 +72,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     duration: "",
     price: ""
   });
-  const customServiceSectionRef = useRef<HTMLDivElement | null>(null);
   const [currentAssignments, setCurrentAssignments] = useState<string[]>([]);
   const [jobSchedule, setJobSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -350,32 +348,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         if (assignError) throw assignError;
       }
 
-      // First, create any custom services in the services table to get real UUIDs
-      const customServiceIdMap: Record<string, string> = {};
-      
-      for (const customService of customServices) {
-        if (formData.selected_services.includes(customService.id)) {
-          const { data: newService, error: serviceCreateError } = await supabase
-            .from('services')
-            .insert({
-              name: customService.name,
-              description: null,
-              default_duration: customService.duration,
-              default_price: customService.price,
-              active: true
-            })
-            .select()
-            .single();
-
-          if (serviceCreateError) throw serviceCreateError;
-          
-          if (newService) {
-            // Map the temporary custom ID to the real UUID
-            customServiceIdMap[customService.id] = newService.id;
-          }
-        }
-      }
-
       // Update job services
       // First, remove all existing job services
       const { error: deleteServicesError } = await supabase
@@ -388,11 +360,8 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       // Then, add new services with custom prices
       if (formData.selected_services.length > 0) {
         const jobServices = formData.selected_services.map(serviceId => {
-          // Check if this is a custom service that was just created
-          const realServiceId = customServiceIdMap[serviceId] || serviceId;
-          
           // Find service details (either from services list or custom services)
-          const service = services.find(s => s.id === realServiceId);
+          const service = services.find(s => s.id === serviceId);
           const customService = customServices.find(s => s.id === serviceId);
           
           if (service) {
@@ -401,17 +370,16 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               service_id: service.id,
               service_name: service.name,
               service_description: service.description,
-              price: servicePrices[serviceId] ?? service.default_price,
+              price: servicePrices[service.id] ?? service.default_price,
               duration: service.default_duration,
             };
-          } else if (customService && customServiceIdMap[serviceId]) {
-            // Use the real UUID for custom services
+          } else if (customService) {
             return {
               job_id: job.id,
-              service_id: customServiceIdMap[serviceId],
+              service_id: customService.id,
               service_name: customService.name,
               service_description: null,
-              price: servicePrices[serviceId] ?? customService.price,
+              price: servicePrices[customService.id] ?? customService.price,
               duration: customService.duration,
             };
           }
@@ -562,167 +530,167 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               <Label>Services *</Label>
               <Card>
                 <CardContent className="pt-4">
-                  <ScrollArea className="h-[400px]">
-                    <div className="space-y-4 pr-4">
-                      {/* Database Services */}
-                      <div className="space-y-3">
-                        {services.map((service) => (
-                          <div key={service.id} className="border border-border rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <Checkbox
-                                id={service.id}
-                                checked={formData.selected_services.includes(service.id)}
-                                onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <Label htmlFor={service.id} className="text-sm font-medium cursor-pointer">
-                                    {service.name}
-                                  </Label>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {service.default_duration && `Duration: ${service.default_duration}h`}
-                                  {service.default_duration && service.default_price && " • "}
-                                  {service.default_price && `Default: $${service.default_price}`}
-                                </div>
-                                {formData.selected_services.includes(service.id) && (
-                                  <div className="mt-2">
-                                    <Label className="text-xs text-muted-foreground">Price ($)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={servicePrices[service.id] || ''}
-                                      onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
-                                      placeholder="Enter price"
-                                      className="mt-1 h-8"
-                                    />
-                                  </div>
-                                )}
+                  <div className="space-y-4">
+                    {/* Database Services */}
+                    <div className="space-y-3">
+                      {services.map((service) => (
+                        <div key={service.id} className="border border-border rounded-lg p-3">
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id={service.id}
+                              checked={formData.selected_services.includes(service.id)}
+                              onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor={service.id} className="text-sm font-medium cursor-pointer">
+                                  {service.name}
+                                </Label>
                               </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {service.default_duration && `Duration: ${service.default_duration}h`}
+                                {service.default_duration && service.default_price && " • "}
+                                {service.default_price && `Default: $${service.default_price}`}
+                              </div>
+                              {formData.selected_services.includes(service.id) && (
+                                <div className="mt-2">
+                                  <Label className="text-xs text-muted-foreground">Price ($)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={servicePrices[service.id] || ''}
+                                    onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
+                                    placeholder="Enter price"
+                                    className="mt-1 h-8"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
+                    </div>
 
-                      {/* Custom Services */}
-                      {customServices.length > 0 && (
-                        <div className="border-t pt-4">
-                          <h4 className="text-sm font-medium mb-3">Custom Services</h4>
-                          <div className="space-y-3">
-                            {customServices.map(service => (
-                              <div key={service.id} className="border border-border rounded-lg p-3">
-                                <div className="flex items-start space-x-2">
-                                  <Checkbox
-                                    id={`custom-service-${service.id}`}
-                                    checked={formData.selected_services.includes(service.id)}
-                                    onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <Label 
-                                        htmlFor={`custom-service-${service.id}`} 
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                      >
-                                        {service.name}
-                                        <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
-                                      </Label>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeCustomService(service.id)}
-                                        className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
-                                      >
-                                        ×
-                                      </Button>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      Duration: {service.duration}h • Default: ${service.price}
-                                    </div>
-                                    {formData.selected_services.includes(service.id) && (
-                                      <div className="mt-2">
-                                        <Label className="text-xs text-muted-foreground">Price ($)</Label>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          value={servicePrices[service.id] || ''}
-                                          onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
-                                          placeholder="Enter price"
-                                          className="mt-1 h-8"
-                                        />
-                                      </div>
-                                    )}
+                    {/* Custom Services */}
+                    {customServices.length > 0 && (
+                      <div className="border-t pt-4">
+                        <h4 className="text-sm font-medium mb-3">Custom Services</h4>
+                        <div className="space-y-3">
+                          {customServices.map(service => (
+                            <div key={service.id} className="border border-border rounded-lg p-3">
+                              <div className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={`custom-service-${service.id}`}
+                                  checked={formData.selected_services.includes(service.id)}
+                                  onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <Label 
+                                      htmlFor={`custom-service-${service.id}`} 
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                      {service.name}
+                                      <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
+                                    </Label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeCustomService(service.id)}
+                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
+                                    >
+                                      ×
+                                    </Button>
                                   </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Duration: {service.duration}h • Default: ${service.price}
+                                  </div>
+                                  {formData.selected_services.includes(service.id) && (
+                                    <div className="mt-2">
+                                      <Label className="text-xs text-muted-foreground">Price ($)</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={servicePrices[service.id] || ''}
+                                        onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
+                                        placeholder="Enter price"
+                                        className="mt-1 h-8"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* End of services list */}
-                    </div>
-                  </ScrollArea>
-                  {/* Add Custom Service Section - Outside scroll area */}
-                  {showCustomServiceForm ? (
-                    <div ref={customServiceSectionRef} className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-medium mb-3">Add Custom Service</h4>
-                      <div className="grid gap-3">
-                        <div className="grid gap-2 md:grid-cols-3">
-                          <Input
-                            placeholder="Service name"
-                            value={customServiceData.name}
-                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
-                            autoFocus
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Duration (hours)"
-                            value={customServiceData.duration}
-                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Price ($)"
-                            value={customServiceData.price}
-                            onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button type="button" onClick={addCustomService} size="sm">
-                            Add Service
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setShowCustomServiceForm(false);
-                              setCustomServiceData({ name: "", duration: "", price: "" });
-                            }} 
-                            size="sm"
-                          >
-                            Cancel
-                          </Button>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="border-t pt-4 mt-4">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setShowCustomServiceForm(true);
-                          setTimeout(() => customServiceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-                        }}
-                        className="w-full"
-                      >
-                        + Add Custom Service
-                      </Button>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Add Custom Service Form */}
+                    {showCustomServiceForm && (
+                      <div className="border-t pt-4">
+                        <h4 className="text-sm font-medium mb-3">Add Custom Service</h4>
+                        <div className="grid gap-3">
+                          <div className="grid gap-2 md:grid-cols-3">
+                            <Input
+                              placeholder="Service name"
+                              value={customServiceData.name}
+                              onChange={(e) => setCustomServiceData(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Duration (hours)"
+                              value={customServiceData.duration}
+                              onChange={(e) => setCustomServiceData(prev => ({ ...prev, duration: e.target.value }))}
+                            />
+                            <Input
+                              type="number"
+                              placeholder="Price ($)"
+                              value={customServiceData.price}
+                              onChange={(e) => setCustomServiceData(prev => ({ ...prev, price: e.target.value }))}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="button" onClick={addCustomService} size="sm">
+                              Add Service
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => {
+                                setShowCustomServiceForm(false);
+                                setCustomServiceData({ name: "", duration: "", price: "" });
+                              }} 
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Custom Service Button */}
+                    {!showCustomServiceForm && (
+                      <div className="border-t pt-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowCustomServiceForm(true)}
+                          className="w-full"
+                        >
+                          + Add Custom Service
+                        </Button>
+                      </div>
+                    )}
+
+                    {formData.selected_services.length === 0 && (
+                      <p className="text-sm text-destructive mt-2">Please select at least one service</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>

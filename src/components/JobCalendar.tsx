@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Calendar as BigCalendar, momentLocalizer, View } from "react-big-calendar";
-import moment from "moment-timezone";
+import moment from "moment";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -180,10 +180,12 @@ export function JobCalendar({
     }
   };
 
-  const accountTimezone = "America/Chicago";
-
-  const formatCDTDateTime = (dateStr) => {
-    return moment.tz(dateStr, accountTimezone).format("YYYY-MM-DD HH:mm");
+  const formatUTCDateTime = (dateStr) => {
+    const dateObj = new Date(dateStr);
+    return (
+      `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, "0")}-${String(dateObj.getUTCDate()).padStart(2, "0")} ` +
+      `${String(dateObj.getUTCHours()).padStart(2, "0")}:${String(dateObj.getUTCMinutes()).padStart(2, "0")}`
+    );
   };
 
   const convertJobsToEvents = () => {
@@ -194,18 +196,20 @@ export function JobCalendar({
       quotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment(moment(quote.scheduled_date).format("YYYY-MM-DDTHH:mm:ss")).tz(accountTimezone, true);
-        // const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
-        const start = m.toDate();
-        // const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
-        const end = m.clone().add(2, "hours").toDate();
-        const timeStr = m.format("HH:mm");
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
+
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
+
+        // Format time for display
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
           title: `${timeStr} ${quote.customer_name || "Customer"}`,
-          start,
-          end,
+          start: startDate,
+          end: endDate,
           resource: quote,
           type: "quote",
         });
@@ -215,18 +219,20 @@ export function JobCalendar({
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment(moment(quote.scheduled_date).format("YYYY-MM-DDTHH:mm:ss")).tz(accountTimezone, true);
-        // const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
-        const start = m.toDate();
-        // const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
-        const end = m.clone().add(2, "hours").toDate();
-        const timeStr = m.format("HH:mm");
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
+
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
+
+        // Format time for display
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
           title: `${timeStr} ${quote.customer_name || "Customer"}`,
-          start,
-          end,
+          start: startDate,
+          end: endDate,
           resource: quote,
           type: "quote",
         });
@@ -240,14 +246,15 @@ export function JobCalendar({
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
         // Assignee filtering is now done at the API level in JobBoard
-        const duration = job.estimated_duration || 2;
-        const m = moment(moment(job.scheduled_date).format("YYYY-MM-DDTHH:mm:ss")).tz(accountTimezone, true);
+        const startDate = new Date(job.scheduled_date);
+        const endDate = new Date(startDate);
 
-        // const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
-        const start = m.toDate();
-        // const end = new Date(m.year(), m.month(), m.date(), m.hour() + duration, m.minute(), m.second());
-        const end = m.clone().add(duration, "hours").toDate();
-        const timeStr = m.format("HH:mm");
+        // Add estimated duration or default to 2 hours
+        const duration = job.estimated_duration || 2;
+        endDate.setHours(startDate.getHours() + duration);
+
+        // Format time for display
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -255,8 +262,8 @@ export function JobCalendar({
         calendarEvents.push({
           id: job.id,
           title: `${timeStr} ${job.customer_name || "Customer"}${recurringIndicator}`,
-          start,
-          end,
+          start: startDate,
+          end: endDate,
           resource: job,
           type: "job",
         });
@@ -271,19 +278,20 @@ export function JobCalendar({
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
-          const m = moment(moment(quote.scheduled_date).format("YYYY-MM-DDTHH:mm:ss")).tz(accountTimezone, true);
+          const startDate = new Date(quote.scheduled_date);
+          const endDate = new Date(startDate);
 
-          // const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
-          const start = m.toDate();
-          // const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
-          const end = m.clone().add(2, "hours").toDate();
-          const timeStr = m.format("HH:mm");
+          // Default to 2 hours for quotes
+          endDate.setHours(startDate.getHours() + 2);
+
+          // Format time for display
+          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
           calendarEvents.push({
             id: quote.id,
             title: `${timeStr} ${quote.customer_name || "Customer"}`,
-            start,
-            end,
+            start: startDate,
+            end: endDate,
             resource: quote,
             type: "quote",
           });
@@ -679,7 +687,7 @@ export function JobCalendar({
                   {selectedQuote.scheduled_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatCDTDateTime(selectedQuote.scheduled_date)}</span>
+                      <span>{formatUTCDateTime(selectedQuote.scheduled_date)}</span>
                     </div>
                   )}
                 </div>
