@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Users, RotateCcw, Plus } from "lucide-react";
+import moment from "moment-timezone";
 
 interface User {
   id: string;
@@ -126,14 +127,12 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
       
       // Parse the scheduled_date to extract date and time components
       if (initialData.scheduled_date) {
-        const date = new Date(initialData.scheduled_date);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
+        // Parse UTC date and convert to CDT timezone
+        const m = moment.parseZone(initialData.scheduled_date).tz("America/Chicago", true);
+        const dateStr = m.format("YYYY-MM-DD");
         
-        let hours = date.getHours();
-        const minutes = String(date.getMinutes()).padStart(2, '0');
+        let hours = m.hour();
+        const minutes = m.format("mm");
         const period = hours >= 12 ? "PM" : "AM";
         hours = hours % 12 || 12; // Convert to 12-hour format
         
@@ -983,7 +982,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
                 });
               }}
             />
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-[1fr_1fr_1fr_0.8fr] gap-2">
               <Select 
                 value={timeData.hour} 
                 onValueChange={(value) => {
