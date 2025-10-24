@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Calendar as BigCalendar, momentLocalizer, View } from "react-big-calendar";
-import moment from "moment-timezone";
+import moment from "moment";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,7 +30,6 @@ import { Calendar as DatePicker } from "@/components/ui/calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
-const accountTimezone = "America/Chicago";
 
 interface Job {
   id: string;
@@ -197,14 +196,14 @@ export function JobCalendar({
       quotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        // Create Date objects from formatted string to ensure consistent calendar placement
-        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
-        const startDate = new Date(dateStr);
-        const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
+
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = m.format("h A");
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -220,14 +219,14 @@ export function JobCalendar({
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        // Create Date objects from formatted string to ensure consistent calendar placement
-        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
-        const startDate = new Date(dateStr);
-        const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
+        const startDate = new Date(quote.scheduled_date);
+        const endDate = new Date(startDate);
+
+        // Default to 2 hours for quotes
+        endDate.setHours(startDate.getHours() + 2);
 
         // Format time for display
-        const timeStr = m.format("h A");
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         calendarEvents.push({
           id: quote.id,
@@ -247,18 +246,15 @@ export function JobCalendar({
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
         // Assignee filtering is now done at the API level in JobBoard
-        const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
-        
-        // Create Date objects from formatted string to ensure consistent calendar placement
-        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
-        const startDate = new Date(dateStr);
+        const startDate = new Date(job.scheduled_date);
+        const endDate = new Date(startDate);
 
         // Add estimated duration or default to 2 hours
         const duration = job.estimated_duration || 2;
-        const endDate = new Date(m.clone().add(duration, "hours").format("YYYY-MM-DD HH:mm:ss"));
+        endDate.setHours(startDate.getHours() + duration);
 
         // Format time for display
-        const timeStr = m.format("h A");
+        const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -282,14 +278,14 @@ export function JobCalendar({
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
-          const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-          // Create Date objects from formatted string to ensure consistent calendar placement
-          const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
-          const startDate = new Date(dateStr);
-          const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
+          const startDate = new Date(quote.scheduled_date);
+          const endDate = new Date(startDate);
+
+          // Default to 2 hours for quotes
+          endDate.setHours(startDate.getHours() + 2);
 
           // Format time for display
-          const timeStr = m.format("h A");
+          const timeStr = `${String(startDate.getUTCHours()).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`;
 
           calendarEvents.push({
             id: quote.id,
