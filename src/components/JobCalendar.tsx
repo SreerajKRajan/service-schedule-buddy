@@ -198,8 +198,10 @@ export function JobCalendar({
         if (!quote.scheduled_date) return;
 
         const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        const startDate = m.toDate();
-        const endDate = m.clone().add(2, "hours").toDate();
+        // Create Date objects from formatted string to ensure consistent calendar placement
+        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
+        const startDate = new Date(dateStr);
+        const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
 
         // Format time for display
         const timeStr = m.format("h A");
@@ -219,8 +221,10 @@ export function JobCalendar({
         if (!quote.scheduled_date) return;
 
         const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        const startDate = m.toDate();
-        const endDate = m.clone().add(2, "hours").toDate();
+        // Create Date objects from formatted string to ensure consistent calendar placement
+        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
+        const startDate = new Date(dateStr);
+        const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
 
         // Format time for display
         const timeStr = m.format("h A");
@@ -244,11 +248,14 @@ export function JobCalendar({
 
         // Assignee filtering is now done at the API level in JobBoard
         const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
-        const startDate = m.toDate();
+        
+        // Create Date objects from formatted string to ensure consistent calendar placement
+        const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
+        const startDate = new Date(dateStr);
 
         // Add estimated duration or default to 2 hours
         const duration = job.estimated_duration || 2;
-        const endDate = m.clone().add(duration, "hours").toDate();
+        const endDate = new Date(m.clone().add(duration, "hours").format("YYYY-MM-DD HH:mm:ss"));
 
         // Format time for display
         const timeStr = m.format("h A");
@@ -276,8 +283,10 @@ export function JobCalendar({
           if (!quote.scheduled_date) return;
 
           const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-          const startDate = m.toDate();
-          const endDate = m.clone().add(2, "hours").toDate();
+          // Create Date objects from formatted string to ensure consistent calendar placement
+          const dateStr = m.format("YYYY-MM-DD HH:mm:ss");
+          const startDate = new Date(dateStr);
+          const endDate = new Date(m.clone().add(2, "hours").format("YYYY-MM-DD HH:mm:ss"));
 
           // Format time for display
           const timeStr = m.format("h A");
