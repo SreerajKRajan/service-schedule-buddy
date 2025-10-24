@@ -97,6 +97,13 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     quoted_by: "",
     ghl_contact_id: "",
   });
+  
+  const [timeData, setTimeData] = useState({
+    date: "",
+    hour: "12",
+    minute: "00",
+    period: "PM" as "AM" | "PM"
+  });
   const [servicePrices, setServicePrices] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
@@ -115,9 +122,28 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   }, [open, job.id, job.price, job.updated_at, services.length, users.length]);
 
   const populateFormData = async () => {
-    const scheduledDate = job.scheduled_date 
-      ? new Date(job.scheduled_date).toISOString().slice(0, 16)
-      : "";
+    const scheduledDate = job.scheduled_date || "";
+
+    // Parse the scheduled_date to extract date and time components
+    if (job.scheduled_date) {
+      const date = new Date(job.scheduled_date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
+      let hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const period = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12; // Convert to 12-hour format
+      
+      setTimeData({
+        date: dateStr,
+        hour: String(hours),
+        minute: minutes,
+        period: period
+      });
+    }
 
     // Try to match job_type back to service IDs
     const selectedServiceIds: string[] = [];
@@ -781,13 +807,122 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="scheduled_date">Scheduled Date</Label>
-              <Input
-                id="scheduled_date"
-                type="datetime-local"
-                value={formData.scheduled_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, scheduled_date: e.target.value }))}
-              />
+              <Label htmlFor="scheduled_date">Scheduled Date & Time</Label>
+              <div className="grid grid-cols-1 gap-2">
+                <Input
+                  id="scheduled_date"
+                  type="date"
+                  value={timeData.date}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setTimeData(prevTime => {
+                      const updated = { ...prevTime, date: newDate };
+                      
+                      // Convert to ISO format for formData
+                      if (newDate && updated.hour && updated.minute) {
+                        let hour24 = parseInt(updated.hour);
+                        if (updated.period === "PM" && hour24 !== 12) hour24 += 12;
+                        if (updated.period === "AM" && hour24 === 12) hour24 = 0;
+                        
+                        const isoString = `${newDate}T${String(hour24).padStart(2, '0')}:${updated.minute}:00`;
+                        setFormData(prev => ({ ...prev, scheduled_date: isoString }));
+                      }
+                      
+                      return updated;
+                    });
+                  }}
+                />
+                <div className="grid grid-cols-4 gap-2">
+                  <Select 
+                    value={timeData.hour} 
+                    onValueChange={(value) => {
+                      setTimeData(prevTime => {
+                        const updated = { ...prevTime, hour: value };
+                        
+                        // Convert to ISO format for formData
+                        if (updated.date && updated.minute) {
+                          let hour24 = parseInt(value);
+                          if (updated.period === "PM" && hour24 !== 12) hour24 += 12;
+                          if (updated.period === "AM" && hour24 === 12) hour24 = 0;
+                          
+                          const isoString = `${updated.date}T${String(hour24).padStart(2, '0')}:${updated.minute}:00`;
+                          setFormData(prev => ({ ...prev, scheduled_date: isoString }));
+                        }
+                        
+                        return updated;
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Hour" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                        <SelectItem key={h} value={String(h)}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={timeData.minute} 
+                    onValueChange={(value) => {
+                      setTimeData(prevTime => {
+                        const updated = { ...prevTime, minute: value };
+                        
+                        // Convert to ISO format for formData
+                        if (updated.date && updated.hour) {
+                          let hour24 = parseInt(updated.hour);
+                          if (updated.period === "PM" && hour24 !== 12) hour24 += 12;
+                          if (updated.period === "AM" && hour24 === 12) hour24 = 0;
+                          
+                          const isoString = `${updated.date}T${String(hour24).padStart(2, '0')}:${value}:00`;
+                          setFormData(prev => ({ ...prev, scheduled_date: isoString }));
+                        }
+                        
+                        return updated;
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Min" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['00', '15', '30', '45'].map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={timeData.period} 
+                    onValueChange={(value: "AM" | "PM") => {
+                      setTimeData(prevTime => {
+                        const updated = { ...prevTime, period: value };
+                        
+                        // Convert to ISO format for formData
+                        if (updated.date && updated.hour && updated.minute) {
+                          let hour24 = parseInt(updated.hour);
+                          if (value === "PM" && hour24 !== 12) hour24 += 12;
+                          if (value === "AM" && hour24 === 12) hour24 = 0;
+                          
+                          const isoString = `${updated.date}T${String(hour24).padStart(2, '0')}:${updated.minute}:00`;
+                          setFormData(prev => ({ ...prev, scheduled_date: isoString }));
+                        }
+                        
+                        return updated;
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
