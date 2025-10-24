@@ -194,9 +194,10 @@ export function JobCalendar({
       quotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
-        const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
-        const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
+        const m = moment.tz(quote.scheduled_date, accountTimezone);
+        const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
+        const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
+        const timeStr = m.format("HH:mm");
 
         calendarEvents.push({
           id: quote.id,
@@ -212,9 +213,10 @@ export function JobCalendar({
       acceptedQuotes.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
-        const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
-        const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
+        const m = moment.tz(quote.scheduled_date, accountTimezone);
+        const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
+        const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
+        const timeStr = m.format("HH:mm");
 
         calendarEvents.push({
           id: quote.id,
@@ -235,9 +237,10 @@ export function JobCalendar({
 
         // Assignee filtering is now done at the API level in JobBoard
         const duration = job.estimated_duration || 2;
-        const start = moment.tz(job.scheduled_date, accountTimezone).toDate();
-        const end = moment.tz(job.scheduled_date, accountTimezone).add(duration, 'hours').toDate();
-        const timeStr = moment.tz(job.scheduled_date, accountTimezone).format("HH:mm");
+        const m = moment.tz(job.scheduled_date, accountTimezone);
+        const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
+        const end = new Date(m.year(), m.month(), m.date(), m.hour() + duration, m.minute(), m.second());
+        const timeStr = m.format("HH:mm");
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -261,9 +264,10 @@ export function JobCalendar({
         acceptedQuotes.forEach((quote) => {
           if (!quote.scheduled_date) return;
 
-          const start = moment.tz(quote.scheduled_date, accountTimezone).toDate();
-          const end = moment.tz(quote.scheduled_date, accountTimezone).add(2, 'hours').toDate();
-          const timeStr = moment.tz(quote.scheduled_date, accountTimezone).format("HH:mm");
+          const m = moment.tz(quote.scheduled_date, accountTimezone);
+          const start = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second());
+          const end = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute(), m.second());
+          const timeStr = m.format("HH:mm");
 
           calendarEvents.push({
             id: quote.id,
