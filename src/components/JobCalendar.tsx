@@ -202,7 +202,7 @@ export function JobCalendar({
         const endDate = m.clone().add(2, "hours").toDate();
 
         // Format time for display
-        const timeStr = m.format("HH:mm");
+        const timeStr = m.format("h A");
 
         calendarEvents.push({
           id: quote.id,
@@ -223,7 +223,7 @@ export function JobCalendar({
         const endDate = m.clone().add(2, "hours").toDate();
 
         // Format time for display
-        const timeStr = m.format("HH:mm");
+        const timeStr = m.format("h A");
 
         calendarEvents.push({
           id: quote.id,
@@ -251,7 +251,7 @@ export function JobCalendar({
         const endDate = m.clone().add(duration, "hours").toDate();
 
         // Format time for display
-        const timeStr = m.format("HH:mm");
+        const timeStr = m.format("h A");
 
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
@@ -280,7 +280,7 @@ export function JobCalendar({
           const endDate = m.clone().add(2, "hours").toDate();
 
           // Format time for display
-          const timeStr = m.format("HH:mm");
+          const timeStr = m.format("h A");
 
           calendarEvents.push({
             id: quote.id,
