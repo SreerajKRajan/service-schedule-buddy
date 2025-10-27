@@ -38,9 +38,6 @@ export function Dashboard({ customerEmail, enabled = true }: DashboardProps) {
 
   const fetchDashboardStats = async () => {
     try {
-      // Update overdue jobs to service_due status first
-      await supabase.rpc('update_overdue_jobs');
-      
       // Fetch job stats with email filter if provided
       let jobs: any[] = [];
       
