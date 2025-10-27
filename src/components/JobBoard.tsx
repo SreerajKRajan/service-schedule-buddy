@@ -175,8 +175,6 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      // Update overdue jobs to service_due status first
-      await supabase.rpc("update_overdue_jobs");
 
       // Check if URL has ?id=email parameter and user doesn't have full access
       let assigneeUserId: string | null = null;
