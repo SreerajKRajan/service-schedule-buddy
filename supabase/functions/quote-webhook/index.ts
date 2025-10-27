@@ -28,7 +28,8 @@ serve(async (req) => {
       jobs_selected, 
       first_time,
       scheduled_date,
-      ghl_contact_id
+      ghl_contact_id,
+      appointment_id
     } = await req.json();
 
     console.log('Received webhook data:', {
@@ -40,7 +41,8 @@ serve(async (req) => {
       jobs_selected,
       first_time,
       scheduled_date,
-      ghl_contact_id
+      ghl_contact_id,
+      appointment_id
     });
 
     // Validate required fields
@@ -52,6 +54,29 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
+    }
+
+    // Check if appointment_id exists in jobs table (already converted)
+    if (appointment_id) {
+      const { data: existingJob } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('appointment_id', appointment_id)
+        .single();
+
+      if (existingJob) {
+        console.log(`Job already exists for appointment_id ${appointment_id}, skipping`);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Job already exists for this appointment',
+            job_id: existingJob.id 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     // Look up user ID if quoted_by is provided as a name
@@ -72,7 +97,62 @@ serve(async (req) => {
       }
     }
 
-    // Insert into accepted_quotes table
+    // Check if appointment_id exists in accepted_quotes (update instead of insert)
+    if (appointment_id) {
+      const { data: existingQuote } = await supabase
+        .from('accepted_quotes')
+        .select('id, status')
+        .eq('appointment_id', appointment_id)
+        .single();
+
+      if (existingQuote) {
+        console.log(`Updating existing quote ${existingQuote.id} for appointment_id ${appointment_id}`);
+        
+        const { data, error } = await supabase
+          .from('accepted_quotes')
+          .update({
+            customer_name,
+            customer_phone,
+            customer_email,
+            customer_address,
+            quoted_by: quoted_by_id,
+            jobs_selected,
+            first_time: first_time || false,
+            scheduled_date,
+            ghl_contact_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingQuote.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error:', error);
+          return new Response(
+            JSON.stringify({ error: 'Failed to update quote data' }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+
+        console.log('Successfully updated accepted quote:', data);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Quote updated successfully',
+            id: data.id 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    // Insert new quote into accepted_quotes table
     const { data, error } = await supabase
       .from('accepted_quotes')
       .insert({
@@ -85,6 +165,7 @@ serve(async (req) => {
         first_time: first_time || false,
         scheduled_date,
         ghl_contact_id,
+        appointment_id,
         status: 'pending'
       })
       .select()
@@ -101,7 +182,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Successfully saved accepted quote:', data);
+    console.log('Successfully saved new accepted quote:', data);
 
     return new Response(
       JSON.stringify({ 

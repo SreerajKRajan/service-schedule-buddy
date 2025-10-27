@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       accepted_quotes: {
         Row: {
+          appointment_id: string | null
           created_at: string
           customer_address: string | null
           customer_email: string | null
@@ -31,6 +32,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_email?: string | null
@@ -197,6 +200,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          appointment_id: string | null
           completed_date: string | null
           created_at: string
           customer_address: string | null
@@ -221,6 +225,7 @@ export type Database = {
           webhook_sent_at: string | null
         }
         Insert: {
+          appointment_id?: string | null
           completed_date?: string | null
           created_at?: string
           customer_address?: string | null
@@ -245,6 +250,7 @@ export type Database = {
           webhook_sent_at?: string | null
         }
         Update: {
+          appointment_id?: string | null
           completed_date?: string | null
           created_at?: string
           customer_address?: string | null
@@ -381,6 +387,7 @@ export type Database = {
       get_jobs_by_assignee: {
         Args: { p_user_id: string }
         Returns: {
+          appointment_id: string | null
           completed_date: string | null
           created_at: string
           customer_address: string | null

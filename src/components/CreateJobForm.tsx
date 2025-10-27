@@ -42,6 +42,7 @@ interface CreateJobFormProps {
     first_time?: boolean;
     jobs_selected?: any[];
     ghl_contact_id?: string;
+    appointment_id?: string;
   };
   onJobCreated?: () => void;
   onJobCreatedError?: () => void;
@@ -89,6 +90,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
     first_time: false,
     quoted_by: "",
     ghl_contact_id: "",
+    appointment_id: "",
   });
   
   const [timeData, setTimeData] = useState({
@@ -119,6 +121,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         scheduled_date: initialData.scheduled_date || "",
         first_time: initialData.first_time || false,
         ghl_contact_id: initialData.ghl_contact_id || "",
+        appointment_id: initialData.appointment_id || "",
         title: initialData.jobs_selected?.map(job => job.title || job.name).join(", ") || prev.title,
         job_type: initialData.jobs_selected?.map(job => job.name || job.title).join(", ") || prev.job_type,
         estimated_duration: initialData.jobs_selected?.reduce((sum, job) => sum + (job.duration ? Math.round(job.duration / 60) : 0), 0).toString() || prev.estimated_duration,
@@ -466,6 +469,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
           status: 'pending' as const,
           quoted_by: formData.quoted_by || null,
           ghl_contact_id: formData.ghl_contact_id || null,
+          appointment_id: formData.appointment_id || null,
         }));
 
         // Insert all jobs
@@ -574,6 +578,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
           status: 'pending' as const,
           quoted_by: formData.quoted_by || null,
           ghl_contact_id: formData.ghl_contact_id || null,
+          appointment_id: formData.appointment_id || null,
         };
 
         const { data: job, error: jobError } = await supabase
@@ -669,6 +674,7 @@ export function CreateJobForm({ onSuccess, onCancel, initialData, onJobCreated, 
         first_time: false,
         quoted_by: "",
         ghl_contact_id: "",
+        appointment_id: "",
       });
 
       // Call onJobCreated if provided (for quote conversion)

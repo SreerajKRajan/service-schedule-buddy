@@ -21,6 +21,7 @@ interface AcceptedQuote {
   status: string;
   created_at: string;
   ghl_contact_id?: string;
+  appointment_id?: string;
   quoted_by_user?: {
     name: string;
   };

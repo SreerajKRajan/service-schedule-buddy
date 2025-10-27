@@ -68,6 +68,7 @@ interface AcceptedQuote {
   first_time: boolean;
   quoted_by?: string;
   ghl_contact_id?: string;
+  appointment_id?: string;
 }
 
 interface JobSchedule {

@@ -64,6 +64,7 @@ interface AcceptedQuote {
   first_time: boolean;
   quoted_by?: string;
   ghl_contact_id?: string;
+  appointment_id?: string;
   created_at: string;
   updated_at: string;
 }

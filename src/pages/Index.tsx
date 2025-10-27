@@ -149,6 +149,7 @@ const Index = () => {
                     first_time: quote.first_time,
                     jobs_selected: quote.jobs_selected,
                     ghl_contact_id: quote.ghl_contact_id,
+                    appointment_id: quote.appointment_id,
                   });
                   setQuoteConversionCallback(() => ({
                     onSuccess,
@@ -163,7 +164,7 @@ const Index = () => {
               <>
                 <TabsContent value="quotes" className="space-y-6">
                   <AcceptedQuotes 
-                    onConvertToJob={(quote, onSuccess, onError) => {
+                  onConvertToJob={(quote, onSuccess, onError) => {
                       setCreateJobData({
                         customer_name: quote.customer_name,
                         customer_phone: quote.customer_phone,
@@ -174,6 +175,7 @@ const Index = () => {
                         first_time: quote.first_time,
                         jobs_selected: quote.jobs_selected,
                         ghl_contact_id: quote.ghl_contact_id,
+                        appointment_id: quote.appointment_id,
                       });
                       setQuoteConversionCallback(() => ({
                         onSuccess,
