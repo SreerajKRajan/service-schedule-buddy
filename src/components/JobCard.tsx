@@ -80,6 +80,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-cyan-100 text-cyan-800';
       case 'on_the_way': return 'bg-orange-100 text-orange-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-green-100 text-green-800';
@@ -253,7 +254,8 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         <div className="flex gap-2 flex-wrap">
           <Badge className={getStatusColor(job.status)}>
             {job.status === 'on_the_way' ? 'On The Way' : 
-             job.status === 'service_due' ? 'Service Due' : 
+             job.status === 'service_due' ? 'Service Due' :
+             job.status === 'confirmed' ? 'Confirmed' : 
              job.status.replace('_', ' ')}
           </Badge>
           <Badge className={getPriorityColor(job.priority)}>
@@ -412,6 +414,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
             </SelectTrigger>
             <SelectContent className="bg-popover border border-border z-50">
               <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="service_due">Service Due</SelectItem>
               <SelectItem value="on_the_way">On The Way</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>

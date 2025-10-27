@@ -418,6 +418,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      update_confirmed_jobs_to_service_due: { Args: never; Returns: number }
       update_overdue_jobs: { Args: never; Returns: number }
     }
     Enums: {
@@ -435,6 +436,7 @@ export type Database = {
         | "cancelled"
         | "on_the_way"
         | "service_due"
+        | "confirmed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +579,7 @@ export const Constants = {
         "cancelled",
         "on_the_way",
         "service_due",
+        "confirmed",
       ],
     },
   },
