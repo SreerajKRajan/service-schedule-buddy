@@ -514,6 +514,7 @@ export function JobBoard({ customerEmail, userRole, hasFullAccess = true, onConv
                     <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>
                   )}
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="service_due">Service Due</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
