@@ -419,7 +419,6 @@ export type Database = {
         }
       }
       update_confirmed_jobs_to_service_due: { Args: never; Returns: number }
-      update_overdue_jobs: { Args: never; Returns: number }
     }
     Enums: {
       frequency_type:
