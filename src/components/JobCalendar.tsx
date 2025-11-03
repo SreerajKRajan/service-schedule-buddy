@@ -193,9 +193,39 @@ export function JobCalendar({
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
 
-    // If parent has filtered to accepted_quotes, use the passed quotes
-    if (parentStatusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
-      quotes.forEach((quote) => {
+    // Show accepted quotes if not hidden (use passed quotes or internal acceptedQuotes)
+    if (!hideAcceptedQuotes) {
+      const quotesToShow = quotes.length > 0 ? quotes : acceptedQuotes;
+      quotesToShow.forEach((quote) => {
+        if (!quote.scheduled_date) return;
+        // Skip if only showing accepted quotes and calendar has status filter for jobs
+        if (statusFilter === "accepted_quotes") {
+          // When filtered to only quotes, skip this - we'll add them below
+          return;
+        }
+
+        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
+        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
+        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
+
+        // Format time for display (12-hour with AM/PM)
+        const timeStr = m.format("h A");
+
+        calendarEvents.push({
+          id: quote.id,
+          title: `${timeStr} ${quote.customer_name || "Customer"}`,
+          start: startDate,
+          end: endDate,
+          resource: quote,
+          type: "quote",
+        });
+      });
+    }
+
+    // If filtered to only show accepted quotes
+    if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
+      const quotesToShow = quotes.length > 0 ? quotes : acceptedQuotes;
+      quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
         const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
@@ -214,29 +244,10 @@ export function JobCalendar({
           type: "quote",
         });
       });
-    } else if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
-      // Only show accepted quotes from calendar's own filter
-      acceptedQuotes.forEach((quote) => {
-        if (!quote.scheduled_date) return;
+    }
 
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
-        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
-
-        // Format time for display (12-hour with AM/PM)
-        const timeStr = m.format("h A");
-
-        calendarEvents.push({
-          id: quote.id,
-          title: `${timeStr} ${quote.customer_name || "Customer"}`,
-          start: startDate,
-          end: endDate,
-          resource: quote,
-          type: "quote",
-        });
-      });
-    } else {
-      // Show jobs (filtered by status if not "all")
+    // Show jobs (unless filtered to only accepted quotes)
+    if (statusFilter !== "accepted_quotes") {
       jobs.forEach((job) => {
         if (!job.scheduled_date) return;
 

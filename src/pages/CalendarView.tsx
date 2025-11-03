@@ -301,7 +301,7 @@ const CalendarView = () => {
       <JobCalendar
         jobs={filteredJobs}
         quotes={acceptedQuotes}
-        hideAcceptedQuotes={!hasFullAccess || statusFilter !== "accepted_quotes"}
+        hideAcceptedQuotes={!hasFullAccess}
         onRefresh={fetchData}
         onConvertToJob={handleConvertToJob}
       />
