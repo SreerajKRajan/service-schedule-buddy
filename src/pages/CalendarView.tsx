@@ -297,7 +297,7 @@ const CalendarView = () => {
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
