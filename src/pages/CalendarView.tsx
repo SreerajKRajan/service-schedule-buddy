@@ -109,41 +109,49 @@ const CalendarView = () => {
         setHasFullAccess(fullAccess);
 
         if (fullAccess) {
-          // Fetch all jobs if user has full access
+          // Fetch all jobs if user has full access (only with scheduled_date for calendar)
           const { data, error } = await supabase
             .from("jobs")
             .select("*")
-            .order("created_at", { ascending: false });
+            .not("scheduled_date", "is", null)
+            .order("scheduled_date", { ascending: true })
+            .limit(10000);
 
           if (error) throw error;
           setJobs(data || []);
           return true;
         }
 
-        // Use a join query to fetch only assigned jobs
+        // Use a join query to fetch only assigned jobs (with scheduled_date for calendar)
         const { data, error } = await supabase
-          .from("job_assignments")
-          .select(`
-            jobs (*)
-          `)
-          .eq("user_id", user.id);
+          .from("jobs")
+          .select("*, job_assignments!inner(user_id)")
+          .eq("job_assignments.user_id", user.id)
+          .not("scheduled_date", "is", null)
+          .order("scheduled_date", { ascending: true })
+          .limit(10000);
 
         if (error) throw error;
         
-        // Extract jobs from the join result
-        const jobsData = data
-          ?.map((assignment: any) => assignment.jobs)
-          .filter(Boolean) || [];
+        // Ensure unique jobs by id
+        const uniqueJobsMap = new Map<string, any>();
+        (data || []).forEach((j: any) => {
+          const id = j.id;
+          if (id && !uniqueJobsMap.has(id)) uniqueJobsMap.set(id, j);
+        });
+        const jobsData = Array.from(uniqueJobsMap.values());
         
         setJobs(jobsData);
         return false;
       }
 
-      // If no userId, fetch all jobs
+      // If no userId, fetch all jobs (only with scheduled_date for calendar)
       const { data, error } = await supabase
         .from("jobs")
         .select("*")
-        .order("created_at", { ascending: false });
+        .not("scheduled_date", "is", null)
+        .order("scheduled_date", { ascending: true })
+        .limit(10000);
 
       if (error) throw error;
       setJobs(data || []);
