@@ -89,11 +89,6 @@ const CalendarView = () => {
 
   const fetchJobs = async () => {
     try {
-      let query = supabase
-        .from("jobs")
-        .select("*")
-        .order("created_at", { ascending: false });
-
       if (userId) {
         const { data: user } = await supabase
           .from("users")
@@ -101,26 +96,35 @@ const CalendarView = () => {
           .ilike("email", userId)
           .maybeSingle();
 
-        if (user) {
-          const { data: assignments } = await supabase
-            .from("job_assignments")
-            .select("job_id")
-            .eq("user_id", user.id);
-
-          if (assignments && assignments.length > 0) {
-            const jobIds = assignments.map((a) => a.job_id);
-            query = query.in("id", jobIds);
-          } else {
-            setJobs([]);
-            return;
-          }
-        } else {
+        if (!user) {
           setJobs([]);
           return;
         }
+
+        // Use a join query instead of fetching all IDs and using .in()
+        const { data, error } = await supabase
+          .from("job_assignments")
+          .select(`
+            jobs (*)
+          `)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        
+        // Extract jobs from the join result
+        const jobsData = data
+          ?.map((assignment: any) => assignment.jobs)
+          .filter(Boolean) || [];
+        
+        setJobs(jobsData);
+        return;
       }
 
-      const { data, error } = await query;
+      // If no userId, fetch all jobs
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setJobs(data || []);
