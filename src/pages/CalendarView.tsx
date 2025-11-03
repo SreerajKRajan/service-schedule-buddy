@@ -3,12 +3,18 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { JobCalendar } from "@/components/JobCalendar";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CreateJobForm } from "@/components/CreateJobForm";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Search, Filter, Calendar as CalendarIcon, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 interface User {
   id: string;
@@ -71,7 +77,7 @@ const CalendarView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
   const [hasFullAccess, setHasFullAccess] = useState(false);
@@ -80,7 +86,7 @@ const CalendarView = () => {
     if (userId) {
       fetchData();
     }
-  }, [userId, assigneeFilter]);
+  }, [userId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -205,11 +211,40 @@ const CalendarView = () => {
       const matchesSearch =
         searchTerm === "" ||
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.customer_address.toLowerCase().includes(searchTerm.toLowerCase());
+        job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.job_type.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || statusFilter === "accepted_quotes" || job.status === statusFilter;
       const matchesType = typeFilter === "all" || job.job_type === typeFilter;
+
+      // Date range filter
+      if (dateRange?.from || dateRange?.to) {
+        if (!job.scheduled_date) return false;
+
+        const scheduledDate = new Date(job.scheduled_date);
+        const scheduledDateOnly = new Date(
+          scheduledDate.getFullYear(),
+          scheduledDate.getMonth(),
+          scheduledDate.getDate()
+        );
+
+        if (dateRange.from && dateRange.to) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          if (scheduledDateOnly < fromDate || scheduledDateOnly > toDate) return false;
+        } else if (dateRange.from) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          if (scheduledDateOnly < fromDate) return false;
+        } else if (dateRange.to) {
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          if (scheduledDateOnly > toDate) return false;
+        }
+      }
 
       return matchesSearch && matchesStatus && matchesType;
     });
@@ -259,57 +294,107 @@ const CalendarView = () => {
   }
 
   const filteredJobs = filterJobs();
+  const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   return (
     <div className="min-h-screen p-4">
-      <Card className="p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Input
-            placeholder="Search jobs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="service_due">Service Due</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="one-time">One-time</SelectItem>
-              <SelectItem value="recurring">Recurring</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm("");
-              setStatusFilter("all");
-              setTypeFilter("all");
-              setAssigneeFilter("all");
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search jobs, customers, or types..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-background">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="service_due">Service Due</SelectItem>
+                <SelectItem value="on_the_way">On the Way</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                {hasFullAccess && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-background">
+                <SelectItem value="all">All Types</SelectItem>
+                {jobTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-full md:w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
+                <Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex gap-2">
+            {(searchTerm || statusFilter !== "all" || typeFilter !== "all" || dateRange) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setTypeFilter("all");
+                  setDateRange(undefined);
+                }}
+                className="h-8"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
       <JobCalendar
         jobs={filteredJobs}
         quotes={acceptedQuotes}
         hideAcceptedQuotes={!hasFullAccess}
+        statusFilter={statusFilter}
         onRefresh={fetchData}
         onConvertToJob={handleConvertToJob}
       />
