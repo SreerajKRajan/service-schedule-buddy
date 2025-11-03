@@ -74,6 +74,7 @@ const CalendarView = () => {
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
+  const [hasFullAccess, setHasFullAccess] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -92,16 +93,33 @@ const CalendarView = () => {
       if (userId) {
         const { data: user } = await supabase
           .from("users")
-          .select("id")
+          .select("id, role")
           .ilike("email", userId)
           .maybeSingle();
 
         if (!user) {
           setJobs([]);
+          setHasFullAccess(false);
           return;
         }
 
-        // Use a join query instead of fetching all IDs and using .in()
+        // Check if user has full access based on their role
+        const fullAccess = user.role === 'supervisor' || user.role === 'manager';
+        setHasFullAccess(fullAccess);
+
+        if (fullAccess) {
+          // Fetch all jobs if user has full access
+          const { data, error } = await supabase
+            .from("jobs")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          setJobs(data || []);
+          return;
+        }
+
+        // Use a join query to fetch only assigned jobs
         const { data, error } = await supabase
           .from("job_assignments")
           .select(`
@@ -128,6 +146,7 @@ const CalendarView = () => {
 
       if (error) throw error;
       setJobs(data || []);
+      setHasFullAccess(true);
     } catch (error: any) {
       toast.error("Failed to fetch jobs");
       console.error("Error fetching jobs:", error);
@@ -151,6 +170,12 @@ const CalendarView = () => {
 
   const fetchAcceptedQuotes = async () => {
     try {
+      // Only fetch accepted quotes if user has full access
+      if (!hasFullAccess && userId) {
+        setAcceptedQuotes([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("accepted_quotes")
         .select("*")
@@ -273,7 +298,7 @@ const CalendarView = () => {
       <JobCalendar
         jobs={filteredJobs}
         quotes={acceptedQuotes}
-        hideAcceptedQuotes={statusFilter !== "accepted_quotes"}
+        hideAcceptedQuotes={!hasFullAccess || statusFilter !== "accepted_quotes"}
         onRefresh={fetchData}
         onConvertToJob={handleConvertToJob}
       />
