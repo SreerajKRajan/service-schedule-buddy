@@ -84,11 +84,12 @@ const CalendarView = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([fetchJobs(), fetchUsers(), fetchAcceptedQuotes()]);
+    const userHasFullAccess = await fetchJobs();
+    await Promise.all([fetchUsers(), fetchAcceptedQuotes(userHasFullAccess)]);
     setLoading(false);
   };
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (): Promise<boolean> => {
     try {
       if (userId) {
         const { data: user } = await supabase
@@ -100,7 +101,7 @@ const CalendarView = () => {
         if (!user) {
           setJobs([]);
           setHasFullAccess(false);
-          return;
+          return false;
         }
 
         // Check if user has full access based on their role
@@ -116,7 +117,7 @@ const CalendarView = () => {
 
           if (error) throw error;
           setJobs(data || []);
-          return;
+          return true;
         }
 
         // Use a join query to fetch only assigned jobs
@@ -135,7 +136,7 @@ const CalendarView = () => {
           .filter(Boolean) || [];
         
         setJobs(jobsData);
-        return;
+        return false;
       }
 
       // If no userId, fetch all jobs
@@ -147,9 +148,11 @@ const CalendarView = () => {
       if (error) throw error;
       setJobs(data || []);
       setHasFullAccess(true);
+      return true;
     } catch (error: any) {
       toast.error("Failed to fetch jobs");
       console.error("Error fetching jobs:", error);
+      return false;
     }
   };
 
@@ -168,10 +171,10 @@ const CalendarView = () => {
     }
   };
 
-  const fetchAcceptedQuotes = async () => {
+  const fetchAcceptedQuotes = async (userHasFullAccess: boolean) => {
     try {
       // Only fetch accepted quotes if user has full access
-      if (!hasFullAccess && userId) {
+      if (!userHasFullAccess && userId) {
         setAcceptedQuotes([]);
         return;
       }
