@@ -33,6 +33,46 @@ const localizer = momentLocalizer(moment);
 
 const accountTimezone = "America/Chicago";
 
+// Add this after your imports, before the component function
+const calendarStyles = `
+  /* Increase time slot height for better spacing */
+  .rbc-time-slot {
+    min-height: 50px;
+  }
+  
+  .rbc-timeslot-group {
+    min-height: 80px;
+  }
+  
+  /* Prevent event overlap */
+  .rbc-day-slot .rbc-event {
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .rbc-day-slot .rbc-events-container {
+    margin-right: 0;
+  }
+  
+  /* Better event content display */
+  .rbc-event-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  
+  /* Hide duplicate time labels */
+  .rbc-event-label {
+    display: none;
+  }
+  
+  /* Adjust event positioning in week/day view */
+  .rbc-time-column .rbc-event {
+    padding: 2px 5px;
+  }
+`;
+
 interface Job {
   id: string;
   title: string;
@@ -401,352 +441,357 @@ export function JobCalendar({
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              Job Calendar
-            </CardTitle>
-
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  {!hideAcceptedQuotes && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
-                </SelectContent>
-              </Select>
-
-              {/* Mobile: Stack view buttons, Desktop: Row */}
-              <div className="flex flex-wrap gap-1 sm:gap-2">
-                <Button
-                  variant={view === "month" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("month")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Month
-                </Button>
-                <Button
-                  variant={view === "week" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("week")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Week
-                </Button>
-                <Button
-                  variant={view === "day" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("day")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Day
-                </Button>
+    <>
+      <style>{calendarStyles}</style>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
+                Job Calendar
+              </CardTitle>
+  
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[150px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    {!hideAcceptedQuotes && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+                  </SelectContent>
+                </Select>
+  
+                {/* Mobile: Stack view buttons, Desktop: Row */}
+                <div className="flex flex-wrap gap-1 sm:gap-2">
+                  <Button
+                    variant={view === "month" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setView("month")}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                  >
+                    Month
+                  </Button>
+                  <Button
+                    variant={view === "week" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setView("week")}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                  >
+                    Week
+                  </Button>
+                  <Button
+                    variant={view === "day" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setView("day")}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                  >
+                    Day
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button variant="outline" size="sm" onClick={navigateToday} className="text-xs sm:text-sm">
-                Today
-              </Button>
-              <Button variant="outline" size="sm" onClick={navigateBack}>
-                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={navigateNext}>
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
+  
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Button variant="outline" size="sm" onClick={navigateToday} className="text-xs sm:text-sm">
+                  Today
+                </Button>
+                <Button variant="outline" size="sm" onClick={navigateBack}>
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={navigateNext}>
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+  
+              <div className="flex-1 flex justify-center sm:justify-end">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm",
+                      )}
+                    >
+                      {getDateTitle()}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <DatePicker
+                      mode="single"
+                      selected={currentDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setCurrentDate(date);
+                        }
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-
-            <div className="flex-1 flex justify-center sm:justify-end">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm",
+          </CardHeader>
+          <CardContent className="p-2 sm:p-6">
+            <div
+              className="min-h-[320px]"
+              style={{
+                height: view === "month" ? monthTotalHeight : 600,
+                // @ts-ignore - CSS variable for month row height
+                ["--month-row-height" as any]: `${monthRowHeight}px`,
+              }}
+            >
+              <BigCalendar
+                step={30}
+                timeslot={2}
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                view={view}
+                onView={setView}
+                date={currentDate}
+                onNavigate={handleNavigate}
+                onSelectEvent={handleSelectEvent}
+                eventPropGetter={eventStyleGetter}
+                min={new Date(1970, 1, 1, 6, 0, 0)}
+                max={new Date(1970, 1, 1, 23, 59, 59)}
+                key={
+                  view === "month"
+                    ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
+                    : `view-${view}`
+                }
+                style={{ height: "100%" }}
+                popup={false}
+                toolbar={false}
+                formats={{
+                  timeGutterFormat: "h A",
+                  eventTimeRangeFormat: () => "",
+                  agendaTimeRangeFormat: () => "",
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+  
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-2 sm:px-0">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded"></div>
+            <span className="text-xs sm:text-sm">Quote</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
+            <span className="text-xs sm:text-sm">Pending</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+            <span className="text-xs sm:text-sm">In Progress</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+            <span className="text-xs sm:text-sm">Completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
+            <span className="text-xs sm:text-sm">Cancelled</span>
+          </div>
+        </div>
+  
+        <Dialog
+          open={!!selectedJob || !!selectedQuote}
+          onOpenChange={() => {
+            setSelectedJob(null);
+            setSelectedQuote(null);
+          }}
+        >
+          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedQuote ? "Quote Details" : "Job Details"}</DialogTitle>
+              <DialogDescription>View and manage {selectedQuote ? "quote" : "job"} information</DialogDescription>
+            </DialogHeader>
+            {selectedJob && (
+              <JobCard
+                job={selectedJob}
+                onUpdate={() => {
+                  onRefresh();
+                  setSelectedJob(null);
+                }}
+              />
+            )}
+            {selectedQuote && (
+              <Card className="h-full border-0 shadow-none">
+                <CardHeader className="space-y-2 px-0">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">Quote Request</CardTitle>
+                  </div>
+                  <CardDescription className="line-clamp-2">Accepted quote for scheduled service</CardDescription>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge className="bg-purple-100 text-purple-800">{selectedQuote.status}</Badge>
+                    {selectedQuote.first_time && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        First Time
+                      </Badge>
                     )}
-                  >
-                    {getDateTitle()}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
-                  <DatePicker
-                    mode="single"
-                    selected={currentDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setCurrentDate(date);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          <div
-            className="min-h-[320px]"
-            style={{
-              height: view === "month" ? monthTotalHeight : 600,
-              // @ts-ignore - CSS variable for month row height
-              ["--month-row-height" as any]: `${monthRowHeight}px`,
-            }}
-          >
-            <BigCalendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              view={view}
-              onView={setView}
-              date={currentDate}
-              onNavigate={handleNavigate}
-              onSelectEvent={handleSelectEvent}
-              eventPropGetter={eventStyleGetter}
-              min={new Date(1970, 1, 1, 6, 0, 0)}
-              max={new Date(1970, 1, 1, 23, 59, 59)}
-              key={
-                view === "month"
-                  ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
-                  : `view-${view}`
-              }
-              style={{ height: "100%" }}
-              popup={false}
-              toolbar={false}
-              formats={{
-                timeGutterFormat: "h A",
-                eventTimeRangeFormat: () => "",
-                agendaTimeRangeFormat: () => "",
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-2 sm:px-0">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded"></div>
-          <span className="text-xs sm:text-sm">Quote</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
-          <span className="text-xs sm:text-sm">Pending</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
-          <span className="text-xs sm:text-sm">In Progress</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
-          <span className="text-xs sm:text-sm">Completed</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
-          <span className="text-xs sm:text-sm">Cancelled</span>
-        </div>
-      </div>
-
-      <Dialog
-        open={!!selectedJob || !!selectedQuote}
-        onOpenChange={() => {
-          setSelectedJob(null);
-          setSelectedQuote(null);
-        }}
-      >
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedQuote ? "Quote Details" : "Job Details"}</DialogTitle>
-            <DialogDescription>View and manage {selectedQuote ? "quote" : "job"} information</DialogDescription>
-          </DialogHeader>
-          {selectedJob && (
-            <JobCard
-              job={selectedJob}
-              onUpdate={() => {
-                onRefresh();
-                setSelectedJob(null);
-              }}
-            />
-          )}
-          {selectedQuote && (
-            <Card className="h-full border-0 shadow-none">
-              <CardHeader className="space-y-2 px-0">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">Quote Request</CardTitle>
-                </div>
-                <CardDescription className="line-clamp-2">Accepted quote for scheduled service</CardDescription>
-                <div className="flex gap-2 flex-wrap">
-                  <Badge className="bg-purple-100 text-purple-800">{selectedQuote.status}</Badge>
-                  {selectedQuote.first_time && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      First Time
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4 px-0">
-                <div className="space-y-2 text-sm">
-                  {selectedQuote.customer_name && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      {selectedQuote.ghl_contact_id ? (
+                  </div>
+                </CardHeader>
+  
+                <CardContent className="space-y-4 px-0">
+                  <div className="space-y-2 text-sm">
+                    {selectedQuote.customer_name && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        {selectedQuote.ghl_contact_id ? (
+                          <a
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.open(
+                                `https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
+                            }}
+                            className="text-primary hover:underline cursor-pointer"
+                          >
+                            {selectedQuote.customer_name}
+                          </a>
+                        ) : (
+                          <span>{selectedQuote.customer_name}</span>
+                        )}
+                      </div>
+                    )}
+  
+                    {selectedQuote.customer_address && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
                         <a
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
                             window.open(
-                              `https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`,
+                              `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`,
                               "_blank",
                               "noopener,noreferrer",
                             );
                           }}
-                          className="text-primary hover:underline cursor-pointer"
+                          className="text-primary hover:underline line-clamp-1 cursor-pointer"
                         >
-                          {selectedQuote.customer_name}
+                          {selectedQuote.customer_address}
                         </a>
-                      ) : (
-                        <span>{selectedQuote.customer_name}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {selectedQuote.customer_address && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.open(
-                            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedQuote.customer_address)}`,
-                            "_blank",
-                            "noopener,noreferrer",
-                          );
-                        }}
-                        className="text-primary hover:underline line-clamp-1 cursor-pointer"
-                      >
-                        {selectedQuote.customer_address}
-                      </a>
-                    </div>
-                  )}
-
-                  {selectedQuote.customer_phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${selectedQuote.customer_phone}`} className="text-primary hover:underline">
-                        {selectedQuote.customer_phone}
-                      </a>
-                    </div>
-                  )}
-
-                  {selectedQuote.customer_email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a
-                        href={`mailto:${selectedQuote.customer_email}`}
-                        className="text-primary hover:underline line-clamp-1"
-                      >
-                        {selectedQuote.customer_email}
-                      </a>
-                    </div>
-                  )}
-
-                  {selectedQuote.scheduled_date && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatUTCDateTime(selectedQuote.scheduled_date)}</span>
-                    </div>
-                  )}
-                </div>
-
-                {selectedQuote.jobs_selected &&
-                  Array.isArray(selectedQuote.jobs_selected) &&
-                  selectedQuote.jobs_selected.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Selected Services ({selectedQuote.jobs_selected.length})</h4>
-                      <div className="grid gap-2">
-                        {selectedQuote.jobs_selected.map((service: any, index: number) => (
-                          <div key={index} className="bg-muted/50 p-3 rounded-lg">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="font-medium">{service.title || service.name || "Service"}</div>
-                                {service.service_description && (
-                                  <div className="text-sm text-muted-foreground">{service.service_description}</div>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                {service.price && <div className="font-medium">${service.price}</div>}
+                      </div>
+                    )}
+  
+                    {selectedQuote.customer_phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <a href={`tel:${selectedQuote.customer_phone}`} className="text-primary hover:underline">
+                          {selectedQuote.customer_phone}
+                        </a>
+                      </div>
+                    )}
+  
+                    {selectedQuote.customer_email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={`mailto:${selectedQuote.customer_email}`}
+                          className="text-primary hover:underline line-clamp-1"
+                        >
+                          {selectedQuote.customer_email}
+                        </a>
+                      </div>
+                    )}
+  
+                    {selectedQuote.scheduled_date && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{formatUTCDateTime(selectedQuote.scheduled_date)}</span>
+                      </div>
+                    )}
+                  </div>
+  
+                  {selectedQuote.jobs_selected &&
+                    Array.isArray(selectedQuote.jobs_selected) &&
+                    selectedQuote.jobs_selected.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2">Selected Services ({selectedQuote.jobs_selected.length})</h4>
+                        <div className="grid gap-2">
+                          {selectedQuote.jobs_selected.map((service: any, index: number) => (
+                            <div key={index} className="bg-muted/50 p-3 rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="font-medium">{service.title || service.name || "Service"}</div>
+                                  {service.service_description && (
+                                    <div className="text-sm text-muted-foreground">{service.service_description}</div>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  {service.price && <div className="font-medium">${service.price}</div>}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+                    )}
+  
+                  {/* Convert to Job Button */}
+                  {selectedQuote.status === "pending" && onConvertToJob && (
+                    <div className="pt-2">
+                      <Button
+                        onClick={() => {
+                          const quoteToConvert = selectedQuote;
+  
+                          // Close the modal immediately
+                          setSelectedQuote(null);
+  
+                          const onSuccess = async () => {
+                            try {
+                              const { error } = await supabase
+                                .from("accepted_quotes")
+                                .update({ status: "converted" })
+                                .eq("id", quoteToConvert.id);
+  
+                              if (error) throw error;
+  
+                              toast.success("Quote converted to job successfully");
+                              fetchAcceptedQuotes();
+                              onRefresh();
+                            } catch (error) {
+                              console.error("Error updating quote status:", error);
+                              toast.error("Failed to update quote status. Please try again.");
+                              fetchAcceptedQuotes();
+                            }
+                          };
+  
+                          const onError = async () => {
+                            toast.error("Failed to convert quote to job. Please try again.");
+                            fetchAcceptedQuotes();
+                          };
+  
+                          onConvertToJob(quoteToConvert, onSuccess, onError);
+                        }}
+                        className="w-full"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Convert to Job{selectedQuote.jobs_selected.length > 1 ? "s" : ""}
+                      </Button>
                     </div>
                   )}
-
-                {/* Convert to Job Button */}
-                {selectedQuote.status === "pending" && onConvertToJob && (
-                  <div className="pt-2">
-                    <Button
-                      onClick={() => {
-                        const quoteToConvert = selectedQuote;
-
-                        // Close the modal immediately
-                        setSelectedQuote(null);
-
-                        const onSuccess = async () => {
-                          try {
-                            const { error } = await supabase
-                              .from("accepted_quotes")
-                              .update({ status: "converted" })
-                              .eq("id", quoteToConvert.id);
-
-                            if (error) throw error;
-
-                            toast.success("Quote converted to job successfully");
-                            fetchAcceptedQuotes();
-                            onRefresh();
-                          } catch (error) {
-                            console.error("Error updating quote status:", error);
-                            toast.error("Failed to update quote status. Please try again.");
-                            fetchAcceptedQuotes();
-                          }
-                        };
-
-                        const onError = async () => {
-                          toast.error("Failed to convert quote to job. Please try again.");
-                          fetchAcceptedQuotes();
-                        };
-
-                        onConvertToJob(quoteToConvert, onSuccess, onError);
-                      }}
-                      className="w-full"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Convert to Job{selectedQuote.jobs_selected.length > 1 ? "s" : ""}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+                </CardContent>
+              </Card>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }
