@@ -86,6 +86,7 @@ const CalendarView = () => {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [isUsersOpen, setIsUsersOpen] = useState(true);
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -95,10 +96,15 @@ const CalendarView = () => {
 
   // Refetch jobs when assignee filters change to mirror JobBoard behavior
   useEffect(() => {
-    if (userId && hasFullAccess) {
-      fetchJobs();
-    }
-  }, [userId, hasFullAccess, selectedAssignees]);
+    const refetchWithFilter = async () => {
+      if (userId && hasFullAccess) {
+        setIsFilterLoading(true);
+        await fetchJobs();
+        setIsFilterLoading(false);
+      }
+    };
+    refetchWithFilter();
+  }, [selectedAssignees]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -466,7 +472,7 @@ const CalendarView = () => {
             <Collapsible open={isUsersOpen} onOpenChange={setIsUsersOpen} className="border rounded-lg p-4">
               <CollapsibleTrigger className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Users</span>
+                  <span className="font-medium">Assignees</span>
                   <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
                     {selectedAssignees.length}
                   </span>
@@ -514,14 +520,24 @@ const CalendarView = () => {
         </CardContent>
       </Card>
 
-      <JobCalendar
-        jobs={filteredJobs}
-        quotes={filteredQuotes}
-        hideAcceptedQuotes={!hasFullAccess}
-        statusFilter={statusFilter}
-        onRefresh={fetchData}
-        onConvertToJob={handleConvertToJob}
-      />
+      <div className="relative">
+        {isFilterLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm" />
+            <div className="relative">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          </div>
+        )}
+        <JobCalendar
+          jobs={filteredJobs}
+          quotes={filteredQuotes}
+          hideAcceptedQuotes={!hasFullAccess}
+          statusFilter={statusFilter}
+          onRefresh={fetchData}
+          onConvertToJob={handleConvertToJob}
+        />
+      </div>
 
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
