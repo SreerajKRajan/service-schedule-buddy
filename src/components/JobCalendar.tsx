@@ -414,6 +414,11 @@ export function JobCalendar({
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Calendar
+            </CardTitle>
+
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
