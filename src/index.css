@@ -263,8 +263,9 @@ All colors MUST be HSL.
 }
 
 /* Day view specific */
+/* Use absolute positioning for correct vertical placement */
 .rbc-day-slot .rbc-event {
-  position: relative !important;
+  position: absolute !important;
 }
 
 /* Mobile optimizations for react-big-calendar */
