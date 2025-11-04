@@ -204,9 +204,9 @@ export function JobCalendar({
           return;
         }
 
-        const m = moment.tz(quote.scheduled_date, accountTimezone);
-        const startDate = m.toDate();
-        const endDate = moment(startDate).add(2, 'hours').toDate();
+        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
+        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
+        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
 
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
@@ -228,9 +228,9 @@ export function JobCalendar({
       quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment.tz(quote.scheduled_date, accountTimezone);
-        const startDate = m.toDate();
-        const endDate = moment(startDate).add(2, 'hours').toDate();
+        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
+        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
+        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
 
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
@@ -255,12 +255,12 @@ export function JobCalendar({
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
         // Assignee filtering is now done at the API level in JobBoard
-        const m = moment.tz(job.scheduled_date, accountTimezone);
-        const startDate = m.toDate();
+        const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
+        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
 
         // Add estimated duration or default to 2 hours
         const duration = job.estimated_duration || 2;
-        const endDate = moment(startDate).add(duration, 'hours').toDate();
+        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + duration, m.minute());
 
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
