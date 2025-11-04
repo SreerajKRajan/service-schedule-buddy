@@ -518,6 +518,8 @@ export function JobCalendar({
               onNavigate={handleNavigate}
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
+              min={new Date(1970, 1, 1, 6, 0, 0)}
+              max={new Date(1970, 1, 1, 22, 0, 0)}
               key={
                 view === "month"
                   ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
@@ -527,7 +529,7 @@ export function JobCalendar({
               popup={false}
               toolbar={false}
               formats={{
-                timeGutterFormat: "HH:mm",
+                timeGutterFormat: "h A",
                 eventTimeRangeFormat: () => "",
                 agendaTimeRangeFormat: () => "",
               }}
