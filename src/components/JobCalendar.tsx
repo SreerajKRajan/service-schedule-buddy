@@ -247,7 +247,7 @@ export function JobCalendar({
 
   const convertJobsToEvents = () => {
     const calendarEvents: CalendarEvent[] = [];
-
+  
     // Show accepted quotes if not hidden (use passed quotes or internal acceptedQuotes)
     if (!hideAcceptedQuotes) {
       const quotesToShow = quotes.length > 0 ? quotes : acceptedQuotes;
@@ -258,14 +258,14 @@ export function JobCalendar({
           // When filtered to only quotes, skip this - we'll add them below
           return;
         }
-
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
-        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
-
+  
+        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone);
+        const startDate = m.toDate();
+        const endDate = m.clone().add(2, 'hours').toDate();
+  
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
-
+  
         calendarEvents.push({
           id: quote.id,
           title: `${timeStr} ${quote.customer_name || "Customer"}`,
@@ -276,20 +276,20 @@ export function JobCalendar({
         });
       });
     }
-
+  
     // If filtered to only show accepted quotes
     if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
       const quotesToShow = quotes.length > 0 ? quotes : acceptedQuotes;
       quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
-
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
-        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
-
+  
+        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone);
+        const startDate = m.toDate();
+        const endDate = m.clone().add(2, 'hours').toDate();
+  
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
-
+  
         calendarEvents.push({
           id: quote.id,
           title: `${timeStr} ${quote.customer_name || "Customer"}`,
@@ -300,29 +300,29 @@ export function JobCalendar({
         });
       });
     }
-
+  
     // Show jobs (unless filtered to only accepted quotes)
     if (statusFilter !== "accepted_quotes") {
       jobs.forEach((job) => {
         if (!job.scheduled_date) return;
-
+  
         // Apply status filter for jobs
         if (statusFilter !== "all" && job.status !== statusFilter) return;
-
+  
         // Assignee filtering is now done at the API level in JobBoard
-        const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
-        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
-
+        const m = moment.parseZone(job.scheduled_date).tz(accountTimezone);
+        const startDate = m.toDate();
+  
         // Add estimated duration or default to 2 hours
         const duration = job.estimated_duration || 2;
-        const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + duration, m.minute());
-
+        const endDate = m.clone().add(duration, 'hours').toDate();
+  
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
-
+  
         // Add (R) indicator for recurring jobs
         const recurringIndicator = job.is_recurring ? " (R)" : "";
-
+  
         calendarEvents.push({
           id: job.id,
           title: `${timeStr} ${job.customer_name || "Customer"}${recurringIndicator}`,
@@ -333,7 +333,7 @@ export function JobCalendar({
         });
       });
     }
-
+  
     setEvents(calendarEvents);
   };
 
@@ -567,7 +567,6 @@ export function JobCalendar({
               <BigCalendar
                 step={30}
                 timeslots={2}
-                dayLayoutAlgorithm="no-overlap"
                 localizer={localizer}
                 events={events}
                 startAccessor="start"
