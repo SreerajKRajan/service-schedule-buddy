@@ -104,6 +104,7 @@ interface JobCalendarProps {
   onConvertToJob?: (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => void;
   assigneeFilter?: string;
   jobAssignments?: JobAssignment[];
+  filterButton?: React.ReactNode;
 }
 
 export function JobCalendar({
@@ -115,6 +116,7 @@ export function JobCalendar({
   onConvertToJob,
   assigneeFilter = "all",
   jobAssignments = [],
+  filterButton,
 }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -420,6 +422,8 @@ export function JobCalendar({
             </CardTitle>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+              {/* Filter Button */}
+              {filterButton && <div className="w-full sm:w-auto">{filterButton}</div>}
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[150px]">

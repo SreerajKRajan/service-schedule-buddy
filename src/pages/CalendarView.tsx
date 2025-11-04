@@ -405,177 +405,178 @@ const CalendarView = () => {
     (selectedAssignees.length > 0 ? 1 : 0);
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Calendar</h1>
-        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Manage Filters
-              {activeFiltersCount > 0 && (
-                <span className="ml-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:w-[400px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters
-              </SheetTitle>
-            </SheetHeader>
-            <div className="mt-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search jobs, customers, or types..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+    <div className="min-h-screen p-4">
+      <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+        <div className="relative">
+          {isFilterLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-background/50 backdrop-blur-sm" />
+              <div className="relative">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="service_due">Service Due</SelectItem>
-                    <SelectItem value="on_the_way">On the Way</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    {hasFullAccess && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Type</label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {jobTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date Range</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                          </>
-                        ) : (
-                          format(dateRange.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {hasFullAccess && users.length > 0 && (
-                <Collapsible open={isUsersOpen} onOpenChange={setIsUsersOpen} className="space-y-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full">
-                    <label className="text-sm font-medium">Assignees</label>
-                    <div className="flex items-center gap-2">
-                      {selectedAssignees.length > 0 && (
-                        <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {selectedAssignees.length}
-                        </span>
-                      )}
-                      {isUsersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 pt-2">
-                    {users.map((user) => (
-                      <div key={user.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`user-${user.id}`}
-                          checked={selectedAssignees.includes(user.id)}
-                          onCheckedChange={() => toggleAssignee(user.id)}
-                        />
-                        <label
-                          htmlFor={`user-${user.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {user.name}
-                        </label>
-                      </div>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-
-              {(searchTerm || statusFilter !== "all" || typeFilter !== "all" || dateRange || selectedAssignees.length > 0) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setTypeFilter("all");
-                    setDateRange(undefined);
-                    setSelectedAssignees([]);
-                  }}
-                  className="w-full"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Clear All Filters
+            </div>
+          )}
+          <JobCalendar
+            jobs={filteredJobs}
+            quotes={statusFilter === "accepted_quotes" ? filteredQuotes : []}
+            statusFilter={statusFilter}
+            onRefresh={fetchData}
+            hideAcceptedQuotes={!hasFullAccess}
+            onConvertToJob={handleConvertToJob}
+            assigneeFilter={selectedAssignees.length === 0 ? "all" : "filtered"}
+            jobAssignments={jobAssignments}
+            filterButton={
+              <SheetTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Filter className="h-4 w-4" />
+                  Manage Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </Button>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+              </SheetTrigger>
+            }
+          />
+        </div>
 
-      <div className="relative">
-        {isFilterLoading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm" />
-            <div className="relative">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <SheetContent side="right" className="w-full sm:w-[400px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6 space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search jobs, customers, or types..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="service_due">Service Due</SelectItem>
+                  <SelectItem value="on_the_way">On the Way</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  {hasFullAccess && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Type</label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {jobTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date Range</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {hasFullAccess && users.length > 0 && (
+              <Collapsible open={isUsersOpen} onOpenChange={setIsUsersOpen} className="space-y-2">
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  <label className="text-sm font-medium">Assignees</label>
+                  <div className="flex items-center gap-2">
+                    {selectedAssignees.length > 0 && (
+                      <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {selectedAssignees.length}
+                      </span>
+                    )}
+                    {isUsersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 pt-2">
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`user-${user.id}`}
+                        checked={selectedAssignees.includes(user.id)}
+                        onCheckedChange={() => toggleAssignee(user.id)}
+                      />
+                      <label
+                        htmlFor={`user-${user.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {user.name}
+                      </label>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {(searchTerm || statusFilter !== "all" || typeFilter !== "all" || dateRange || selectedAssignees.length > 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setTypeFilter("all");
+                  setDateRange(undefined);
+                  setSelectedAssignees([]);
+                }}
+                className="w-full"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear All Filters
+              </Button>
+            )}
           </div>
-        )}
-        <JobCalendar
-          jobs={filteredJobs}
-          quotes={filteredQuotes}
-          hideAcceptedQuotes={!hasFullAccess}
-          statusFilter={statusFilter}
-          onRefresh={fetchData}
-          onConvertToJob={handleConvertToJob}
-        />
-      </div>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
