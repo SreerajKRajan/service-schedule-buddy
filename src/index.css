@@ -180,22 +180,24 @@ All colors MUST be HSL.
 /* Week and Day view customizations */
 .rbc-time-view {
   border: 1px solid hsl(var(--border));
-  overflow: visible !important;
+  background: hsl(var(--card));
+  overflow: hidden; /* prevent legend/content below from bleeding into grid */
+  position: relative;
 }
 
 .rbc-time-view .rbc-time-content {
-  overflow: visible !important;
+  background: hsl(var(--card));
+  overflow: hidden;
   max-height: none !important;
   border-top: 2px solid hsl(var(--border));
+  position: relative;
+  z-index: 1;
 }
 
-.rbc-time-view .rbc-time-column {
-  overflow: visible !important;
-  min-height: 100% !important;
-}
-
+.rbc-time-view .rbc-time-column,
 .rbc-time-view .rbc-day-slot {
-  overflow: visible !important;
+  overflow: hidden;
+  background: hsl(var(--card));
 }
 
 .rbc-time-view .rbc-timeslot-group {
@@ -251,6 +253,7 @@ All colors MUST be HSL.
 /* Week view header styling */
 .rbc-time-header {
   border-bottom: 2px solid hsl(var(--border));
+  background: hsl(var(--card));
 }
 
 .rbc-time-header-content {
