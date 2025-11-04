@@ -181,22 +181,20 @@ All colors MUST be HSL.
 .rbc-time-view {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  overflow: hidden; /* prevent legend/content below from bleeding into grid */
+  overflow: auto; /* allow scrolling to show all time slots */
   position: relative;
 }
 
 .rbc-time-view .rbc-time-content {
   background: hsl(var(--card));
-  overflow: hidden;
+  overflow: visible !important;
   max-height: none !important;
   border-top: 2px solid hsl(var(--border));
-  position: relative;
-  z-index: 1;
 }
 
 .rbc-time-view .rbc-time-column,
 .rbc-time-view .rbc-day-slot {
-  overflow: hidden;
+  overflow: visible !important;
   background: hsl(var(--card));
 }
 
