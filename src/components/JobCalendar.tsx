@@ -519,7 +519,7 @@ export function JobCalendar({
               onSelectEvent={handleSelectEvent}
               eventPropGetter={eventStyleGetter}
               min={new Date(1970, 1, 1, 6, 0, 0)}
-              max={new Date(1970, 1, 1, 22, 0, 0)}
+              max={new Date(1970, 1, 1, 23, 59, 59)}
               key={
                 view === "month"
                   ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
