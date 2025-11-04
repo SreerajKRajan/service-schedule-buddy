@@ -272,6 +272,16 @@ const CalendarView = () => {
     });
   };
 
+  const filterAcceptedQuotes = () => {
+    return acceptedQuotes.filter((quote) => {
+      // Assignee filter for quotes - filter by quoted_by
+      const matchesAssignee = selectedAssignees.length === 0 || 
+        (quote.quoted_by && selectedAssignees.includes(quote.quoted_by));
+      
+      return matchesAssignee;
+    });
+  };
+
   const toggleAssignee = (userId: string) => {
     setSelectedAssignees(prev => 
       prev.includes(userId) 
@@ -324,6 +334,7 @@ const CalendarView = () => {
   }
 
   const filteredJobs = filterJobs();
+  const filteredQuotes = filterAcceptedQuotes();
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   return (
@@ -453,7 +464,7 @@ const CalendarView = () => {
 
       <JobCalendar
         jobs={filteredJobs}
-        quotes={acceptedQuotes}
+        quotes={filteredQuotes}
         hideAcceptedQuotes={!hasFullAccess}
         statusFilter={statusFilter}
         onRefresh={fetchData}
