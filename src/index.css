@@ -241,11 +241,28 @@ All colors MUST be HSL.
 
 /* Allow events to stack side-by-side when overlapping */
 .rbc-time-view .rbc-events-container {
-  margin-right: 10px;
+  margin-right: 0;
+  position: relative;
 }
 
 .rbc-time-view .rbc-event {
-  margin-right: 2px;
+  margin-right: 1px;
+  /* Allow events to shrink and position side-by-side */
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Ensure proper horizontal stacking for overlapping events */
+.rbc-time-view .rbc-event-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rbc-time-view .rbc-addons-dnd-resizable {
+  position: absolute !important;
 }
 
 /* Week view header styling */
