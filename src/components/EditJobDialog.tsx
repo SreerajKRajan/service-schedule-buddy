@@ -59,6 +59,13 @@ interface EditJobDialogProps {
   onSuccess: () => void;
 }
 
+interface ServiceInstance {
+  instanceId: string; // Unique ID for this instance (job_services.id or temp ID)
+  serviceId: string; // The service ID from services table
+  price: number;
+  isExisting: boolean; // Whether this came from job_services table
+}
+
 export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDialogProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -78,11 +85,11 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   const [currentAssignments, setCurrentAssignments] = useState<string[]>([]);
   const [jobSchedule, setJobSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [serviceInstances, setServiceInstances] = useState<ServiceInstance[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     job_type: "",
-    selected_services: [] as string[],
     priority: 1,
     estimated_duration: "2",
     scheduled_date: "",
@@ -105,7 +112,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     minute: "00",
     period: "PM" as "AM" | "PM"
   });
-  const [servicePrices, setServicePrices] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -144,22 +150,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       });
     }
 
-    // Try to match job_type back to service IDs
-    const selectedServiceIds: string[] = [];
-    if (job.job_type && services.length > 0) {
-      const jobTypeNames = job.job_type.split(', ').map(name => name.trim());
-      jobTypeNames.forEach(jobTypeName => {
-        const matchedService = services.find(service => 
-          service.name.toLowerCase() === jobTypeName.toLowerCase() ||
-          service.name.toLowerCase().includes(jobTypeName.toLowerCase()) ||
-          jobTypeName.toLowerCase().includes(service.name.toLowerCase())
-        );
-        if (matchedService) {
-          selectedServiceIds.push(matchedService.id);
-        }
-      });
-    }
-
     // Fetch current assignments
     let assignedUsers: string[] = [];
     try {
@@ -175,23 +165,24 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       console.error('Error fetching job assignments:', error);
     }
 
-    // Fetch current job services and their custom prices
+    // Fetch current job services with their IDs and prices
     try {
       const { data, error } = await supabase
         .from('job_services')
-        .select('service_id, price')
+        .select('id, service_id, price')
         .eq('job_id', job.id);
 
       if (error) throw error;
       
-      // Set service prices from existing job services
-      const existingServicePrices: Record<string, number> = {};
-      data?.forEach(service => {
-        if (service.service_id && service.price !== null) {
-          existingServicePrices[service.service_id] = service.price;
-        }
-      });
-      setServicePrices(existingServicePrices);
+      // Create service instances from existing job_services
+      const instances: ServiceInstance[] = data?.map(js => ({
+        instanceId: js.id,
+        serviceId: js.service_id,
+        price: js.price || 0,
+        isExisting: true
+      })) || [];
+      
+      setServiceInstances(instances);
     } catch (error) {
       console.error('Error fetching job services:', error);
     }
@@ -200,7 +191,6 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       title: job.title || "",
       description: job.description || "",
       job_type: job.job_type || "",
-      selected_services: selectedServiceIds,
       priority: job.priority || 1,
       estimated_duration: job.estimated_duration?.toString() || "",
       scheduled_date: scheduledDate,
@@ -269,10 +259,15 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
     };
 
     setCustomServices(prev => [...prev, customService]);
-    setFormData(prev => ({
-      ...prev,
-      selected_services: [...prev.selected_services, customService.id]
-    }));
+    
+    // Add a new service instance
+    const newInstance: ServiceInstance = {
+      instanceId: `temp-${Date.now()}-${Math.random()}`,
+      serviceId: customService.id,
+      price: customService.price,
+      isExisting: false
+    };
+    setServiceInstances(prev => [...prev, newInstance]);
     
     // Reset form
     setCustomServiceData({ name: "", duration: "", price: "" });
@@ -286,10 +281,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
 
   const removeCustomService = (serviceId: string) => {
     setCustomServices(prev => prev.filter(s => s.id !== serviceId));
-    setFormData(prev => ({
-      ...prev,
-      selected_services: prev.selected_services.filter(id => id !== serviceId)
-    }));
+    setServiceInstances(prev => prev.filter(instance => instance.serviceId !== serviceId));
   };
 
   const fetchJobSchedule = async () => {
@@ -308,7 +300,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       return;
     }
 
-    if (formData.selected_services.length === 0) {
+    if (serviceInstances.length === 0) {
       toast({
         title: "Error",
         description: "Please select at least one service",
@@ -379,7 +371,8 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       const customServiceIdMap: Record<string, string> = {};
       
       for (const customService of customServices) {
-        if (formData.selected_services.includes(customService.id)) {
+        const hasInstance = serviceInstances.some(inst => inst.serviceId === customService.id);
+        if (hasInstance) {
           const { data: newService, error: serviceCreateError } = await supabase
             .from('services')
             .insert({
@@ -411,14 +404,14 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       if (deleteServicesError) throw deleteServicesError;
 
       // Then, add new services with custom prices
-      if (formData.selected_services.length > 0) {
-        const jobServices = formData.selected_services.map(serviceId => {
+      if (serviceInstances.length > 0) {
+        const jobServices = serviceInstances.map(instance => {
           // Check if this is a custom service that was just created
-          const realServiceId = customServiceIdMap[serviceId] || serviceId;
+          const realServiceId = customServiceIdMap[instance.serviceId] || instance.serviceId;
           
           // Find service details (either from services list or custom services)
           const service = services.find(s => s.id === realServiceId);
-          const customService = customServices.find(s => s.id === serviceId);
+          const customService = customServices.find(s => s.id === instance.serviceId);
           
           if (service) {
             return {
@@ -426,17 +419,17 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
               service_id: service.id,
               service_name: service.name,
               service_description: service.description,
-              price: servicePrices[serviceId] ?? service.default_price,
+              price: instance.price ?? service.default_price,
               duration: service.default_duration,
             };
-          } else if (customService && customServiceIdMap[serviceId]) {
+          } else if (customService && customServiceIdMap[instance.serviceId]) {
             // Use the real UUID for custom services
             return {
               job_id: job.id,
-              service_id: customServiceIdMap[serviceId],
+              service_id: customServiceIdMap[instance.serviceId],
               service_name: customService.name,
               service_description: null,
-              price: servicePrices[serviceId] ?? customService.price,
+              price: instance.price ?? customService.price,
               duration: customService.duration,
             };
           }
@@ -478,66 +471,77 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
   };
 
   const handleServiceChange = (serviceId: string, checked: boolean) => {
-    setFormData(prev => {
-      const newSelectedServices = checked
-        ? [...prev.selected_services, serviceId]
-        : prev.selected_services.filter(id => id !== serviceId);
+    if (checked) {
+      // Add a new service instance
+      const service = services.find(s => s.id === serviceId);
+      const customService = customServices.find(s => s.id === serviceId);
       
-      // Initialize service price when adding a service
-      if (checked) {
-        const service = services.find(s => s.id === serviceId);
-        const customService = customServices.find(s => s.id === serviceId);
-        
-        if (service) {
-          const defaultPrice = service.default_price ?? 0;
-          setServicePrices(prevPrices => ({
-            ...prevPrices,
-            [serviceId]: defaultPrice
-          }));
-        } else if (customService) {
-          setServicePrices(prevPrices => ({
-            ...prevPrices,
-            [serviceId]: customService.price || 0
-          }));
-        }
-      } else {
-        // Remove service price when unchecking
-        setServicePrices(prevPrices => {
-          const newPrices = { ...prevPrices };
-          delete newPrices[serviceId];
-          return newPrices;
-        });
-      }
-      
-      // Update job_type to be a comma-separated list of service names
-      const allServices = [...services, ...customServices];
-      const selectedServiceNames = allServices
-        .filter(s => newSelectedServices.includes(s.id))
-        .map(s => s.name)
-        .join(", ");
-      
-      return {
-        ...prev,
-        selected_services: newSelectedServices,
-        job_type: selectedServiceNames,
+      const newInstance: ServiceInstance = {
+        instanceId: `temp-${Date.now()}-${Math.random()}`,
+        serviceId: serviceId,
+        price: service?.default_price ?? customService?.price ?? 0,
+        isExisting: false
       };
-    });
+      
+      setServiceInstances(prev => [...prev, newInstance]);
+    } else {
+      // Remove one instance of this service (remove the first occurrence)
+      setServiceInstances(prev => {
+        const index = prev.findIndex(inst => inst.serviceId === serviceId);
+        if (index !== -1) {
+          return [...prev.slice(0, index), ...prev.slice(index + 1)];
+        }
+        return prev;
+      });
+    }
+    
+    // Update job_type
+    updateJobType();
   };
 
-  const handleServicePriceChange = (serviceId: string, price: string) => {
+  const handleServiceInstancePriceChange = (instanceId: string, price: string) => {
     const numPrice = parseFloat(price) || 0;
-    setServicePrices(prev => ({
-      ...prev,
-      [serviceId]: numPrice
-    }));
+    setServiceInstances(prev => 
+      prev.map(inst => 
+        inst.instanceId === instanceId 
+          ? { ...inst, price: numPrice }
+          : inst
+      )
+    );
   };
 
-  // Update total price when service prices change, but don't override
-  // an existing price (e.g., one saved on the job already)
+  const removeServiceInstance = (instanceId: string) => {
+    setServiceInstances(prev => prev.filter(inst => inst.instanceId !== instanceId));
+    updateJobType();
+  };
+
+  const updateJobType = () => {
+    setTimeout(() => {
+      setServiceInstances(current => {
+        const allServices = [...services, ...customServices];
+        const selectedServiceNames = current
+          .map(inst => {
+            const service = allServices.find(s => s.id === inst.serviceId);
+            return service?.name || '';
+          })
+          .filter(Boolean)
+          .join(", ");
+        
+        setFormData(prev => ({
+          ...prev,
+          job_type: selectedServiceNames,
+        }));
+        
+        return current;
+      });
+    }, 0);
+  };
+
+  // Update total price when service instances change
   useEffect(() => {
-    const total = Object.values(servicePrices).reduce((sum: number, price: number) => sum + price, 0);
+    const total = serviceInstances.reduce((sum, inst) => sum + inst.price, 0);
     setFormData(prev => {
-      if (!prev.price) {
+      if (!prev.price || prev.price === "0") {
         return {
           ...prev,
           price: total > 0 ? total.toString() : ""
@@ -545,7 +549,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
       }
       return prev;
     });
-  }, [servicePrices]);
+  }, [serviceInstances]);
 
   const jobTypes = [
     "Window Cleaning",
@@ -591,43 +595,83 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                     <div className="space-y-4 pr-4">
                       {/* Database Services */}
                       <div className="space-y-3">
-                        {services.map((service) => (
-                          <div key={service.id} className="border border-border rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <Checkbox
-                                id={service.id}
-                                checked={formData.selected_services.includes(service.id)}
-                                onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <Label htmlFor={service.id} className="text-sm font-medium cursor-pointer">
-                                    {service.name}
-                                  </Label>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {service.default_duration && `Duration: ${service.default_duration}h`}
-                                  {service.default_duration && service.default_price && " • "}
-                                  {service.default_price && `Default: $${service.default_price}`}
-                                </div>
-                                {formData.selected_services.includes(service.id) && (
-                                  <div className="mt-2">
-                                    <Label className="text-xs text-muted-foreground">Price ($)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={servicePrices[service.id] || ''}
-                                      onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
-                                      placeholder="Enter price"
-                                      className="mt-1 h-8"
-                                    />
+                        {services.map((service) => {
+                          const instances = serviceInstances.filter(inst => inst.serviceId === service.id);
+                          const hasInstances = instances.length > 0;
+                          
+                          return (
+                            <div key={service.id} className="border border-border rounded-lg p-3">
+                              <div className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={service.id}
+                                  checked={hasInstances}
+                                  onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={service.id} className="text-sm font-medium cursor-pointer">
+                                      {service.name}
+                                      {instances.length > 1 && (
+                                        <Badge variant="secondary" className="ml-2 text-xs">
+                                          x{instances.length}
+                                        </Badge>
+                                      )}
+                                    </Label>
                                   </div>
-                                )}
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {service.default_duration && `Duration: ${service.default_duration}h`}
+                                    {service.default_duration && service.default_price && " • "}
+                                    {service.default_price && `Default: $${service.default_price}`}
+                                  </div>
+                                  {hasInstances && (
+                                    <div className="mt-2 space-y-2">
+                                      {instances.map((instance, idx) => (
+                                        <div key={instance.instanceId} className="flex items-center gap-2">
+                                          <div className="flex-1">
+                                            <Label className="text-xs text-muted-foreground">
+                                              Price {instances.length > 1 ? `#${idx + 1}` : ''} ($)
+                                            </Label>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              min="0"
+                                              value={instance.price || ''}
+                                              onChange={(e) => handleServiceInstancePriceChange(instance.instanceId, e.target.value)}
+                                              placeholder="Enter price"
+                                              className="mt-1 h-8"
+                                            />
+                                          </div>
+                                          {instances.length > 1 && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeServiceInstance(instance.instanceId)}
+                                              className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 mt-5"
+                                            >
+                                              ×
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                      {hasInstances && (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleServiceChange(service.id, true)}
+                                          className="w-full h-7 text-xs"
+                                        >
+                                          + Add Another
+                                        </Button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* Custom Services */}
@@ -635,54 +679,94 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
                         <div className="border-t pt-4">
                           <h4 className="text-sm font-medium mb-3">Custom Services</h4>
                           <div className="space-y-3">
-                            {customServices.map(service => (
-                              <div key={service.id} className="border border-border rounded-lg p-3">
-                                <div className="flex items-start space-x-2">
-                                  <Checkbox
-                                    id={`custom-service-${service.id}`}
-                                    checked={formData.selected_services.includes(service.id)}
-                                    onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <Label 
-                                        htmlFor={`custom-service-${service.id}`} 
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                      >
-                                        {service.name}
-                                        <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
-                                      </Label>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeCustomService(service.id)}
-                                        className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
-                                      >
-                                        ×
-                                      </Button>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      Duration: {service.duration}h • Default: ${service.price}
-                                    </div>
-                                    {formData.selected_services.includes(service.id) && (
-                                      <div className="mt-2">
-                                        <Label className="text-xs text-muted-foreground">Price ($)</Label>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          value={servicePrices[service.id] || ''}
-                                          onChange={(e) => handleServicePriceChange(service.id, e.target.value)}
-                                          placeholder="Enter price"
-                                          className="mt-1 h-8"
-                                        />
+                            {customServices.map(service => {
+                              const instances = serviceInstances.filter(inst => inst.serviceId === service.id);
+                              const hasInstances = instances.length > 0;
+                              
+                              return (
+                                <div key={service.id} className="border border-border rounded-lg p-3">
+                                  <div className="flex items-start space-x-2">
+                                    <Checkbox
+                                      id={`custom-service-${service.id}`}
+                                      checked={hasInstances}
+                                      onCheckedChange={(checked) => handleServiceChange(service.id, checked as boolean)}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between">
+                                        <Label 
+                                          htmlFor={`custom-service-${service.id}`} 
+                                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                          {service.name}
+                                          <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>
+                                          {instances.length > 1 && (
+                                            <Badge variant="secondary" className="ml-2 text-xs">
+                                              x{instances.length}
+                                            </Badge>
+                                          )}
+                                        </Label>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeCustomService(service.id)}
+                                          className="h-6 w-6 p-0 text-destructive hover:text-destructive/90"
+                                        >
+                                          ×
+                                        </Button>
                                       </div>
-                                    )}
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Duration: {service.duration}h • Default: ${service.price}
+                                      </div>
+                                      {hasInstances && (
+                                        <div className="mt-2 space-y-2">
+                                          {instances.map((instance, idx) => (
+                                            <div key={instance.instanceId} className="flex items-center gap-2">
+                                              <div className="flex-1">
+                                                <Label className="text-xs text-muted-foreground">
+                                                  Price {instances.length > 1 ? `#${idx + 1}` : ''} ($)
+                                                </Label>
+                                                <Input
+                                                  type="number"
+                                                  step="0.01"
+                                                  min="0"
+                                                  value={instance.price || ''}
+                                                  onChange={(e) => handleServiceInstancePriceChange(instance.instanceId, e.target.value)}
+                                                  placeholder="Enter price"
+                                                  className="mt-1 h-8"
+                                                />
+                                              </div>
+                                              {instances.length > 1 && (
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => removeServiceInstance(instance.instanceId)}
+                                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 mt-5"
+                                                >
+                                                  ×
+                                                </Button>
+                                              )}
+                                            </div>
+                                          ))}
+                                          {hasInstances && (
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleServiceChange(service.id, true)}
+                                              className="w-full h-7 text-xs"
+                                            >
+                                              + Add Another
+                                            </Button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
