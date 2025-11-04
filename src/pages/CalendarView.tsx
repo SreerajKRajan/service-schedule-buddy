@@ -85,6 +85,7 @@ const CalendarView = () => {
   const [hasFullAccess, setHasFullAccess] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
+  const [isUsersOpen, setIsUsersOpen] = useState(true);
 
   useEffect(() => {
     if (userId) {
@@ -324,7 +325,6 @@ const CalendarView = () => {
 
   const filteredJobs = filterJobs();
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
-  const [isUsersOpen, setIsUsersOpen] = useState(true);
 
   return (
     <div className="min-h-screen p-4 space-y-6">
