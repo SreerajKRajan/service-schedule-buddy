@@ -33,43 +33,58 @@ const localizer = momentLocalizer(moment);
 
 const accountTimezone = "America/Chicago";
 
-// Add this after your imports, before the component function
 const calendarStyles = `
-  /* Increase time slot height for better spacing */
+  /* Force smaller event width to prevent overlap */
+  .rbc-event {
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Ensure proper stacking for overlapping events */
+  .rbc-day-slot .rbc-events-container {
+    margin-right: 10px !important;
+  }
+  
+  .rbc-event-content {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Hide the time label that's duplicated in title */
+  .rbc-event-label {
+    display: none !important;
+  }
+  
+  /* Reduce event overlap percentage */
+  .rbc-addons-dnd .rbc-addons-dnd-resizable {
+    width: 100% !important;
+  }
+  
+  /* Better slot sizing */
   .rbc-time-slot {
-    min-height: 50px;
+    min-height: 40px !important;
   }
   
   .rbc-timeslot-group {
-    min-height: 80px;
+    min-height: 80px !important;
   }
   
-  /* Prevent event overlap */
+  /* Force events to respect boundaries */
   .rbc-day-slot .rbc-event {
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    max-width: 95% !important;
   }
   
-  .rbc-day-slot .rbc-events-container {
-    margin-right: 0;
+  /* Improve column width */
+  .rbc-time-content > * + * > * {
+    border-left: 1px solid #ddd;
   }
   
-  /* Better event content display */
-  .rbc-event-content {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-    line-height: 1.3;
-  }
-  
-  /* Hide duplicate time labels */
-  .rbc-event-label {
-    display: none;
-  }
-  
-  /* Adjust event positioning in week/day view */
-  .rbc-time-column .rbc-event {
-    padding: 2px 5px;
+  /* Prevent events from being too wide */
+  .rbc-event.rbc-selected {
+    max-width: 95% !important;
   }
 `;
 
@@ -552,6 +567,7 @@ export function JobCalendar({
               <BigCalendar
                 step={30}
                 timeslots={2}
+                dayLayoutAlgorithm="no-overlap"
                 localizer={localizer}
                 events={events}
                 startAccessor="start"
