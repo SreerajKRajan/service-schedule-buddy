@@ -199,7 +199,6 @@ All colors MUST be HSL.
   overflow: visible !important;
   background: hsl(var(--card));
   height: auto !important;
-  position: relative;
 }
 
 .rbc-time-view .rbc-timeslot-group {
@@ -229,7 +228,6 @@ All colors MUST be HSL.
   overflow: visible;
   white-space: normal;
   word-wrap: break-word;
-  position: absolute !important;
 }
 
 .rbc-time-view .rbc-event-label {
@@ -244,37 +242,13 @@ All colors MUST be HSL.
   overflow: visible;
 }
 
-/* CRITICAL FIX: Prevent overlapping events in week/day view */
-/* Make the events container use flexbox to arrange events horizontally */
+/* Allow events to stack side-by-side when overlapping */
 .rbc-time-view .rbc-events-container {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 2px;
-  position: relative !important;
-  margin-right: 0 !important;
-  width: 100% !important;
+  margin-right: 10px;
 }
 
-/* Make each event take equal space and not overlap */
 .rbc-time-view .rbc-event {
-  position: relative !important;
-  flex: 1 1 0% !important;
-  min-width: 80px !important;
-  max-width: none !important;
-  margin-right: 0 !important;
-  box-sizing: border-box;
-}
-
-/* Ensure day slots can accommodate multiple events side by side */
-.rbc-time-view .rbc-day-slot {
-  min-width: 120px !important;
-}
-
-/* When there are multiple overlapping events, they should stack horizontally */
-.rbc-time-view .rbc-row-segment {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 2px;
+  margin-right: 2px;
 }
 
 /* Week view header styling */
@@ -291,19 +265,10 @@ All colors MUST be HSL.
   border-right: 1px solid hsl(var(--border));
 }
 
-/* Ensure columns are wide enough for multiple events */
-.rbc-time-view .rbc-time-column {
-  min-width: 150px !important;
-}
-
-/* Day view specific - maintain absolute positioning but prevent overlap */
+/* Day view specific */
+/* Use absolute positioning for correct vertical placement */
 .rbc-day-slot .rbc-event {
   position: absolute !important;
-}
-
-/* For day view, calculate width based on number of concurrent events */
-.rbc-day-slot .rbc-event[style*="width"] {
-  min-width: 80px !important;
 }
 
 /* Mobile optimizations for react-big-calendar */
@@ -358,18 +323,5 @@ All colors MUST be HSL.
   
   .rbc-agenda-view .rbc-agenda-time-cell {
     font-size: 0.7rem;
-  }
-  
-  /* Mobile: smaller min-width for events */
-  .rbc-time-view .rbc-event {
-    min-width: 60px !important;
-  }
-  
-  .rbc-time-view .rbc-day-slot {
-    min-width: 80px !important;
-  }
-  
-  .rbc-time-view .rbc-time-column {
-    min-width: 100px !important;
   }
 }
