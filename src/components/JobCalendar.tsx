@@ -551,7 +551,7 @@ export function JobCalendar({
             >
               <BigCalendar
                 step={30}
-                timeslot={2}
+                timeslots={2}
                 localizer={localizer}
                 events={events}
                 startAccessor="start"
