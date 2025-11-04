@@ -93,6 +93,13 @@ const CalendarView = () => {
     }
   }, [userId]);
 
+  // Refetch jobs when assignee filters change to mirror JobBoard behavior
+  useEffect(() => {
+    if (userId && hasFullAccess) {
+      fetchJobs();
+    }
+  }, [userId, hasFullAccess, selectedAssignees]);
+
   const fetchData = async () => {
     setLoading(true);
     const userHasFullAccess = await fetchJobs();
@@ -134,12 +141,25 @@ const CalendarView = () => {
 
         if (fullAccess) {
           // Fetch all jobs if user has full access (only with scheduled_date for calendar)
-          const { data, error } = await supabase
+          let query = supabase
             .from("jobs")
             .select("*")
             .not("scheduled_date", "is", null)
             .order("scheduled_date", { ascending: true })
             .limit(10000);
+
+          // If assignees are selected, mirror JobBoard behavior and filter at the API level
+          if (selectedAssignees.length > 0) {
+            query = supabase
+              .from("jobs")
+              .select("*, job_assignments!inner(user_id)")
+              .in("job_assignments.user_id", selectedAssignees)
+              .not("scheduled_date", "is", null)
+              .order("scheduled_date", { ascending: true })
+              .limit(10000);
+          }
+
+          const { data, error } = await query;
 
           if (error) throw error;
           setJobs(data || []);
@@ -273,15 +293,47 @@ const CalendarView = () => {
   };
 
   const filterAcceptedQuotes = () => {
-    return acceptedQuotes.filter((quote) => {
-      // Assignee filter for quotes - filter by quoted_by
-      const matchesAssignee = selectedAssignees.length === 0 || 
-        (quote.quoted_by && selectedAssignees.includes(quote.quoted_by));
-      
-      return matchesAssignee;
-    });
-  };
+    let filtered = acceptedQuotes;
 
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (quote) =>
+          quote.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          quote.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    if (dateRange?.from || dateRange?.to) {
+      filtered = filtered.filter((quote) => {
+        if (!quote.scheduled_date) return false;
+
+        const scheduledDate = new Date(quote.scheduled_date);
+        const scheduledDateOnly = new Date(
+          scheduledDate.getFullYear(),
+          scheduledDate.getMonth(),
+          scheduledDate.getDate(),
+        );
+
+        if (dateRange.from && dateRange.to) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly >= fromDate && scheduledDateOnly <= toDate;
+        } else if (dateRange.from) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          return scheduledDateOnly >= fromDate;
+        } else if (dateRange.to) {
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          return scheduledDateOnly <= toDate;
+        }
+
+        return true;
+      });
+    }
+
+    return filtered;
+  };
   const toggleAssignee = (userId: string) => {
     setSelectedAssignees(prev => 
       prev.includes(userId) 
