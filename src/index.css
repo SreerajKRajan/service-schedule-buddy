@@ -239,14 +239,12 @@ All colors MUST be HSL.
   overflow: visible;
 }
 
-/* Make events not overlap by default */
+/* Allow events to stack side-by-side when overlapping */
 .rbc-time-view .rbc-events-container {
-  margin-right: 0 !important;
+  margin-right: 10px;
 }
 
 .rbc-time-view .rbc-event {
-  left: 0 !important;
-  width: 100% !important;
   margin-right: 2px;
 }
 
