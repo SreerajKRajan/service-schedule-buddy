@@ -177,6 +177,97 @@ All colors MUST be HSL.
   max-height: none !important;
 }
 
+/* Week and Day view customizations */
+.rbc-time-view {
+  border: 1px solid hsl(var(--border));
+  overflow: visible !important;
+}
+
+.rbc-time-view .rbc-time-content {
+  overflow: visible !important;
+  max-height: none !important;
+  border-top: 2px solid hsl(var(--border));
+}
+
+.rbc-time-view .rbc-time-column {
+  overflow: visible !important;
+  min-height: 100% !important;
+}
+
+.rbc-time-view .rbc-day-slot {
+  overflow: visible !important;
+}
+
+.rbc-time-view .rbc-timeslot-group {
+  min-height: 60px !important;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.rbc-time-view .rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.3);
+}
+
+.rbc-time-view .rbc-time-gutter {
+  border-right: 1px solid hsl(var(--border));
+}
+
+.rbc-time-view .rbc-current-time-indicator {
+  background-color: hsl(var(--destructive));
+  height: 2px;
+}
+
+.rbc-time-view .rbc-event {
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.rbc-time-view .rbc-event-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.rbc-time-view .rbc-event-content {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  white-space: normal;
+  overflow: visible;
+}
+
+/* Make events not overlap by default */
+.rbc-time-view .rbc-events-container {
+  margin-right: 0 !important;
+}
+
+.rbc-time-view .rbc-event {
+  left: 0 !important;
+  width: 100% !important;
+  margin-right: 2px;
+}
+
+/* Week view header styling */
+.rbc-time-header {
+  border-bottom: 2px solid hsl(var(--border));
+}
+
+.rbc-time-header-content {
+  border-left: 1px solid hsl(var(--border));
+}
+
+.rbc-time-header-gutter {
+  border-right: 1px solid hsl(var(--border));
+}
+
+/* Day view specific */
+.rbc-day-slot .rbc-event {
+  position: relative !important;
+}
+
 /* Mobile optimizations for react-big-calendar */
 @media (max-width: 768px) {
   .rbc-calendar {
