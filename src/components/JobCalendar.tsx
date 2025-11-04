@@ -511,7 +511,7 @@ export function JobCalendar({
           <div
             className="min-h-[320px]"
             style={{
-              height: view === "month" ? monthTotalHeight : 600,
+              height: view === "month" ? monthTotalHeight : "auto",
               // @ts-ignore - CSS variable for month row height
               ["--month-row-height" as any]: `${monthRowHeight}px`,
             }}
@@ -534,7 +534,7 @@ export function JobCalendar({
                   ? `month-${currentDate.getFullYear()}-${currentDate.getMonth()}-${monthRowHeight}`
                   : `view-${view}`
               }
-              style={{ height: "100%" }}
+              style={{ height: view === "month" ? "100%" : "auto" }}
               popup={false}
               toolbar={false}
               formats={{
