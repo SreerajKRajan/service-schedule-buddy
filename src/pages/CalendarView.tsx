@@ -260,9 +260,9 @@ const CalendarView = () => {
       const matchesStatus = statusFilter === "all" || statusFilter === "accepted_quotes" || job.status === statusFilter;
       const matchesType = typeFilter === "all" || job.job_type === typeFilter;
 
-      // Assignee filter
-      const matchesAssignee = selectedAssignees.length === 0 || 
-        jobAssignments.some(ja => ja.job_id === job.id && selectedAssignees.includes(ja.user_id));
+      // Assignee filter - skip client-side filtering when API-level filtering is applied
+      // We already filter by assignees in fetchJobs via SQL join, so always pass this check
+      const matchesAssignee = true;
 
       // Date range filter
       if (dateRange?.from || dateRange?.to) {
