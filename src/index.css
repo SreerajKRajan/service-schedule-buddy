@@ -192,10 +192,19 @@ All colors MUST be HSL.
 .rbc-time-view .rbc-time-column {
   overflow: visible !important;
   min-height: 100% !important;
+  min-width: 150px !important; /* Ensure enough width for multiple events */
 }
 
 .rbc-time-view .rbc-day-slot {
   overflow: visible !important;
+  position: relative !important;
+}
+
+/* Events container must expand to show all overlapping events */
+.rbc-time-view .rbc-events-container {
+  position: relative !important;
+  width: 100% !important;
+  margin-right: 0 !important;
 }
 
 .rbc-time-view .rbc-timeslot-group {
@@ -216,15 +225,19 @@ All colors MUST be HSL.
   height: 2px;
 }
 
+/* Match month view event styling */
 .rbc-time-view .rbc-event {
   border: none;
-  padding: 4px 6px;
-  border-radius: 4px;
+  padding: 2px 4px;
+  border-radius: 3px;
   font-size: 0.75rem;
   line-height: 1.3;
   overflow: visible;
   white-space: normal;
   word-wrap: break-word;
+  margin-right: 2px;
+  /* Allow react-big-calendar to position overlapping events */
+  position: absolute !important;
 }
 
 .rbc-time-view .rbc-event-label {
@@ -237,15 +250,6 @@ All colors MUST be HSL.
   line-height: 1.3;
   white-space: normal;
   overflow: visible;
-}
-
-/* Allow events to stack side-by-side when overlapping */
-.rbc-time-view .rbc-events-container {
-  margin-right: 10px;
-}
-
-.rbc-time-view .rbc-event {
-  margin-right: 2px;
 }
 
 /* Week view header styling */
