@@ -12,7 +12,9 @@ import { CreateJobForm } from "@/components/CreateJobForm";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { Search, Filter, Calendar as CalendarIcon, X } from "lucide-react";
+import { Search, Filter, Calendar as CalendarIcon, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 
@@ -81,6 +83,8 @@ const CalendarView = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
   const [hasFullAccess, setHasFullAccess] = useState(false);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
 
   useEffect(() => {
     if (userId) {
@@ -91,8 +95,21 @@ const CalendarView = () => {
   const fetchData = async () => {
     setLoading(true);
     const userHasFullAccess = await fetchJobs();
-    await Promise.all([fetchUsers(), fetchAcceptedQuotes(userHasFullAccess)]);
+    await Promise.all([fetchUsers(), fetchAcceptedQuotes(userHasFullAccess), fetchJobAssignments()]);
     setLoading(false);
+  };
+
+  const fetchJobAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("job_assignments")
+        .select("*");
+
+      if (error) throw error;
+      setJobAssignments(data || []);
+    } catch (error: any) {
+      console.error("Error fetching job assignments:", error);
+    }
   };
 
   const fetchJobs = async (): Promise<boolean> => {
@@ -222,6 +239,10 @@ const CalendarView = () => {
       const matchesStatus = statusFilter === "all" || statusFilter === "accepted_quotes" || job.status === statusFilter;
       const matchesType = typeFilter === "all" || job.job_type === typeFilter;
 
+      // Assignee filter
+      const matchesAssignee = selectedAssignees.length === 0 || 
+        jobAssignments.some(ja => ja.job_id === job.id && selectedAssignees.includes(ja.user_id));
+
       // Date range filter
       if (dateRange?.from || dateRange?.to) {
         if (!job.scheduled_date) return false;
@@ -246,8 +267,16 @@ const CalendarView = () => {
         }
       }
 
-      return matchesSearch && matchesStatus && matchesType;
+      return matchesSearch && matchesStatus && matchesType && matchesAssignee;
     });
+  };
+
+  const toggleAssignee = (userId: string) => {
+    setSelectedAssignees(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
   };
 
   const handleConvertToJob = (quote: AcceptedQuote, onSuccess: () => void, onError: () => void) => {
@@ -295,6 +324,7 @@ const CalendarView = () => {
 
   const filteredJobs = filterJobs();
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
+  const [isUsersOpen, setIsUsersOpen] = useState(true);
 
   return (
     <div className="min-h-screen p-4 space-y-6">
@@ -369,8 +399,38 @@ const CalendarView = () => {
               </PopoverContent>
             </Popover>
           </div>
+          {hasFullAccess && users.length > 0 && (
+            <Collapsible open={isUsersOpen} onOpenChange={setIsUsersOpen} className="border rounded-lg p-4">
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Users</span>
+                  <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                    {selectedAssignees.length}
+                  </span>
+                </div>
+                {isUsersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4 space-y-2">
+                {users.map((user) => (
+                  <div key={user.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`user-${user.id}`}
+                      checked={selectedAssignees.includes(user.id)}
+                      onCheckedChange={() => toggleAssignee(user.id)}
+                    />
+                    <label
+                      htmlFor={`user-${user.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {user.name}
+                    </label>
+                  </div>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
           <div className="flex gap-2">
-            {(searchTerm || statusFilter !== "all" || typeFilter !== "all" || dateRange) && (
+            {(searchTerm || statusFilter !== "all" || typeFilter !== "all" || dateRange || selectedAssignees.length > 0) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -379,6 +439,7 @@ const CalendarView = () => {
                   setStatusFilter("all");
                   setTypeFilter("all");
                   setDateRange(undefined);
+                  setSelectedAssignees([]);
                 }}
                 className="h-8"
               >
