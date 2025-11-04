@@ -184,8 +184,8 @@ export function JobCalendar({
   };
 
   const formatUTCDateTime = (dateStr) => {
-    // Parse the UTC date and convert to CDT timezone
-    const m = moment.parseZone(dateStr).tz(accountTimezone, true);
+    // Parse the UTC date and convert to account timezone
+    const m = moment.utc(dateStr).tz(accountTimezone);
     // Format as: YYYY-MM-DD h:mm AM/PM
     return m.format("YYYY-MM-DD h:mm A");
   };
@@ -204,7 +204,7 @@ export function JobCalendar({
           return;
         }
 
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
+        const m = moment.utc(quote.scheduled_date).tz(accountTimezone);
         const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
         const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
 
@@ -228,7 +228,7 @@ export function JobCalendar({
       quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
 
-        const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
+        const m = moment.utc(quote.scheduled_date).tz(accountTimezone);
         const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
         const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
 
@@ -255,7 +255,7 @@ export function JobCalendar({
         if (statusFilter !== "all" && job.status !== statusFilter) return;
 
         // Assignee filtering is now done at the API level in JobBoard
-        const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
+        const m = moment.utc(job.scheduled_date).tz(accountTimezone);
         const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
 
         // Add estimated duration or default to 2 hours
