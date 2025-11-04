@@ -167,10 +167,19 @@ export function JobCalendar({
         )
       : 0;
 
-  const monthTotalHeight =
-    view === "month"
-      ? 64 + weeksInMonth * monthRowHeight // header + rows
-      : 600;
+  // Calculate dynamic height for week/day views
+  const weekDayHeight = () => {
+    if (view === "month") {
+      return 64 + weeksInMonth * monthRowHeight; // header + rows
+    }
+    // For week/day views: calculate based on time slots (6 AM to 11:59 PM = 18 hours)
+    // Each hour = 60px, plus header (100px)
+    const hours = 18; // 6 AM to 11:59 PM
+    const pixelsPerHour = 60;
+    return 100 + hours * pixelsPerHour;
+  };
+
+  const monthTotalHeight = weekDayHeight();
 
   const fetchAcceptedQuotes = async () => {
     try {
