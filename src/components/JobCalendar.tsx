@@ -277,33 +277,6 @@ export function JobCalendar({
           type: "job",
         });
       });
-
-      // Add accepted quotes only if parent filter is not set to a specific job status
-      // and calendar's own filter allows it
-      const parentIsJobStatus =
-        parentStatusFilter && parentStatusFilter !== "all" && parentStatusFilter !== "accepted_quotes";
-
-      if (statusFilter === "all" && !hideAcceptedQuotes && !parentIsJobStatus) {
-        acceptedQuotes.forEach((quote) => {
-          if (!quote.scheduled_date) return;
-
-          const m = moment.parseZone(quote.scheduled_date).tz(accountTimezone, true);
-          const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
-          const endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 2, m.minute());
-
-          // Format time for display (12-hour with AM/PM)
-          const timeStr = m.format("h A");
-
-          calendarEvents.push({
-            id: quote.id,
-            title: `${timeStr} ${quote.customer_name || "Customer"}`,
-            start: startDate,
-            end: endDate,
-            resource: quote,
-            type: "quote",
-          });
-        });
-      }
     }
 
     setEvents(calendarEvents);
