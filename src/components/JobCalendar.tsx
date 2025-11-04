@@ -429,32 +429,34 @@ export function JobCalendar({
               <Button variant="outline" size="sm" onClick={navigateToday}>
                 Today
               </Button>
-              <Button variant="outline" size="icon" onClick={navigateBack}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" className="font-semibold min-w-[180px]">
-                    {getDateTitle()}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <DatePicker
-                    mode="single"
-                    selected={currentDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setCurrentDate(date);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button variant="outline" size="icon" onClick={navigateNext}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center border rounded-md">
+                <Button variant="ghost" size="icon" onClick={navigateBack} className="rounded-r-none border-r">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" className="font-semibold min-w-[180px] rounded-none">
+                      {getDateTitle()}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <DatePicker
+                      mode="single"
+                      selected={currentDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setCurrentDate(date);
+                        }
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="ghost" size="icon" onClick={navigateNext} className="rounded-l-none border-l">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
 
               {/* View Type Select */}
               <Select value={view} onValueChange={(value) => setView(value as View)}>
