@@ -399,7 +399,7 @@ export function JobCalendar({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
-            Job Calendar
+            Calendar
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -416,7 +416,7 @@ export function JobCalendar({
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
-              Job Calendar
+              Calendar
             </CardTitle>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">

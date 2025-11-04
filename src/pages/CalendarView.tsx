@@ -407,7 +407,7 @@ const CalendarView = () => {
   return (
     <div className="min-h-screen p-4 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Job Calendar</h1>
+        <h1 className="text-2xl font-bold">Calendar</h1>
         <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" className="gap-2">
