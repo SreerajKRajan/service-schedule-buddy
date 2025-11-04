@@ -105,18 +105,20 @@ interface JobCalendarProps {
   assigneeFilter?: string;
   jobAssignments?: JobAssignment[];
   filterButton?: React.ReactNode;
+  onStatusFilterChange?: (status: string) => void;
 }
 
 export function JobCalendar({
   jobs,
   quotes = [],
-  statusFilter: parentStatusFilter,
+  statusFilter: parentStatusFilter = "all",
   onRefresh,
   hideAcceptedQuotes = false,
   onConvertToJob,
   assigneeFilter = "all",
   jobAssignments = [],
   filterButton,
+  onStatusFilterChange,
 }: JobCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -125,7 +127,6 @@ export function JobCalendar({
   const [view, setView] = useState<View>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [monthRowHeight, setMonthRowHeight] = useState<number>(140);
 
   useEffect(() => {
@@ -136,7 +137,7 @@ export function JobCalendar({
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, quotes, acceptedQuotes, statusFilter, parentStatusFilter]);
+  }, [jobs, quotes, acceptedQuotes, parentStatusFilter]);
 
   // Dynamically set month row height so all events fit without "+X more"
   useEffect(() => {
@@ -210,7 +211,7 @@ export function JobCalendar({
       quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
         // Skip if only showing accepted quotes and calendar has status filter for jobs
-        if (statusFilter === "accepted_quotes") {
+        if (parentStatusFilter === "accepted_quotes") {
           // When filtered to only quotes, skip this - we'll add them below
           return;
         }
@@ -234,7 +235,7 @@ export function JobCalendar({
     }
 
     // If filtered to only show accepted quotes
-    if (statusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
+    if (parentStatusFilter === "accepted_quotes" && !hideAcceptedQuotes) {
       const quotesToShow = quotes.length > 0 ? quotes : acceptedQuotes;
       quotesToShow.forEach((quote) => {
         if (!quote.scheduled_date) return;
@@ -258,12 +259,12 @@ export function JobCalendar({
     }
 
     // Show jobs (unless filtered to only accepted quotes)
-    if (statusFilter !== "accepted_quotes") {
+    if (parentStatusFilter !== "accepted_quotes") {
       jobs.forEach((job) => {
         if (!job.scheduled_date) return;
 
         // Apply status filter for jobs
-        if (statusFilter !== "all" && job.status !== statusFilter) return;
+        if (parentStatusFilter !== "all" && job.status !== parentStatusFilter) return;
 
         // Assignee filtering is now done at the API level in JobBoard
         const m = moment.parseZone(job.scheduled_date).tz(accountTimezone, true);
@@ -415,86 +416,29 @@ export function JobCalendar({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex items-center gap-2 mb-4">
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
               Calendar
             </CardTitle>
-
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              {/* Filter Button */}
-              {filterButton && <div className="w-full sm:w-auto">{filterButton}</div>}
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  {!hideAcceptedQuotes && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
-                </SelectContent>
-              </Select>
-
-              {/* Mobile: Stack view buttons, Desktop: Row */}
-              <div className="flex flex-wrap gap-1 sm:gap-2">
-                <Button
-                  variant={view === "month" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("month")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Month
-                </Button>
-                <Button
-                  variant={view === "week" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("week")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Week
-                </Button>
-                <Button
-                  variant={view === "day" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("day")}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                  Day
-                </Button>
-              </div>
-            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-4">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button variant="outline" size="sm" onClick={navigateToday} className="text-xs sm:text-sm">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            {/* Left side: Today, navigation arrows, and date */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={navigateToday}>
                 Today
               </Button>
-              <Button variant="outline" size="sm" onClick={navigateBack}>
-                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Button variant="outline" size="icon" onClick={navigateBack}>
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={navigateNext}>
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-            </div>
-
-            <div className="flex-1 flex justify-center sm:justify-end">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full sm:w-auto sm:min-w-[200px] justify-center text-center font-medium text-xs sm:text-sm",
-                    )}
-                  >
+                  <Button variant="ghost" className="font-semibold min-w-[180px]">
                     {getDateTitle()}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
+                <PopoverContent className="w-auto p-0" align="start">
                   <DatePicker
                     mode="single"
                     selected={currentDate}
@@ -508,7 +452,25 @@ export function JobCalendar({
                   />
                 </PopoverContent>
               </Popover>
+              <Button variant="outline" size="icon" onClick={navigateNext}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+
+              {/* View Type Select */}
+              <Select value={view} onValueChange={(value) => setView(value as View)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Month View</SelectItem>
+                  <SelectItem value="week">Week View</SelectItem>
+                  <SelectItem value="day">Day View</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Right side: Filter Button */}
+            {filterButton && <div>{filterButton}</div>}
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
