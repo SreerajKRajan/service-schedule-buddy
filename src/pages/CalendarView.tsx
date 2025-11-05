@@ -287,6 +287,7 @@ const CalendarView = () => {
         .order("start_time", { ascending: true });
 
       if (error) throw error;
+      console.log("Fetched appointments:", data);
       setAppointments(data || []);
     } catch (error: any) {
       console.error("Error fetching appointments:", error);
@@ -482,6 +483,13 @@ const CalendarView = () => {
   const filteredJobs = filterJobs();
   const filteredQuotes = filterAcceptedQuotes();
   const filteredAppointments = filterAppointments();
+  console.log("Calendar data:", { 
+    totalAppointments: appointments.length, 
+    filteredAppointments: filteredAppointments.length,
+    appointmentTypeFilter,
+    totalJobs: jobs.length,
+    filteredJobs: filteredJobs.length
+  });
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   const activeFiltersCount = 

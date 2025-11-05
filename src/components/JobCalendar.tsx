@@ -158,6 +158,7 @@ export function JobCalendar({
   }, [hideAcceptedQuotes]);
 
   useEffect(() => {
+    console.log("JobCalendar received appointments:", appointments);
     convertJobsToEvents();
   }, [jobs, quotes, acceptedQuotes, appointments, parentStatusFilter]);
 
@@ -315,6 +316,7 @@ export function JobCalendar({
 
     // Show external appointments (unless filtered to only accepted quotes)
     if (parentStatusFilter !== "accepted_quotes") {
+      console.log("Processing appointments for calendar:", appointments.length);
       appointments.forEach((appointment) => {
         if (!appointment.start_time) return;
 
@@ -333,6 +335,13 @@ export function JobCalendar({
         // Format time for display (12-hour with AM/PM)
         const timeStr = m.format("h A");
 
+        console.log("Adding appointment to calendar:", {
+          title: appointment.title,
+          startDate,
+          endDate,
+          originalTime: appointment.start_time
+        });
+
         calendarEvents.push({
           id: appointment.id,
           title: `${timeStr} ${appointment.title}`,
@@ -344,6 +353,7 @@ export function JobCalendar({
       });
     }
 
+    console.log("Total calendar events:", calendarEvents.length);
     setEvents(calendarEvents);
   };
 
