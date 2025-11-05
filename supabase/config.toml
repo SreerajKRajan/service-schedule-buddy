@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.project-completion-webhook]
 verify_jwt = false
+
+[functions.calendar-import-webhook]
+verify_jwt = false

@@ -73,6 +73,74 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          address: string | null
+          appointment_status: string | null
+          assigned_user_id: string | null
+          assigned_users: string[] | null
+          calendar_id: string | null
+          contact_id: string | null
+          created_at: string
+          end_time: string
+          external_id: string
+          group_id: string | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          source: string | null
+          start_time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          appointment_status?: string | null
+          assigned_user_id?: string | null
+          assigned_users?: string[] | null
+          calendar_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          end_time: string
+          external_id: string
+          group_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          source?: string | null
+          start_time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          appointment_status?: string | null
+          assigned_user_id?: string | null
+          assigned_users?: string[] | null
+          calendar_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          end_time?: string
+          external_id?: string
+          group_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          source?: string | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_assignments: {
         Row: {
           assigned_at: string

@@ -71,6 +71,26 @@ interface AcceptedQuote {
   appointment_id?: string;
 }
 
+interface Appointment {
+  id: string;
+  external_id: string;
+  location_id?: string;
+  address?: string;
+  title: string;
+  calendar_id?: string;
+  contact_id?: string;
+  group_id?: string;
+  appointment_status: string;
+  assigned_user_id?: string;
+  assigned_users?: string[];
+  notes?: string;
+  source?: string;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface JobSchedule {
   id: string;
   job_id: string;
@@ -86,8 +106,8 @@ interface CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  resource: Job | AcceptedQuote;
-  type: "job" | "quote";
+  resource: Job | AcceptedQuote | Appointment;
+  type: "job" | "quote" | "appointment";
 }
 
 interface JobAssignment {
@@ -98,6 +118,7 @@ interface JobAssignment {
 interface JobCalendarProps {
   jobs: Job[];
   quotes?: AcceptedQuote[];
+  appointments?: Appointment[];
   statusFilter?: string;
   onRefresh: () => void;
   hideAcceptedQuotes?: boolean;
@@ -111,6 +132,7 @@ interface JobCalendarProps {
 export function JobCalendar({
   jobs,
   quotes = [],
+  appointments = [],
   statusFilter: parentStatusFilter = "all",
   onRefresh,
   hideAcceptedQuotes = false,
@@ -137,7 +159,7 @@ export function JobCalendar({
 
   useEffect(() => {
     convertJobsToEvents();
-  }, [jobs, quotes, acceptedQuotes, parentStatusFilter]);
+  }, [jobs, quotes, acceptedQuotes, appointments, parentStatusFilter]);
 
   // Dynamically set month row height so all events fit without "+X more"
   useEffect(() => {
@@ -291,6 +313,37 @@ export function JobCalendar({
       });
     }
 
+    // Show external appointments (unless filtered to only accepted quotes)
+    if (parentStatusFilter !== "accepted_quotes") {
+      appointments.forEach((appointment) => {
+        if (!appointment.start_time) return;
+
+        const m = moment.parseZone(appointment.start_time).tz(accountTimezone, true);
+        const startDate = new Date(m.year(), m.month(), m.date(), m.hour(), m.minute());
+
+        // Use end_time if available, otherwise default to 1 hour
+        let endDate: Date;
+        if (appointment.end_time) {
+          const endM = moment.parseZone(appointment.end_time).tz(accountTimezone, true);
+          endDate = new Date(endM.year(), endM.month(), endM.date(), endM.hour(), endM.minute());
+        } else {
+          endDate = new Date(m.year(), m.month(), m.date(), m.hour() + 1, m.minute());
+        }
+
+        // Format time for display (12-hour with AM/PM)
+        const timeStr = m.format("h A");
+
+        calendarEvents.push({
+          id: appointment.id,
+          title: `${timeStr} ${appointment.title}`,
+          start: startDate,
+          end: endDate,
+          resource: appointment,
+          type: "appointment",
+        });
+      });
+    }
+
     setEvents(calendarEvents);
   };
 
@@ -298,9 +351,13 @@ export function JobCalendar({
     if (event.type === "job") {
       setSelectedJob(event.resource as Job);
       setSelectedQuote(null);
-    } else {
+    } else if (event.type === "quote") {
       setSelectedQuote(event.resource as AcceptedQuote);
       setSelectedJob(null);
+    } else if (event.type === "appointment") {
+      // For now, appointments don't have a detail dialog
+      // You can add a separate state for selected appointment if needed
+      toast.info("External appointment: " + (event.resource as Appointment).title);
     }
   };
 
@@ -366,6 +423,8 @@ export function JobCalendar({
 
     if (event.type === "quote") {
       backgroundColor = "#8b5cf6"; // Purple for quotes
+    } else if (event.type === "appointment") {
+      backgroundColor = "#06b6d4"; // Cyan for external appointments
     } else {
       const job = event.resource as Job;
       switch (job.status) {
