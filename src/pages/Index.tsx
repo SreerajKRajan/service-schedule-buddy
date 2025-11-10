@@ -7,10 +7,11 @@ import { UserManagement } from "@/components/UserManagement";
 import { ServicesManagement } from "@/components/ServicesManagement";
 import { Dashboard } from "@/components/Dashboard";
 import AcceptedQuotes from "@/components/AcceptedQuotes";
+import { InvoiceAnalytics } from "@/components/InvoiceAnalytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck } from "lucide-react";
+import { PlusCircle, Users, BarChart3, Briefcase, Settings, FileCheck, DollarSign } from "lucide-react";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -92,10 +93,14 @@ const Index = () => {
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {hasFullAccess ? (
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="dashboard" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Dashboard
+                </TabsTrigger>
+                <TabsTrigger value="invoices" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Invoices
                 </TabsTrigger>
                 <TabsTrigger value="jobs" className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4" />
@@ -128,9 +133,15 @@ const Index = () => {
             )}
 
             {hasFullAccess && (
-              <TabsContent value="dashboard" className="space-y-6">
-                <Dashboard customerEmail={isFiltered ? customerEmail : null} enabled={activeTab === 'dashboard'} />
-              </TabsContent>
+              <>
+                <TabsContent value="dashboard" className="space-y-6">
+                  <Dashboard customerEmail={isFiltered ? customerEmail : null} enabled={activeTab === 'dashboard'} />
+                </TabsContent>
+
+                <TabsContent value="invoices" className="space-y-6">
+                  <InvoiceAnalytics />
+                </TabsContent>
+              </>
             )}
 
             <TabsContent value="jobs" className="space-y-6">
