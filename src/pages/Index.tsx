@@ -5,7 +5,7 @@ import { JobBoard } from "@/components/JobBoard";
 import { CreateJobForm } from "@/components/CreateJobForm";
 import { UserManagement } from "@/components/UserManagement";
 import { ServicesManagement } from "@/components/ServicesManagement";
-import { Dashboard } from "@/components/Dashboard";
+import InvoiceAnalyticsDashboard from "@/components/InvoiceAnalyticsDashboard";
 import AcceptedQuotes from "@/components/AcceptedQuotes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,7 +129,7 @@ const Index = () => {
 
             {hasFullAccess && (
               <TabsContent value="dashboard" className="space-y-6">
-                <Dashboard customerEmail={isFiltered ? customerEmail : null} enabled={activeTab === 'dashboard'} />
+                <InvoiceAnalyticsDashboard />
               </TabsContent>
             )}
 
