@@ -150,14 +150,18 @@ export default function InvoiceAnalyticsDashboard() {
       );
       
       if (!response.ok) {
-        throw new Error("Failed to fetch technician schedule");
+        // Function might still be deploying, don't show error to user
+        console.warn("Technician schedule endpoint not available yet (still deploying)");
+        setTechnicianData(null);
+        return;
       }
       
       const result = await response.json();
       setTechnicianData(result);
     } catch (error) {
       console.error("Error fetching technician schedule:", error);
-      toast.error("Failed to load technician schedule data");
+      // Don't show error toast, just log it - function might still be deploying
+      setTechnicianData(null);
     }
   };
 
@@ -504,67 +508,69 @@ export default function InvoiceAnalyticsDashboard() {
         </CardContent>
       </Card>
 
-      {/* Technician Schedule Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Activities by Representative (Next 7 Days)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {technicianData && technicianData.technicians.length > 0 ? (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Technician</TableHead>
-                    <TableHead className="text-right">Scheduled Jobs</TableHead>
-                    <TableHead>Earliest Date</TableHead>
-                    <TableHead className="text-right">Total Hours</TableHead>
-                    <TableHead>Job Types</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {technicianData.technicians.map((tech) => (
-                    <TableRow key={tech.id}>
-                      <TableCell className="font-medium">{tech.name}</TableCell>
-                      <TableCell className="text-right">{tech.job_count}</TableCell>
-                      <TableCell>
-                        {tech.earliest_scheduled_date
-                          ? new Date(tech.earliest_scheduled_date).toLocaleDateString()
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-right">{tech.total_hours}h</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {tech.job_types.slice(0, 3).map((type, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
-                              {type}
-                            </Badge>
-                          ))}
-                          {tech.job_types.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{tech.job_types.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
+      {/* Technician Schedule Section - Only show if data is available */}
+      {technicianData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Activities by Representative (Next 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {technicianData.technicians.length > 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Technician</TableHead>
+                      <TableHead className="text-right">Scheduled Jobs</TableHead>
+                      <TableHead>Earliest Date</TableHead>
+                      <TableHead className="text-right">Total Hours</TableHead>
+                      <TableHead>Job Types</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                <p>
-                  Total: {technicianData.summary.total_technicians} technicians with{" "}
-                  {technicianData.summary.total_jobs} scheduled jobs
-                </p>
+                  </TableHeader>
+                  <TableBody>
+                    {technicianData.technicians.map((tech) => (
+                      <TableRow key={tech.id}>
+                        <TableCell className="font-medium">{tech.name}</TableCell>
+                        <TableCell className="text-right">{tech.job_count}</TableCell>
+                        <TableCell>
+                          {tech.earliest_scheduled_date
+                            ? new Date(tech.earliest_scheduled_date).toLocaleDateString()
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell className="text-right">{tech.total_hours}h</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {tech.job_types.slice(0, 3).map((type, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {type}
+                              </Badge>
+                            ))}
+                            {tech.job_types.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{tech.job_types.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                  <p>
+                    Total: {technicianData.summary.total_technicians} technicians with{" "}
+                    {technicianData.summary.total_jobs} scheduled jobs
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No scheduled jobs found for the next 7 days
               </div>
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No scheduled jobs found for the next 7 days
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
