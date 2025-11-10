@@ -69,6 +69,26 @@ interface AcceptedQuote {
   created_at: string;
 }
 
+interface Appointment {
+  id: string;
+  external_id: string;
+  location_id?: string;
+  address?: string;
+  title: string;
+  calendar_id?: string;
+  contact_id?: string;
+  group_id?: string;
+  appointment_status: string;
+  assigned_user_id?: string;
+  assigned_users?: string[];
+  notes?: string;
+  source?: string;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const CalendarView = () => {
   const [searchParams] = useSearchParams();
   const userId = searchParams.get("id");
@@ -76,10 +96,12 @@ const CalendarView = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [acceptedQuotes, setAcceptedQuotes] = useState<AcceptedQuote[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createJobData, setCreateJobData] = useState<any>(null);
@@ -111,7 +133,12 @@ const CalendarView = () => {
   const fetchData = async () => {
     setLoading(true);
     const userHasFullAccess = await fetchJobs();
-    await Promise.all([fetchUsers(), fetchAcceptedQuotes(userHasFullAccess), fetchJobAssignments()]);
+    await Promise.all([
+      fetchUsers(), 
+      fetchAcceptedQuotes(userHasFullAccess), 
+      fetchJobAssignments(),
+      fetchAppointments()
+    ]);
     setLoading(false);
   };
 
@@ -252,7 +279,27 @@ const CalendarView = () => {
     }
   };
 
+  const fetchAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      console.log("Fetched appointments:", data);
+      setAppointments(data || []);
+    } catch (error: any) {
+      console.error("Error fetching appointments:", error);
+    }
+  };
+
   const filterJobs = () => {
+    // Filter by appointment type
+    if (appointmentTypeFilter === "external") {
+      return [];
+    }
+
     return jobs.filter((job) => {
       const matchesSearch =
         searchTerm === "" ||
@@ -297,6 +344,46 @@ const CalendarView = () => {
       }
 
       return matchesSearch && matchesStatus && matchesType && matchesAssignee;
+    });
+  };
+
+  const filterAppointments = () => {
+    // Filter by appointment type
+    if (appointmentTypeFilter === "jobs") {
+      return [];
+    }
+
+    return appointments.filter((appointment) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        appointment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        appointment.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        appointment.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        appointment.source?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Date range filter
+      if (dateRange?.from || dateRange?.to) {
+        const appointmentDate = new Date(appointment.start_time);
+        const appointmentDateOnly = new Date(
+          appointmentDate.getFullYear(),
+          appointmentDate.getMonth(),
+          appointmentDate.getDate()
+        );
+
+        if (dateRange.from && dateRange.to) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          if (appointmentDateOnly < fromDate || appointmentDateOnly > toDate) return false;
+        } else if (dateRange.from) {
+          const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          if (appointmentDateOnly < fromDate) return false;
+        } else if (dateRange.to) {
+          const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+          if (appointmentDateOnly > toDate) return false;
+        }
+      }
+
+      return matchesSearch;
     });
   };
 
@@ -395,12 +482,21 @@ const CalendarView = () => {
 
   const filteredJobs = filterJobs();
   const filteredQuotes = filterAcceptedQuotes();
+  const filteredAppointments = filterAppointments();
+  console.log("Calendar data:", { 
+    totalAppointments: appointments.length, 
+    filteredAppointments: filteredAppointments.length,
+    appointmentTypeFilter,
+    totalJobs: jobs.length,
+    filteredJobs: filteredJobs.length
+  });
   const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter((type) => type && type.trim() !== ""))];
 
   const activeFiltersCount = 
     (searchTerm ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
     (typeFilter !== "all" ? 1 : 0) +
+    (appointmentTypeFilter !== "all" ? 1 : 0) +
     (dateRange ? 1 : 0) +
     (selectedAssignees.length > 0 ? 1 : 0);
 
@@ -419,6 +515,7 @@ const CalendarView = () => {
           <JobCalendar
             jobs={filteredJobs}
             quotes={statusFilter === "accepted_quotes" ? filteredQuotes : []}
+            appointments={filteredAppointments}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
             onRefresh={fetchData}
@@ -479,6 +576,20 @@ const CalendarView = () => {
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                   {hasFullAccess && <SelectItem value="accepted_quotes">Accepted Quotes</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Appointment Type</label>
+              <Select value={appointmentTypeFilter} onValueChange={setAppointmentTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Appointments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Appointments</SelectItem>
+                  <SelectItem value="jobs">Jobs Only</SelectItem>
+                  <SelectItem value="external">External Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

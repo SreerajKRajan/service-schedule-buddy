@@ -6,5 +6,5 @@ verify_jwt = false
 [functions.project-completion-webhook]
 verify_jwt = false
 
-[functions.invoice-analytics]
+[functions.calendar-import-webhook]
 verify_jwt = false
