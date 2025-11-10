@@ -12,6 +12,13 @@ interface TechnicianSchedule {
   earliest_scheduled_date: string | null;
   total_hours: number;
   job_types: string[];
+  previous_week_job_count: number;
+  trend: 'up' | 'down' | 'same';
+  trend_percentage: number;
+  daily_breakdown: Array<{
+    date: string;
+    job_count: number;
+  }>;
 }
 
 Deno.serve(async (req) => {
@@ -26,6 +33,12 @@ Deno.serve(async (req) => {
     const daysAhead = parseInt(url.searchParams.get('days_ahead') || '7');
     const startDate = url.searchParams.get('start_date');
     const endDate = url.searchParams.get('end_date');
+    const sortBy = url.searchParams.get('sort_by') || 'job_count';
+    const sortOrder = url.searchParams.get('sort_order') || 'desc';
+    const technicianId = url.searchParams.get('technician_id');
+    const jobType = url.searchParams.get('job_type');
+    const includeTrends = url.searchParams.get('include_trends') !== 'false';
+    const includeDailyBreakdown = url.searchParams.get('include_daily_breakdown') !== 'false';
 
     console.log(`Fetching technician schedules for next ${daysAhead} days`);
 
@@ -43,8 +56,8 @@ Deno.serve(async (req) => {
 
     console.log(`Date range: ${startDateTime.toISOString()} to ${endDateTime.toISOString()}`);
 
-    // Fetch jobs with assignments
-    const { data: jobs, error: jobsError } = await supabase
+    // Build query for current week jobs
+    let jobsQuery = supabase
       .from('jobs')
       .select(`
         id,
@@ -66,12 +79,56 @@ Deno.serve(async (req) => {
       .not('scheduled_date', 'is', null)
       .not('status', 'in', '(completed,cancelled)');
 
+    // Apply filters
+    if (technicianId) {
+      jobsQuery = jobsQuery.eq('job_assignments.user_id', technicianId);
+    }
+    if (jobType) {
+      jobsQuery = jobsQuery.eq('job_type', jobType);
+    }
+
+    const { data: jobs, error: jobsError } = await jobsQuery;
+
     if (jobsError) {
       console.error('Error fetching jobs:', jobsError);
       throw jobsError;
     }
 
     console.log(`Found ${jobs?.length || 0} jobs with assignments`);
+
+    // Fetch previous week data if trends requested
+    let previousWeekJobs: any[] = [];
+    if (includeTrends) {
+      const prevStartDate = new Date(startDateTime.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const prevEndDate = startDateTime;
+
+      let prevJobsQuery = supabase
+        .from('jobs')
+        .select(`
+          id,
+          job_assignments!inner(
+            user_id,
+            users!inner(
+              id,
+              role
+            )
+          )
+        `)
+        .gte('scheduled_date', prevStartDate.toISOString())
+        .lt('scheduled_date', prevEndDate.toISOString())
+        .not('scheduled_date', 'is', null)
+        .not('status', 'in', '(completed,cancelled)');
+
+      if (technicianId) {
+        prevJobsQuery = prevJobsQuery.eq('job_assignments.user_id', technicianId);
+      }
+      if (jobType) {
+        prevJobsQuery = prevJobsQuery.eq('job_type', jobType);
+      }
+
+      const { data: prevJobs } = await prevJobsQuery;
+      previousWeekJobs = prevJobs || [];
+    }
 
     // Process and aggregate data by technician
     const technicianMap = new Map<string, {
@@ -100,6 +157,19 @@ Deno.serve(async (req) => {
       });
     });
 
+    // Calculate previous week job counts
+    const previousWeekMap = new Map<string, number>();
+    if (includeTrends) {
+      previousWeekJobs.forEach((job: any) => {
+        job.job_assignments?.forEach((assignment: any) => {
+          const user = assignment.users;
+          if (user && user.role === 'worker') {
+            previousWeekMap.set(user.id, (previousWeekMap.get(user.id) || 0) + 1);
+          }
+        });
+      });
+    }
+
     // Transform to response format
     const technicians: TechnicianSchedule[] = Array.from(technicianMap.values()).map(tech => {
       const sortedJobs = tech.jobs.sort((a, b) => 
@@ -109,15 +179,62 @@ Deno.serve(async (req) => {
       const jobTypes = [...new Set(tech.jobs.map(j => j.job_type))];
       const totalHours = tech.jobs.reduce((sum, j) => sum + j.estimated_duration, 0);
 
+      // Calculate trend
+      const currentCount = tech.jobs.length;
+      const previousCount = previousWeekMap.get(tech.id) || 0;
+      const trendPercentage = previousCount > 0 
+        ? Math.round(((currentCount - previousCount) / previousCount) * 100)
+        : (currentCount > 0 ? 100 : 0);
+      const trend = currentCount > previousCount ? 'up' 
+        : currentCount < previousCount ? 'down' 
+        : 'same';
+
+      // Generate daily breakdown
+      const dailyBreakdown: Array<{ date: string; job_count: number }> = [];
+      if (includeDailyBreakdown) {
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(startDateTime.getTime() + i * 24 * 60 * 60 * 1000);
+          const dateStr = date.toISOString().split('T')[0];
+          const jobsOnDate = tech.jobs.filter(job => 
+            job.scheduled_date.split('T')[0] === dateStr
+          );
+          dailyBreakdown.push({
+            date: dateStr,
+            job_count: jobsOnDate.length
+          });
+        }
+      }
+
       return {
         id: tech.id,
         name: tech.name,
         job_count: tech.jobs.length,
         earliest_scheduled_date: sortedJobs[0]?.scheduled_date || null,
         total_hours: Math.round(totalHours / 60), // Convert minutes to hours
-        job_types: jobTypes
+        job_types: jobTypes,
+        previous_week_job_count: previousCount,
+        trend,
+        trend_percentage: trendPercentage,
+        daily_breakdown: dailyBreakdown
       };
-    }).sort((a, b) => b.job_count - a.job_count);
+    });
+
+    // Apply backend sorting
+    technicians.sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortBy === 'job_count') {
+        comparison = a.job_count - b.job_count;
+      } else if (sortBy === 'earliest_date') {
+        const dateA = a.earliest_scheduled_date ? new Date(a.earliest_scheduled_date).getTime() : Infinity;
+        const dateB = b.earliest_scheduled_date ? new Date(b.earliest_scheduled_date).getTime() : Infinity;
+        comparison = dateA - dateB;
+      } else if (sortBy === 'name') {
+        comparison = a.name.localeCompare(b.name);
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
 
     const response = {
       technicians,

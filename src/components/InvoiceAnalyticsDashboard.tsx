@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -73,6 +73,13 @@ interface TechnicianScheduleData {
     earliest_scheduled_date: string | null;
     total_hours: number;
     job_types: string[];
+    previous_week_job_count: number;
+    trend: 'up' | 'down' | 'same';
+    trend_percentage: number;
+    daily_breakdown: Array<{
+      date: string;
+      job_count: number;
+    }>;
   }>;
   summary: {
     total_technicians: number;
@@ -109,6 +116,13 @@ export default function InvoiceAnalyticsDashboard() {
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [status, setStatus] = useState("all");
 
+  // Technician filters and sorting
+  const [techSortBy, setTechSortBy] = useState("job_count");
+  const [techSortOrder, setTechSortOrder] = useState("desc");
+  const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "chart" | "heatmap">("table");
+
   const fetchInvoiceAnalytics = async () => {
     setLoading(true);
     try {
@@ -139,8 +153,22 @@ export default function InvoiceAnalyticsDashboard() {
 
   const fetchTechnicianSchedule = async () => {
     try {
+      const params = new URLSearchParams();
+      params.append("days_ahead", "7");
+      params.append("sort_by", techSortBy);
+      params.append("sort_order", techSortOrder);
+      params.append("include_trends", "true");
+      params.append("include_daily_breakdown", "true");
+
+      if (technicianFilter !== "all") {
+        params.append("technician_id", technicianFilter);
+      }
+      if (jobTypeFilter !== "all") {
+        params.append("job_type", jobTypeFilter);
+      }
+
       const response = await fetch(
-        `https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/technician-schedule?days_ahead=7`
+        `https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/technician-schedule?${params.toString()}`
       );
       
       if (!response.ok) {
@@ -170,6 +198,11 @@ export default function InvoiceAnalyticsDashboard() {
     };
     fetchData();
   }, []);
+
+  // Refetch technician data when filters/sorting change
+  useEffect(() => {
+    fetchTechnicianSchedule();
+  }, [techSortBy, techSortOrder, technicianFilter, jobTypeFilter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -471,66 +504,269 @@ export default function InvoiceAnalyticsDashboard() {
 
       {/* Technician Schedule Section - Only show if data is available */}
       {technicianData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Activities by Representative (Next 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {technicianData.technicians.length > 0 ? (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Technician</TableHead>
-                      <TableHead className="text-right">Scheduled Jobs</TableHead>
-                      <TableHead>Earliest Date</TableHead>
-                      <TableHead className="text-right">Total Hours</TableHead>
-                      <TableHead>Job Types</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {technicianData.technicians.map((tech) => (
-                      <TableRow key={tech.id}>
-                        <TableCell className="font-medium">{tech.name}</TableCell>
-                        <TableCell className="text-right">{tech.job_count}</TableCell>
-                        <TableCell>
-                          {tech.earliest_scheduled_date
-                            ? new Date(tech.earliest_scheduled_date).toLocaleDateString()
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell className="text-right">{tech.total_hours}h</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {tech.job_types.slice(0, 3).map((type, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {type}
-                              </Badge>
-                            ))}
-                            {tech.job_types.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{tech.job_types.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                  <p>
-                    Total: {technicianData.summary.total_technicians} technicians with{" "}
-                    {technicianData.summary.total_jobs} scheduled jobs
-                  </p>
+        <>
+          {/* Technician Filters and Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales Activities by Representative (Next 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Sort By */}
+                <div className="space-y-2">
+                  <Label>Sort By</Label>
+                  <Select value={techSortBy} onValueChange={setTechSortBy}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="job_count">Scheduled Jobs</SelectItem>
+                      <SelectItem value="earliest_date">Earliest Date</SelectItem>
+                      <SelectItem value="name">Technician Name</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No scheduled jobs found for the next 7 days
+
+                {/* Sort Order */}
+                <div className="space-y-2">
+                  <Label>Order</Label>
+                  <Select value={techSortOrder} onValueChange={setTechSortOrder}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desc">High to Low</SelectItem>
+                      <SelectItem value="asc">Low to High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Technician Filter */}
+                <div className="space-y-2">
+                  <Label>Technician</Label>
+                  <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Technicians" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Technicians</SelectItem>
+                      {technicianData.technicians.map(tech => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Job Type Filter */}
+                <div className="space-y-2">
+                  <Label>Job Type</Label>
+                  <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Job Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Job Types</SelectItem>
+                      {Array.from(new Set(technicianData.technicians.flatMap(t => t.job_types))).map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* View Mode */}
+                <div className="space-y-2">
+                  <Label>View</Label>
+                  <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="View" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="table">Table</SelectItem>
+                      <SelectItem value="chart">Bar Chart</SelectItem>
+                      <SelectItem value="heatmap">Heatmap</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Display based on view mode */}
+          {technicianData.technicians.length > 0 ? (
+            <>
+              {/* Table View with Trends */}
+              {viewMode === "table" && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Technician</TableHead>
+                          <TableHead className="text-right">Scheduled Jobs</TableHead>
+                          <TableHead>Earliest Date</TableHead>
+                          <TableHead className="text-right">Total Hours</TableHead>
+                          <TableHead>Job Types</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {technicianData.technicians.map((tech) => (
+                          <TableRow key={tech.id}>
+                            <TableCell className="font-medium">{tech.name}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <span className="font-medium">{tech.job_count}</span>
+                                {tech.trend === 'up' && (
+                                  <div className="flex items-center text-green-600">
+                                    <ArrowUp className="h-4 w-4" />
+                                    <span className="text-xs">+{tech.trend_percentage}%</span>
+                                  </div>
+                                )}
+                                {tech.trend === 'down' && (
+                                  <div className="flex items-center text-red-600">
+                                    <ArrowDown className="h-4 w-4" />
+                                    <span className="text-xs">{tech.trend_percentage}%</span>
+                                  </div>
+                                )}
+                                {tech.trend === 'same' && (
+                                  <div className="flex items-center text-muted-foreground">
+                                    <Minus className="h-4 w-4" />
+                                    <span className="text-xs">0%</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {tech.earliest_scheduled_date
+                                ? new Date(tech.earliest_scheduled_date).toLocaleDateString()
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell className="text-right">{tech.total_hours}h</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {tech.job_types.slice(0, 3).map((type, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {type}
+                                  </Badge>
+                                ))}
+                                {tech.job_types.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{tech.job_types.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                      <p>
+                        Total: {technicianData.summary.total_technicians} technicians with{" "}
+                        {technicianData.summary.total_jobs} scheduled jobs
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Horizontal Bar Chart View */}
+              {viewMode === "chart" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Technician Workload Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={Math.max(400, technicianData.technicians.length * 50)}>
+                      <BarChart
+                        data={technicianData.technicians}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={90} />
+                        <Tooltip />
+                        <Bar dataKey="job_count" fill="hsl(217, 91%, 60%)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Workload Heatmap View */}
+              {viewMode === "heatmap" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>7-Day Workload Heatmap</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {technicianData.technicians.map((tech) => {
+                        const maxJobs = Math.max(...tech.daily_breakdown.map(d => d.job_count), 1);
+                        
+                        return (
+                          <div key={tech.id} className="space-y-1">
+                            <div className="text-sm font-medium">{tech.name}</div>
+                            <div className="flex gap-1">
+                              {tech.daily_breakdown.map((day, idx) => {
+                                const intensity = day.job_count / maxJobs;
+                                const bgColor = day.job_count > 0 
+                                  ? `rgba(59, 130, 246, ${Math.max(0.2, intensity)})` 
+                                  : 'rgba(229, 231, 235, 1)';
+                                
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="flex-1 h-12 rounded flex items-center justify-center text-xs font-medium border"
+                                    style={{ backgroundColor: bgColor }}
+                                    title={`${format(new Date(day.date), 'MMM dd')}: ${day.job_count} jobs`}
+                                  >
+                                    {day.job_count > 0 && day.job_count}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Legend */}
+                    <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Less</span>
+                      <div className="flex gap-1">
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(229, 231, 235, 1)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.4)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.6)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 1)' }} />
+                      </div>
+                      <span>More</span>
+                    </div>
+                    <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                      <p>
+                        Total: {technicianData.summary.total_technicians} technicians with{" "}
+                        {technicianData.summary.total_jobs} scheduled jobs
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8 text-muted-foreground">
+                  No scheduled jobs found for the next 7 days
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
