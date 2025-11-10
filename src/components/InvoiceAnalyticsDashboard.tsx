@@ -108,9 +108,6 @@ export default function InvoiceAnalyticsDashboard() {
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [status, setStatus] = useState("all");
-  const [locationId, setLocationId] = useState("");
-  const [customerId, setCustomerId] = useState("");
-  const [groupBy, setGroupBy] = useState("none");
 
   const fetchInvoiceAnalytics = async () => {
     setLoading(true);
@@ -121,9 +118,6 @@ export default function InvoiceAnalyticsDashboard() {
       if (startDate) params.append("start_date", format(startDate, "yyyy-MM-dd"));
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
       if (status && status !== "all") params.append("status", status);
-      if (locationId) params.append("location_id", locationId);
-      if (customerId) params.append("customer_id", customerId);
-      if (groupBy && groupBy !== "none") params.append("group_by", groupBy);
       
       const response = await fetch(
         `https://quotenew.theservicepilot.com/api/invoice/invoices/analytics/?${params.toString()}`
@@ -319,39 +313,6 @@ export default function InvoiceAnalyticsDashboard() {
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="sent">Sent</SelectItem>
                   <SelectItem value="void">Void</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Location ID</Label>
-              <Input
-                placeholder="Enter location ID"
-                value={locationId}
-                onChange={(e) => setLocationId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Customer ID</Label>
-              <Input
-                placeholder="Enter customer ID"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Group By</Label>
-              <Select value={groupBy} onValueChange={setGroupBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select grouping" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="location">Location</SelectItem>
-                  <SelectItem value="customer">Customer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
