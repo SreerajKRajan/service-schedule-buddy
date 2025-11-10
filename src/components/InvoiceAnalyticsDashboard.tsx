@@ -85,11 +85,11 @@ export default function InvoiceAnalyticsDashboard() {
     new Date(new Date().setMonth(new Date().getMonth() - 3))
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("all");
   const [locationId, setLocationId] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [groupBy, setGroupBy] = useState("");
+  const [currency, setCurrency] = useState("default");
+  const [groupBy, setGroupBy] = useState("none");
 
   const fetchInvoiceAnalytics = async () => {
     setLoading(true);
@@ -99,11 +99,11 @@ export default function InvoiceAnalyticsDashboard() {
       if (granularity) params.append("granularity", granularity);
       if (startDate) params.append("start_date", format(startDate, "yyyy-MM-dd"));
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
-      if (status) params.append("status", status);
+      if (status && status !== "all") params.append("status", status);
       if (locationId) params.append("location_id", locationId);
       if (customerId) params.append("customer_id", customerId);
-      if (currency) params.append("currency", currency);
-      if (groupBy) params.append("group_by", groupBy);
+      if (currency && currency !== "default") params.append("currency", currency);
+      if (groupBy && groupBy !== "none") params.append("group_by", groupBy);
       
       const response = await fetch(
         `https://quotenew.theservicepilot.com/api/invoice/invoices/analytics/?${params.toString()}`
@@ -262,7 +262,7 @@ export default function InvoiceAnalyticsDashboard() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
@@ -298,7 +298,7 @@ export default function InvoiceAnalyticsDashboard() {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Default</SelectItem>
+                  <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
                   <SelectItem value="GBP">GBP</SelectItem>
@@ -313,7 +313,7 @@ export default function InvoiceAnalyticsDashboard() {
                   <SelectValue placeholder="Select grouping" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="status">Status</SelectItem>
                   <SelectItem value="location">Location</SelectItem>
                   <SelectItem value="customer">Customer</SelectItem>
