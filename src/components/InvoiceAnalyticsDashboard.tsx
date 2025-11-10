@@ -121,7 +121,7 @@ export default function InvoiceAnalyticsDashboard() {
   const [techSortOrder, setTechSortOrder] = useState("desc");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"table" | "chart" | "heatmap">("table");
+  const [viewMode, setViewMode] = useState<"table" | "chart" | "heatmap">("heatmap");
 
   const fetchInvoiceAnalytics = async () => {
     setLoading(true);
