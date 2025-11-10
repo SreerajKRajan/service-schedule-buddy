@@ -88,7 +88,6 @@ export default function InvoiceAnalyticsDashboard() {
   const [status, setStatus] = useState("all");
   const [locationId, setLocationId] = useState("");
   const [customerId, setCustomerId] = useState("");
-  const [currency, setCurrency] = useState("default");
   const [groupBy, setGroupBy] = useState("none");
 
   const fetchInvoiceAnalytics = async () => {
@@ -102,7 +101,6 @@ export default function InvoiceAnalyticsDashboard() {
       if (status && status !== "all") params.append("status", status);
       if (locationId) params.append("location_id", locationId);
       if (customerId) params.append("customer_id", customerId);
-      if (currency && currency !== "default") params.append("currency", currency);
       if (groupBy && groupBy !== "none") params.append("group_by", groupBy);
       
       const response = await fetch(
@@ -130,7 +128,7 @@ export default function InvoiceAnalyticsDashboard() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency === "default" ? "USD" : currency,
+      currency: "USD",
     }).format(amount);
   };
 
@@ -289,21 +287,6 @@ export default function InvoiceAnalyticsDashboard() {
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
