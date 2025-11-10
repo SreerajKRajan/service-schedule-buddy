@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.calendar-import-webhook]
 verify_jwt = false
+
+[functions.technician-schedule]
+verify_jwt = false
