@@ -130,7 +130,7 @@ export default function InvoiceAnalyticsDashboard() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency || "USD",
+      currency: currency === "default" ? "USD" : currency,
     }).format(amount);
   };
 
