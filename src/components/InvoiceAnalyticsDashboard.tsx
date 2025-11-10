@@ -106,7 +106,7 @@ export default function InvoiceAnalyticsDashboard() {
       if (groupBy) params.append("group_by", groupBy);
       
       const response = await fetch(
-        `https://4ad97c94bc7e.ngrok-free.app/api/invoice/invoices/analytics/?${params.toString()}`
+        `https://quotenew.theservicepilot.com/api/invoice/invoices/analytics/?${params.toString()}`
       );
       
       if (!response.ok) {
