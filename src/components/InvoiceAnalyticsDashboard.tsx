@@ -73,6 +73,7 @@ interface TechnicianScheduleData {
     job_count: number;
     earliest_scheduled_date: string | null;
     total_hours: number;
+    total_sales: number;
     job_types: string[];
     previous_week_job_count: number;
     trend: "up" | "down" | "same";
@@ -80,6 +81,7 @@ interface TechnicianScheduleData {
     daily_breakdown: Array<{
       date: string;
       job_count: number;
+      sales_amount: number;
     }>;
   }>;
   summary: {
@@ -744,6 +746,7 @@ export default function InvoiceAnalyticsDashboard() {
                         <TableRow className="border-border">
                           <TableHead className="font-semibold">Technician</TableHead>
                           <TableHead className="text-right font-semibold">Scheduled Jobs</TableHead>
+                          <TableHead className="text-right font-semibold">Total Sales</TableHead>
                           <TableHead className="font-semibold">Earliest Date</TableHead>
                           <TableHead className="text-right font-semibold">Total Hours</TableHead>
                           <TableHead className="font-semibold">Job Types</TableHead>
@@ -775,6 +778,11 @@ export default function InvoiceAnalyticsDashboard() {
                                   </div>
                                 )}
                               </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className="font-semibold text-lg text-success">
+                                {formatCurrency(tech.total_sales)}
+                              </span>
                             </TableCell>
                             <TableCell>
                               {tech.earliest_scheduled_date
@@ -882,7 +890,12 @@ export default function InvoiceAnalyticsDashboard() {
                       {technicianData.technicians.map((tech) => {
                         return (
                           <div key={tech.id} className="space-y-1">
-                            <div className="text-sm font-semibold truncate">{tech.name}</div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-semibold truncate">{tech.name}</div>
+                              <div className="text-xs text-success font-medium ml-2">
+                                {formatCurrency(tech.total_sales)}
+                              </div>
+                            </div>
                             <div className="flex gap-1 min-w-max sm:min-w-0">
                               {tech.daily_breakdown.map((day, idx) => {
                                 // Consistent color coding based on job count
@@ -900,12 +913,17 @@ export default function InvoiceAnalyticsDashboard() {
                                 return (
                                   <div
                                     key={idx}
-                                    className="flex-1 min-w-[60px] h-14 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
+                                    className="flex-1 min-w-[60px] h-16 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
                                     style={{ backgroundColor: bgColor }}
-                                    title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs`}
+                                    title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs, ${formatCurrency(day.sales_amount)}`}
                                   >
                                     <div className="text-[10px] text-muted-foreground">{format(new Date(day.date), "MMM dd")}</div>
-                                    {day.job_count > 0 && <div className="font-bold text-sm">{day.job_count}</div>}
+                                    {day.job_count > 0 && (
+                                      <>
+                                        <div className="font-bold text-sm">{day.job_count}</div>
+                                        <div className="text-[10px] text-success font-semibold">${day.sales_amount.toFixed(0)}</div>
+                                      </>
+                                    )}
                                   </div>
                                 );
                               })}

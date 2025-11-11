@@ -11,6 +11,7 @@ interface TechnicianSchedule {
   job_count: number;
   earliest_scheduled_date: string | null;
   total_hours: number;
+  total_sales: number;
   job_types: string[];
   previous_week_job_count: number;
   trend: 'up' | 'down' | 'same';
@@ -18,6 +19,7 @@ interface TechnicianSchedule {
   daily_breakdown: Array<{
     date: string;
     job_count: number;
+    sales_amount: number;
   }>;
 }
 
@@ -65,6 +67,7 @@ Deno.serve(async (req) => {
         estimated_duration,
         job_type,
         status,
+        price,
         job_assignments!inner(
           user_id,
           users!inner(
@@ -134,7 +137,7 @@ Deno.serve(async (req) => {
     const technicianMap = new Map<string, {
       id: string;
       name: string;
-      jobs: Array<{ scheduled_date: string; estimated_duration: number; job_type: string }>;
+      jobs: Array<{ scheduled_date: string; estimated_duration: number; job_type: string; price: number }>;
     }>();
 
     jobs?.forEach((job: any) => {
@@ -151,7 +154,8 @@ Deno.serve(async (req) => {
           technicianMap.get(user.id)!.jobs.push({
             scheduled_date: job.scheduled_date,
             estimated_duration: job.estimated_duration || 0,
-            job_type: job.job_type
+            job_type: job.job_type,
+            price: job.price || 0
           });
         }
       });
@@ -178,6 +182,7 @@ Deno.serve(async (req) => {
       
       const jobTypes = [...new Set(tech.jobs.map(j => j.job_type))];
       const totalHours = tech.jobs.reduce((sum, j) => sum + j.estimated_duration, 0);
+      const totalSales = tech.jobs.reduce((sum, j) => sum + j.price, 0);
 
       // Calculate trend
       const currentCount = tech.jobs.length;
@@ -190,7 +195,7 @@ Deno.serve(async (req) => {
         : 'same';
 
       // Generate daily breakdown
-      const dailyBreakdown: Array<{ date: string; job_count: number }> = [];
+      const dailyBreakdown: Array<{ date: string; job_count: number; sales_amount: number }> = [];
       if (includeDailyBreakdown) {
         for (let i = 0; i < 7; i++) {
           const date = new Date(startDateTime.getTime() + i * 24 * 60 * 60 * 1000);
@@ -198,9 +203,11 @@ Deno.serve(async (req) => {
           const jobsOnDate = tech.jobs.filter(job => 
             job.scheduled_date.split('T')[0] === dateStr
           );
+          const salesOnDate = jobsOnDate.reduce((sum, job) => sum + job.price, 0);
           dailyBreakdown.push({
             date: dateStr,
-            job_count: jobsOnDate.length
+            job_count: jobsOnDate.length,
+            sales_amount: salesOnDate
           });
         }
       }
@@ -211,6 +218,7 @@ Deno.serve(async (req) => {
         job_count: tech.jobs.length,
         earliest_scheduled_date: sortedJobs[0]?.scheduled_date || null,
         total_hours: Math.round(totalHours / 60), // Convert minutes to hours
+        total_sales: totalSales,
         job_types: jobTypes,
         previous_week_job_count: previousCount,
         trend,
