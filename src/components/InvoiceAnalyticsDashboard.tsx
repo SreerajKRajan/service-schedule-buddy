@@ -568,11 +568,13 @@ export default function InvoiceAnalyticsDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Job Types</SelectItem>
-                      {Array.from(new Set(technicianData.technicians.flatMap(t => t.job_types))).map(type => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
+                      {Array.from(new Set(technicianData.technicians.flatMap(t => t.job_types)))
+                        .filter(type => type && type.trim() !== "")
+                        .map(type => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
