@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle, ArrowUp, ArrowDown, Minus, CheckCircle, Clock, AlertTriangle, File } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -231,16 +231,25 @@ export default function InvoiceAnalyticsDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card key={i} className="border-none shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-8 w-32" />
-                <Skeleton className="h-3 w-24 mt-2" />
+                <Skeleton className="h-9 w-32 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border-none shadow-sm">
+              <CardContent className="py-6">
+                <Skeleton className="h-20 w-full" />
               </CardContent>
             </Card>
           ))}
@@ -254,14 +263,14 @@ export default function InvoiceAnalyticsDashboard() {
   return (
     <div className="space-y-6">
       {/* Filters Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      <Card className="border-none shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Filters</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label>Granularity</Label>
+              <Label className="text-sm font-medium">Granularity</Label>
               <Select value={granularity} onValueChange={setGranularity}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select granularity" />
@@ -276,7 +285,7 @@ export default function InvoiceAnalyticsDashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label className="text-sm font-medium">Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -300,7 +309,7 @@ export default function InvoiceAnalyticsDashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label className="text-sm font-medium">End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -324,7 +333,7 @@ export default function InvoiceAnalyticsDashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label className="text-sm font-medium">Status</Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
@@ -350,85 +359,184 @@ export default function InvoiceAnalyticsDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-none shadow-sm bg-gradient-to-br from-primary/10 to-primary/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.summary.total_invoices}</div>
-            <p className="text-xs text-muted-foreground">
-              {data.paid_unpaid_overview.paid.count} paid, {data.paid_unpaid_overview.unpaid.count} unpaid
+            <div className="text-3xl font-bold text-foreground">{data.summary.total_invoices}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {data.paid_unpaid_overview.paid.count} paid • {data.paid_unpaid_overview.unpaid.count} unpaid
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-none shadow-sm bg-gradient-to-br from-success/10 to-success/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Collected</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-success" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data.summary.total_amount)}</div>
-            <p className="text-xs text-muted-foreground">Total invoiced amount</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(data.summary.total_paid)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-success">{formatCurrency(data.summary.total_paid)}</div>
+            <p className="text-sm text-muted-foreground mt-1">
               {((data.summary.total_paid / data.summary.total_amount) * 100).toFixed(1)}% of total
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Due</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-none shadow-sm bg-gradient-to-br from-warning/10 to-warning/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-warning" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{formatCurrency(data.summary.total_due)}</div>
-            <p className="text-xs text-muted-foreground">
-              {data.summary.overdue_count} overdue ({formatCurrency(data.summary.overdue_total)})
+            <div className="text-3xl font-bold text-warning">{formatCurrency(data.summary.total_due)}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {data.summary.overdue_count} overdue invoices
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-gradient-to-br from-danger/10 to-danger/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Amount</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-danger/20 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-danger" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-danger">{formatCurrency(data.summary.overdue_total)}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Requires immediate attention
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Status Distribution Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-success-light bg-success-light/50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <div className="h-12 w-12 rounded-lg bg-success flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">Paid</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">{data.paid_unpaid_overview.paid.count}</p>
+                <p className="text-sm font-medium text-success">
+                  {formatCurrency(data.paid_unpaid_overview.paid.total)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-warning-light bg-warning-light/50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <div className="h-12 w-12 rounded-lg bg-warning flex items-center justify-center flex-shrink-0">
+              <Clock className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">Unpaid</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">{data.paid_unpaid_overview.unpaid.count}</p>
+                <p className="text-sm font-medium text-warning">
+                  {formatCurrency(data.paid_unpaid_overview.unpaid.total)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-danger-light bg-danger-light/50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <div className="h-12 w-12 rounded-lg bg-danger flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">{data.summary.overdue_count}</p>
+                <p className="text-sm font-medium text-danger">
+                  {formatCurrency(data.summary.overdue_total)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-info-light bg-info-light/50">
+          <CardContent className="flex items-center gap-4 py-6">
+            <div className="h-12 w-12 rounded-lg bg-info flex items-center justify-center flex-shrink-0">
+              <File className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">Draft</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-foreground">
+                  {data.status_distribution.draft?.count || 0}
+                </p>
+                <p className="text-sm font-medium text-info">
+                  {formatCurrency(data.status_distribution.draft?.total || 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle>Revenue Trends</CardTitle>
+            <CardTitle className="text-lg font-semibold">Revenue Trends</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Paid vs Outstanding over time</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart data={formatTrendData()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
-                <Bar dataKey="Paid" fill="hsl(142, 76%, 36%)" />
-                <Bar dataKey="Unpaid" fill="hsl(24, 95%, 53%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                <XAxis 
+                  dataKey="period" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <Tooltip 
+                  formatter={(value) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Bar dataKey="Paid" fill="hsl(var(--success))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Unpaid" fill="hsl(var(--warning))" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle>Status Distribution</CardTitle>
+            <CardTitle className="text-lg font-semibold">Invoice Status Distribution</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Breakdown by status</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={formatStatusData()}
@@ -436,7 +544,7 @@ export default function InvoiceAnalyticsDashboard() {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -452,6 +560,11 @@ export default function InvoiceAnalyticsDashboard() {
                     value,
                     `${props.payload.name} (${formatCurrency(props.payload.amount)})`,
                   ]}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -460,34 +573,37 @@ export default function InvoiceAnalyticsDashboard() {
       </div>
 
       {/* Top Customers */}
-      <Card>
+      <Card className="border-none shadow-sm">
         <CardHeader>
-          <CardTitle>Top Customers</CardTitle>
+          <CardTitle className="text-lg font-semibold">Top Customers</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">Highest revenue generating customers</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 font-medium">Name</th>
-                  <th className="text-left p-2 font-medium">Email</th>
-                  <th className="text-right p-2 font-medium">Total Invoiced</th>
-                  <th className="text-right p-2 font-medium">Invoices</th>
-                  <th className="text-right p-2 font-medium">Total Paid</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border">
+                  <TableHead className="font-semibold">Name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="text-right font-semibold">Total Invoiced</TableHead>
+                  <TableHead className="text-right font-semibold">Invoices</TableHead>
+                  <TableHead className="text-right font-semibold">Total Paid</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data.top_customers.map((customer, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="p-2">{customer.contact_name}</td>
-                    <td className="p-2 text-muted-foreground">{customer.contact_email}</td>
-                    <td className="p-2 text-right font-medium">{formatCurrency(customer.total_invoiced)}</td>
-                    <td className="p-2 text-right">{customer.invoices_count}</td>
-                    <td className="p-2 text-right text-green-600">{formatCurrency(customer.total_paid)}</td>
-                  </tr>
+                  <TableRow key={index} className="border-border hover:bg-muted/50">
+                    <TableCell className="font-medium">{customer.contact_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{customer.contact_email}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(customer.total_invoiced)}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="secondary">{customer.invoices_count}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-success">{formatCurrency(customer.total_paid)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -496,9 +612,10 @@ export default function InvoiceAnalyticsDashboard() {
       {technicianData && (
         <>
           {/* Technician Filters and Controls */}
-          <Card>
+          <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle>Sales Activities by Representative (Next 7 Days)</CardTitle>
+              <CardTitle className="text-lg font-semibold">Sales Activities by Representative (Next 7 Days)</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Technician schedule and workload overview</p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -592,41 +709,41 @@ export default function InvoiceAnalyticsDashboard() {
             <>
               {/* Table View with Trends */}
               {viewMode === "table" && (
-                <Card>
+                <Card className="border-none shadow-sm">
                   <CardContent className="pt-6">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Technician</TableHead>
-                          <TableHead className="text-right">Scheduled Jobs</TableHead>
-                          <TableHead>Earliest Date</TableHead>
-                          <TableHead className="text-right">Total Hours</TableHead>
-                          <TableHead>Job Types</TableHead>
+                        <TableRow className="border-border">
+                          <TableHead className="font-semibold">Technician</TableHead>
+                          <TableHead className="text-right font-semibold">Scheduled Jobs</TableHead>
+                          <TableHead className="font-semibold">Earliest Date</TableHead>
+                          <TableHead className="text-right font-semibold">Total Hours</TableHead>
+                          <TableHead className="font-semibold">Job Types</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {technicianData.technicians.map((tech) => (
-                          <TableRow key={tech.id}>
+                          <TableRow key={tech.id} className="border-border hover:bg-muted/50">
                             <TableCell className="font-medium">{tech.name}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <span className="font-medium">{tech.job_count}</span>
+                                <span className="font-semibold text-lg">{tech.job_count}</span>
                                 {tech.trend === "up" && (
-                                  <div className="flex items-center text-green-600">
+                                  <div className="flex items-center text-success">
                                     <ArrowUp className="h-4 w-4" />
-                                    <span className="text-xs">+{tech.trend_percentage}%</span>
+                                    <span className="text-xs font-medium">+{tech.trend_percentage}%</span>
                                   </div>
                                 )}
                                 {tech.trend === "down" && (
-                                  <div className="flex items-center text-red-600">
+                                  <div className="flex items-center text-danger">
                                     <ArrowDown className="h-4 w-4" />
-                                    <span className="text-xs">{tech.trend_percentage}%</span>
+                                    <span className="text-xs font-medium">{tech.trend_percentage}%</span>
                                   </div>
                                 )}
                                 {tech.trend === "same" && (
                                   <div className="flex items-center text-muted-foreground">
                                     <Minus className="h-4 w-4" />
-                                    <span className="text-xs">0%</span>
+                                    <span className="text-xs font-medium">0%</span>
                                   </div>
                                 )}
                               </div>
@@ -636,7 +753,7 @@ export default function InvoiceAnalyticsDashboard() {
                                 ? new Date(tech.earliest_scheduled_date).toLocaleDateString()
                                 : "N/A"}
                             </TableCell>
-                            <TableCell className="text-right">{tech.total_hours}h</TableCell>
+                            <TableCell className="text-right font-medium">{tech.total_hours}h</TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {tech.job_types.slice(0, 3).map((type, idx) => (
@@ -655,7 +772,7 @@ export default function InvoiceAnalyticsDashboard() {
                         ))}
                       </TableBody>
                     </Table>
-                    <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                    <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
                       <p>
                         Total: {technicianData.summary.total_technicians} technicians with{" "}
                         {technicianData.summary.total_jobs} scheduled jobs
@@ -667,9 +784,10 @@ export default function InvoiceAnalyticsDashboard() {
 
               {/* Horizontal Bar Chart View */}
               {viewMode === "chart" && (
-                <Card>
+                <Card className="border-none shadow-sm">
                   <CardHeader>
-                    <CardTitle>Technician Workload Overview</CardTitle>
+                    <CardTitle className="text-lg font-semibold">Technician Workload Overview</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">Job count by technician</p>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={Math.max(400, technicianData.technicians.length * 50)}>
@@ -678,11 +796,22 @@ export default function InvoiceAnalyticsDashboard() {
                         layout="vertical"
                         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={90} />
-                        <Tooltip />
-                        <Bar dataKey="job_count" fill="hsl(217, 91%, 60%)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          width={90} 
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                          }}
+                        />
+                        <Bar dataKey="job_count" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -691,9 +820,10 @@ export default function InvoiceAnalyticsDashboard() {
 
               {/* Workload Heatmap View */}
               {viewMode === "heatmap" && (
-                <Card>
+                <Card className="border-none shadow-sm">
                   <CardHeader>
-                    <CardTitle>7-Day Workload Heatmap</CardTitle>
+                    <CardTitle className="text-lg font-semibold">7-Day Workload Heatmap</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">Daily job distribution by technician</p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -702,23 +832,24 @@ export default function InvoiceAnalyticsDashboard() {
 
                         return (
                           <div key={tech.id} className="space-y-1">
-                            <div className="text-sm font-medium">{tech.name}</div>
+                            <div className="text-sm font-semibold">{tech.name}</div>
                             <div className="flex gap-1">
                               {tech.daily_breakdown.map((day, idx) => {
                                 const intensity = day.job_count / maxJobs;
                                 const bgColor =
                                   day.job_count > 0
-                                    ? `rgba(59, 130, 246, ${Math.max(0.2, intensity)})`
-                                    : "rgba(229, 231, 235, 1)";
+                                    ? `hsl(var(--primary) / ${Math.max(0.2, intensity)})`
+                                    : "hsl(var(--muted))";
 
                                 return (
                                   <div
                                     key={idx}
-                                    className="flex-1 h-12 rounded flex items-center justify-center text-xs font-medium border"
+                                    className="flex-1 h-14 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
                                     style={{ backgroundColor: bgColor }}
                                     title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs`}
                                   >
-                                    {day.job_count > 0 && day.job_count}
+                                    <div className="text-[10px] text-muted-foreground">{format(new Date(day.date), "MMM dd")}</div>
+                                    {day.job_count > 0 && <div className="font-bold text-sm">{day.job_count}</div>}
                                   </div>
                                 );
                               })}
@@ -728,31 +859,19 @@ export default function InvoiceAnalyticsDashboard() {
                       })}
                     </div>
                     {/* Legend */}
-                    <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Less</span>
+                    <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground p-4 bg-muted/30 rounded-lg">
+                      <span className="font-medium">Intensity:</span>
                       <div className="flex gap-1">
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: "rgba(229, 231, 235, 1)" }} />
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
-                        />
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: "rgba(59, 130, 246, 0.4)" }}
-                        />
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: "rgba(59, 130, 246, 0.6)" }}
-                        />
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: "rgba(59, 130, 246, 0.8)" }}
-                        />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: "rgba(59, 130, 246, 1)" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--muted))" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.2)" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.4)" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.6)" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.8)" }} />
+                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary))" }} />
                       </div>
-                      <span>More</span>
+                      <span className="ml-2">← Less to More →</span>
                     </div>
-                    <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                    <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
                       <p>
                         Total: {technicianData.summary.total_technicians} technicians with{" "}
                         {technicianData.summary.total_jobs} scheduled jobs
@@ -763,10 +882,13 @@ export default function InvoiceAnalyticsDashboard() {
               )}
             </>
           ) : (
-            <Card>
+            <Card className="border-none shadow-sm">
               <CardContent className="pt-6">
-                <div className="text-center py-8 text-muted-foreground">
-                  No scheduled jobs found for the next 7 days
+                <div className="text-center py-12">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <AlertCircle className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">No scheduled jobs found for the next 7 days</p>
                 </div>
               </CardContent>
             </Card>
