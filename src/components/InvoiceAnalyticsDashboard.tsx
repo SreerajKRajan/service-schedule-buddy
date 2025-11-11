@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle, ArrowUp, ArrowDown, Minus, CheckCircle, Clock, AlertTriangle, File } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -359,70 +360,97 @@ export default function InvoiceAnalyticsDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-none shadow-sm bg-gradient-to-br from-primary/10 to-primary/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-none shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
             <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
               <FileText className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{data.summary.total_invoices}</div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <div className="text-3xl font-bold">{data.summary.total_invoices}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {data.paid_unpaid_overview.paid.count} paid • {data.paid_unpaid_overview.unpaid.count} unpaid
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-success/10 to-success/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Collected</CardTitle>
             <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
-              <DollarSign className="h-5 w-5 text-success" />
+              <CheckCircle className="h-5 w-5 text-success" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-success">{formatCurrency(data.summary.total_paid)}</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {((data.summary.total_paid / data.summary.total_amount) * 100).toFixed(1)}% of total
+            <div className="text-3xl font-bold text-success">
+              {formatCurrency(data.summary.total_paid)}
+            </div>
+            <div className="mt-3">
+              <Progress 
+                value={(data.summary.total_paid / data.summary.total_amount * 100) || 0} 
+                className="h-2 bg-success-light"
+                indicatorClassName="bg-success"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {((data.summary.total_paid / data.summary.total_amount * 100) || 0).toFixed(1)}% collected
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-warning/10 to-warning/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
             <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
               <Clock className="h-5 w-5 text-warning" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-warning">{formatCurrency(data.summary.total_due)}</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {data.summary.overdue_count} overdue invoices
+            <div className="text-3xl font-bold text-warning">
+              {formatCurrency(data.summary.total_due)}
+            </div>
+            <div className="mt-3">
+              <Progress 
+                value={(data.summary.total_due / data.summary.total_amount * 100) || 0} 
+                className="h-2 bg-warning-light"
+                indicatorClassName="bg-warning"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {((data.summary.total_due / data.summary.total_amount * 100) || 0).toFixed(1)}% pending
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-danger/10 to-danger/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Amount</CardTitle>
             <div className="h-10 w-10 rounded-full bg-danger/20 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-danger" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-danger">{formatCurrency(data.summary.overdue_total)}</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Requires immediate attention
+            <div className="text-3xl font-bold text-danger">
+              {formatCurrency(data.summary.overdue_total)}
+            </div>
+            <div className="mt-3">
+              <Progress 
+                value={(data.summary.overdue_total / data.summary.total_amount * 100) || 0} 
+                className="h-2 bg-danger-light"
+                indicatorClassName="bg-danger"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {data.summary.overdue_count} overdue invoices
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Status Distribution Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Status Distribution Cards */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-success-light bg-success-light/50">
           <CardContent className="flex items-center gap-4 py-6">
             <div className="h-12 w-12 rounded-lg bg-success flex items-center justify-center flex-shrink-0">
@@ -495,7 +523,7 @@ export default function InvoiceAnalyticsDashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Revenue Trends</CardTitle>
@@ -811,7 +839,7 @@ export default function InvoiceAnalyticsDashboard() {
                             borderRadius: '8px',
                           }}
                         />
-                        <Bar dataKey="job_count" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} />
+                        <Bar dataKey="job_count" fill="hsl(var(--info))" radius={[0, 8, 8, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -826,25 +854,53 @@ export default function InvoiceAnalyticsDashboard() {
                     <p className="text-sm text-muted-foreground mt-1">Daily job distribution by technician</p>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {technicianData.technicians.map((tech) => {
-                        const maxJobs = Math.max(...tech.daily_breakdown.map((d) => d.job_count), 1);
+                    {/* Enhanced Legend */}
+                    <div className="mb-6 bg-muted/30 rounded-lg p-4">
+                      <p className="text-sm font-semibold mb-3 text-center">Job Load Intensity</p>
+                      <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded border border-border bg-muted"></div>
+                          <span className="text-muted-foreground">No jobs</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: 'hsl(var(--success) / 0.4)' }}></div>
+                          <span className="text-muted-foreground">Light (1-2)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: 'hsl(var(--warning) / 0.6)' }}></div>
+                          <span className="text-muted-foreground">Moderate (3-4)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: 'hsl(var(--danger) / 0.8)' }}></div>
+                          <span className="text-muted-foreground">Heavy (5+)</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center mt-2">Color intensity reflects workload level</p>
+                    </div>
 
+                    <div className="space-y-3 overflow-x-auto">
+                      {technicianData.technicians.map((tech) => {
                         return (
                           <div key={tech.id} className="space-y-1">
-                            <div className="text-sm font-semibold">{tech.name}</div>
-                            <div className="flex gap-1">
+                            <div className="text-sm font-semibold truncate">{tech.name}</div>
+                            <div className="flex gap-1 min-w-max sm:min-w-0">
                               {tech.daily_breakdown.map((day, idx) => {
-                                const intensity = day.job_count / maxJobs;
-                                const bgColor =
-                                  day.job_count > 0
-                                    ? `hsl(var(--primary) / ${Math.max(0.2, intensity)})`
-                                    : "hsl(var(--muted))";
+                                // Consistent color coding based on job count
+                                let bgColor;
+                                if (day.job_count === 0) {
+                                  bgColor = 'hsl(var(--muted))';
+                                } else if (day.job_count <= 2) {
+                                  bgColor = 'hsl(var(--success) / 0.4)';
+                                } else if (day.job_count <= 4) {
+                                  bgColor = 'hsl(var(--warning) / 0.6)';
+                                } else {
+                                  bgColor = 'hsl(var(--danger) / 0.8)';
+                                }
 
                                 return (
                                   <div
                                     key={idx}
-                                    className="flex-1 h-14 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
+                                    className="flex-1 min-w-[60px] h-14 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
                                     style={{ backgroundColor: bgColor }}
                                     title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs`}
                                   >
@@ -857,25 +913,6 @@ export default function InvoiceAnalyticsDashboard() {
                           </div>
                         );
                       })}
-                    </div>
-                    {/* Legend */}
-                    <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground p-4 bg-muted/30 rounded-lg">
-                      <span className="font-medium">Intensity:</span>
-                      <div className="flex gap-1">
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--muted))" }} />
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.2)" }} />
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.4)" }} />
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.6)" }} />
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary) / 0.8)" }} />
-                        <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: "hsl(var(--primary))" }} />
-                      </div>
-                      <span className="ml-2">← Less to More →</span>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
-                      <p>
-                        Total: {technicianData.summary.total_technicians} technicians with{" "}
-                        {technicianData.summary.total_jobs} scheduled jobs
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
