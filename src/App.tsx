@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import CalendarView from "./pages/CalendarView";
 import NotFound from "./pages/NotFound";
+import InvoiceAnalyticsDashboard from "./components/InvoiceAnalyticsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/calendarview" element={<CalendarView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/dashboard" element={<InvoiceAnalyticsDashboard />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
