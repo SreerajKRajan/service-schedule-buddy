@@ -74,7 +74,7 @@ interface TechnicianScheduleData {
     total_hours: number;
     job_types: string[];
     previous_week_job_count: number;
-    trend: 'up' | 'down' | 'same';
+    trend: "up" | "down" | "same";
     trend_percentage: number;
     daily_breakdown: Array<{
       date: string;
@@ -107,11 +107,11 @@ export default function InvoiceAnalyticsDashboard() {
   const [data, setData] = useState<InvoiceAnalyticsData | null>(null);
   const [technicianData, setTechnicianData] = useState<TechnicianScheduleData | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter states
   const [granularity, setGranularity] = useState("monthly");
   const [startDate, setStartDate] = useState<Date | undefined>(
-    new Date(new Date().setMonth(new Date().getMonth() - 3))
+    new Date(new Date().setMonth(new Date().getMonth() - 3)),
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [status, setStatus] = useState("all");
@@ -127,20 +127,20 @@ export default function InvoiceAnalyticsDashboard() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      
+
       if (granularity) params.append("granularity", granularity);
       if (startDate) params.append("start_date", format(startDate, "yyyy-MM-dd"));
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
       if (status && status !== "all") params.append("status", status);
-      
+
       const response = await fetch(
-        `https://quotenew.theservicepilot.com/api/invoice/invoices/analytics/?${params.toString()}`
+        `https://quotenew.theservicepilot.com/api/invoice/invoices/analytics/?${params.toString()}`,
       );
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch invoice analytics");
       }
-      
+
       const result = await response.json();
       setData(result);
     } catch (error) {
@@ -168,16 +168,16 @@ export default function InvoiceAnalyticsDashboard() {
       }
 
       const response = await fetch(
-        `https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/technician-schedule?${params.toString()}`
+        `https://spelxsmrpbswmmahwzyg.supabase.co/functions/v1/technician-schedule?${params.toString()}`,
       );
-      
+
       if (!response.ok) {
         // Function might still be deploying, don't show error to user
         console.warn("Technician schedule endpoint not available yet (still deploying)");
         setTechnicianData(null);
         return;
       }
-      
+
       const result = await response.json();
       setTechnicianData(result);
     } catch (error) {
@@ -190,10 +190,7 @@ export default function InvoiceAnalyticsDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchInvoiceAnalytics(),
-        fetchTechnicianSchedule()
-      ]);
+      await Promise.all([fetchInvoiceAnalytics(), fetchTechnicianSchedule()]);
       setLoading(false);
     };
     fetchData();
@@ -284,10 +281,7 @@ export default function InvoiceAnalyticsDashboard() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
+                    className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {startDate ? format(startDate, "PPP") : "Pick a date"}
@@ -311,10 +305,7 @@ export default function InvoiceAnalyticsDashboard() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
+                    className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? format(endDate, "PPP") : "Pick a date"}
@@ -341,7 +332,6 @@ export default function InvoiceAnalyticsDashboard() {
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="sent">Sent</SelectItem>
@@ -452,17 +442,17 @@ export default function InvoiceAnalyticsDashboard() {
                 >
                   {formatStatusData().map((entry, index) => {
                     const statusKey = Object.keys(data.status_distribution).find(
-                      (key) => data.status_distribution[key].label === entry.name
+                      (key) => data.status_distribution[key].label === entry.name,
                     );
-                    return (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={STATUS_COLORS[statusKey || ""] || "hsl(215, 14%, 34%)"}
-                      />
-                    );
+                    return <Cell key={`cell-${index}`} fill={STATUS_COLORS[statusKey || ""] || "hsl(215, 14%, 34%)"} />;
                   })}
                 </Pie>
-                <Tooltip formatter={(value, name, props) => [value, `${props.payload.name} (${formatCurrency(props.payload.amount)})`]} />
+                <Tooltip
+                  formatter={(value, name, props) => [
+                    value,
+                    `${props.payload.name} (${formatCurrency(props.payload.amount)})`,
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -550,7 +540,7 @@ export default function InvoiceAnalyticsDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Technicians</SelectItem>
-                      {technicianData.technicians.map(tech => (
+                      {technicianData.technicians.map((tech) => (
                         <SelectItem key={tech.id} value={tech.id}>
                           {tech.name}
                         </SelectItem>
@@ -568,9 +558,9 @@ export default function InvoiceAnalyticsDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Job Types</SelectItem>
-                      {Array.from(new Set(technicianData.technicians.flatMap(t => t.job_types)))
-                        .filter(type => type && type.trim() !== "")
-                        .map(type => (
+                      {Array.from(new Set(technicianData.technicians.flatMap((t) => t.job_types)))
+                        .filter((type) => type && type.trim() !== "")
+                        .map((type) => (
                           <SelectItem key={type} value={type}>
                             {type}
                           </SelectItem>
@@ -621,19 +611,19 @@ export default function InvoiceAnalyticsDashboard() {
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <span className="font-medium">{tech.job_count}</span>
-                                {tech.trend === 'up' && (
+                                {tech.trend === "up" && (
                                   <div className="flex items-center text-green-600">
                                     <ArrowUp className="h-4 w-4" />
                                     <span className="text-xs">+{tech.trend_percentage}%</span>
                                   </div>
                                 )}
-                                {tech.trend === 'down' && (
+                                {tech.trend === "down" && (
                                   <div className="flex items-center text-red-600">
                                     <ArrowDown className="h-4 w-4" />
                                     <span className="text-xs">{tech.trend_percentage}%</span>
                                   </div>
                                 )}
-                                {tech.trend === 'same' && (
+                                {tech.trend === "same" && (
                                   <div className="flex items-center text-muted-foreground">
                                     <Minus className="h-4 w-4" />
                                     <span className="text-xs">0%</span>
@@ -708,24 +698,25 @@ export default function InvoiceAnalyticsDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {technicianData.technicians.map((tech) => {
-                        const maxJobs = Math.max(...tech.daily_breakdown.map(d => d.job_count), 1);
-                        
+                        const maxJobs = Math.max(...tech.daily_breakdown.map((d) => d.job_count), 1);
+
                         return (
                           <div key={tech.id} className="space-y-1">
                             <div className="text-sm font-medium">{tech.name}</div>
                             <div className="flex gap-1">
                               {tech.daily_breakdown.map((day, idx) => {
                                 const intensity = day.job_count / maxJobs;
-                                const bgColor = day.job_count > 0 
-                                  ? `rgba(59, 130, 246, ${Math.max(0.2, intensity)})` 
-                                  : 'rgba(229, 231, 235, 1)';
-                                
+                                const bgColor =
+                                  day.job_count > 0
+                                    ? `rgba(59, 130, 246, ${Math.max(0.2, intensity)})`
+                                    : "rgba(229, 231, 235, 1)";
+
                                 return (
                                   <div
                                     key={idx}
                                     className="flex-1 h-12 rounded flex items-center justify-center text-xs font-medium border"
                                     style={{ backgroundColor: bgColor }}
-                                    title={`${format(new Date(day.date), 'MMM dd')}: ${day.job_count} jobs`}
+                                    title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs`}
                                   >
                                     {day.job_count > 0 && day.job_count}
                                   </div>
@@ -740,12 +731,24 @@ export default function InvoiceAnalyticsDashboard() {
                     <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
                       <span>Less</span>
                       <div className="flex gap-1">
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(229, 231, 235, 1)' }} />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.4)' }} />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.6)' }} />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }} />
-                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: 'rgba(59, 130, 246, 1)' }} />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: "rgba(229, 231, 235, 1)" }} />
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: "rgba(59, 130, 246, 0.4)" }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: "rgba(59, 130, 246, 0.6)" }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: "rgba(59, 130, 246, 0.8)" }}
+                        />
+                        <div className="w-4 h-4 rounded border" style={{ backgroundColor: "rgba(59, 130, 246, 1)" }} />
                       </div>
                       <span>More</span>
                     </div>
