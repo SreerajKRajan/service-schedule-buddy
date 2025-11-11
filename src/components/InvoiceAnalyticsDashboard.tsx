@@ -780,7 +780,7 @@ export default function InvoiceAnalyticsDashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <span className="font-semibold text-lg text-success">
+                              <span className="font-bold text-2xl text-success">
                                 {formatCurrency(tech.total_sales)}
                               </span>
                             </TableCell>
@@ -892,7 +892,7 @@ export default function InvoiceAnalyticsDashboard() {
                           <div key={tech.id} className="space-y-1">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-semibold truncate">{tech.name}</div>
-                              <div className="text-xs text-success font-medium ml-2">
+                              <div className="text-base text-success font-bold ml-2">
                                 {formatCurrency(tech.total_sales)}
                               </div>
                             </div>
@@ -921,7 +921,7 @@ export default function InvoiceAnalyticsDashboard() {
                                     {day.job_count > 0 && (
                                       <>
                                         <div className="font-bold text-sm">{day.job_count}</div>
-                                        <div className="text-[10px] text-success font-semibold">${day.sales_amount.toFixed(0)}</div>
+                                        <div className="text-xs text-success font-bold">${day.sales_amount.toFixed(0)}</div>
                                       </>
                                     )}
                                   </div>
