@@ -362,7 +362,7 @@ export default function InvoiceAnalyticsDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
@@ -380,15 +380,16 @@ export default function InvoiceAnalyticsDashboard() {
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-success/10 to-success/5">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Collected</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Paid / Collected</CardTitle>
             <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
               <CheckCircle className="h-5 w-5 text-success" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-success">
-              {formatCurrency(data.summary.total_paid)}
-            </div>
+            <div className="text-3xl font-bold">{data.paid_unpaid_overview.paid.count}</div>
+            <p className="text-sm font-medium text-success mt-1">
+              {formatCurrency(data.paid_unpaid_overview.paid.total)}
+            </p>
             <div className="mt-3">
               <Progress 
                 value={(data.summary.total_paid / data.summary.total_amount * 100) || 0} 
@@ -404,15 +405,16 @@ export default function InvoiceAnalyticsDashboard() {
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-warning/10 to-warning/5">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding / Unpaid</CardTitle>
             <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
               <Clock className="h-5 w-5 text-warning" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-warning">
-              {formatCurrency(data.summary.total_due)}
-            </div>
+            <div className="text-3xl font-bold">{data.paid_unpaid_overview.unpaid.count}</div>
+            <p className="text-sm font-medium text-warning mt-1">
+              {formatCurrency(data.paid_unpaid_overview.unpaid.total)}
+            </p>
             <div className="mt-3">
               <Progress 
                 value={(data.summary.total_due / data.summary.total_amount * 100) || 0} 
@@ -428,15 +430,16 @@ export default function InvoiceAnalyticsDashboard() {
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-danger/10 to-danger/5">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Amount</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
             <div className="h-10 w-10 rounded-full bg-danger/20 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-danger" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-danger">
+            <div className="text-3xl font-bold">{data.summary.overdue_count}</div>
+            <p className="text-sm font-medium text-danger mt-1">
               {formatCurrency(data.summary.overdue_total)}
-            </div>
+            </p>
             <div className="mt-3">
               <Progress 
                 value={(data.summary.overdue_total / data.summary.total_amount * 100) || 0} 
@@ -445,81 +448,33 @@ export default function InvoiceAnalyticsDashboard() {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {data.summary.overdue_count} overdue invoices
+              {((data.summary.overdue_total / data.summary.total_amount * 100) || 0).toFixed(1)}% of total amount
             </p>
           </CardContent>
         </Card>
-      </div>
 
-        {/* Status Distribution Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-success-light bg-success-light/50">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-lg bg-success flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="h-6 w-6 text-white" />
+        <Card className="border-none shadow-sm bg-gradient-to-br from-muted/10 to-muted/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Draft</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-muted/20 flex items-center justify-center">
+              <File className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-muted-foreground">Paid</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-foreground">{data.paid_unpaid_overview.paid.count}</p>
-                <p className="text-sm font-medium text-success">
-                  {formatCurrency(data.paid_unpaid_overview.paid.total)}
-                </p>
-              </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{data.status_distribution.draft?.count || 0}</div>
+            <p className="text-sm font-medium text-muted-foreground mt-1">
+              {formatCurrency(data.status_distribution.draft?.total || 0)}
+            </p>
+            <div className="mt-3">
+              <Progress 
+                value={((data.status_distribution.draft?.total || 0) / data.summary.total_amount * 100) || 0} 
+                className="h-2 bg-muted"
+                indicatorClassName="bg-muted-foreground"
+              />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-warning-light bg-warning-light/50">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-lg bg-warning flex items-center justify-center flex-shrink-0">
-              <Clock className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-muted-foreground">Unpaid</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-foreground">{data.paid_unpaid_overview.unpaid.count}</p>
-                <p className="text-sm font-medium text-warning">
-                  {formatCurrency(data.paid_unpaid_overview.unpaid.total)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-danger-light bg-danger-light/50">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-lg bg-danger flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-foreground">{data.summary.overdue_count}</p>
-                <p className="text-sm font-medium text-danger">
-                  {formatCurrency(data.summary.overdue_total)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-info-light bg-info-light/50">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-lg bg-info flex items-center justify-center flex-shrink-0">
-              <File className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-muted-foreground">Draft</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-foreground">
-                  {data.status_distribution.draft?.count || 0}
-                </p>
-                <p className="text-sm font-medium text-info">
-                  {formatCurrency(data.status_distribution.draft?.total || 0)}
-                </p>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {(((data.status_distribution.draft?.total || 0) / data.summary.total_amount * 100) || 0).toFixed(1)}% of total amount
+            </p>
           </CardContent>
         </Card>
       </div>
