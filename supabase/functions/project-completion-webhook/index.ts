@@ -37,6 +37,21 @@ serve(async (req) => {
       });
     }
 
+    // Check if webhook was already sent to prevent duplicates
+    if (job.webhook_sent_at) {
+      console.log('Webhook already sent at:', job.webhook_sent_at, 'for job:', jobId);
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Webhook already sent previously',
+        sent_at: job.webhook_sent_at 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('First time sending webhook for job:', jobId);
+
     // Get quoted by user name
     let quotedByName = '';
     if (job.quoted_by) {
@@ -136,6 +151,19 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Update webhook_sent_at timestamp to prevent duplicate calls
+    const { error: updateError } = await supabase
+      .from('jobs')
+      .update({ webhook_sent_at: new Date().toISOString() })
+      .eq('id', jobId);
+
+    if (updateError) {
+      console.error('Failed to update webhook_sent_at:', updateError);
+      // Don't fail the request, webhook was already sent successfully
+    } else {
+      console.log('Successfully updated webhook_sent_at for job:', jobId);
     }
 
     return new Response(JSON.stringify({ success: true }), {
