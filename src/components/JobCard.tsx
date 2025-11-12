@@ -404,11 +404,11 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         )}
 
         <div className="pt-2 space-y-2">
-          <Select
-            value={job.status}
-            onValueChange={updateJobStatus}
-            disabled={updating}
-          >
+              <Select
+                value={job.status}
+                onValueChange={updateJobStatus}
+                disabled={updating || job.status === 'completed'}
+              >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Update status" />
             </SelectTrigger>

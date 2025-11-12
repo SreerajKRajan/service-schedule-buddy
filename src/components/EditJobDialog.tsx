@@ -850,7 +850,7 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
           <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))} disabled={job.status === 'completed'}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
