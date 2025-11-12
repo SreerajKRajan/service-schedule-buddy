@@ -153,17 +153,25 @@ serve(async (req) => {
       });
     }
 
-    // Update webhook_sent_at timestamp to prevent duplicate calls
+    // Atomically update status, completed_date, and webhook_sent_at
+    const now = new Date().toISOString();
     const { error: updateError } = await supabase
       .from('jobs')
-      .update({ webhook_sent_at: new Date().toISOString() })
+      .update({ 
+        status: 'completed',
+        completed_date: now,
+        webhook_sent_at: now 
+      })
       .eq('id', jobId);
 
     if (updateError) {
-      console.error('Failed to update webhook_sent_at:', updateError);
-      // Don't fail the request, webhook was already sent successfully
+      console.error('Failed to update job status and webhook_sent_at:', updateError);
+      return new Response(JSON.stringify({ error: 'Failed to update job status' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } else {
-      console.log('Successfully updated webhook_sent_at for job:', jobId);
+      console.log('Successfully updated job status to completed and webhook_sent_at for job:', jobId);
     }
 
     return new Response(JSON.stringify({ success: true }), {

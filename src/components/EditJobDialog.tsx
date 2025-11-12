@@ -311,8 +311,35 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
 
     setLoading(true);
     try {
-      // Update the job
-      const jobData = {
+      // Check if job is being marked as completed
+      const isCompletingJob = formData.status === 'completed' && job.status !== 'completed';
+      
+      if (isCompletingJob) {
+        console.log('Job is being completed, calling webhook edge function');
+        const { error: webhookError } = await supabase.functions.invoke('project-completion-webhook', {
+          body: { jobId: job.id }
+        });
+
+        if (webhookError) {
+          console.error('Error calling completion webhook:', webhookError);
+          toast({
+            title: "Error",
+            description: "Failed to complete job and send notifications. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Completion webhook called successfully');
+        toast({
+          title: "Success",
+          description: "Job marked as completed and notifications sent.",
+        });
+      }
+
+      // Update the job (exclude status if job was just completed via webhook)
+      const jobData: any = {
         title: formData.title,
         description: formData.description,
         job_type: formData.job_type,
@@ -324,12 +351,16 @@ export function EditJobDialog({ job, open, onOpenChange, onSuccess }: EditJobDia
         customer_phone: formData.customer_phone || null,
         customer_email: formData.customer_email || null,
         notes: formData.notes || null,
-        status: (formData.status || job.status) as 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'on_the_way' | 'service_due',
         price: formData.price ? parseFloat(formData.price) : null,
         first_time: formData.first_time,
         quoted_by: formData.quoted_by || null,
         ghl_contact_id: formData.ghl_contact_id || null,
       };
+
+      // Only include status if not completing (webhook already handled it)
+      if (!isCompletingJob) {
+        jobData.status = (formData.status || job.status) as 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'on_the_way' | 'service_due';
+      }
 
       const { data: updatedJob, error: jobError } = await supabase
         .from('jobs')
