@@ -364,115 +364,115 @@ export default function InvoiceAnalyticsDashboard() {
       {/* Summary Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-none shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
-            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <FileText className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.summary.total_invoices}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {data.paid_unpaid_overview.paid.count} paid • {data.paid_unpaid_overview.unpaid.count} unpaid
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-success/10 to-success/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Paid / Collected</CardTitle>
-            <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-success" />
+            <div className="h-8 w-8 rounded-full bg-success/20 flex items-center justify-center">
+              <CheckCircle className="h-4 w-4 text-success" />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.paid_unpaid_overview.paid.count}</div>
-            <p className="text-sm font-medium text-success mt-1">
+            <p className="text-sm font-medium text-success mt-0.5">
               {formatCurrency(data.paid_unpaid_overview.paid.total)}
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               <Progress 
                 value={(data.summary.total_paid / data.summary.total_amount * 100) || 0} 
-                className="h-2 bg-success-light"
+                className="h-1.5 bg-success-light"
                 indicatorClassName="bg-success"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {((data.summary.total_paid / data.summary.total_amount * 100) || 0).toFixed(1)}% collected
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-warning/10 to-warning/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding / Unpaid</CardTitle>
-            <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-warning" />
+            <div className="h-8 w-8 rounded-full bg-warning/20 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-warning" />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.paid_unpaid_overview.unpaid.count}</div>
-            <p className="text-sm font-medium text-warning mt-1">
+            <p className="text-sm font-medium text-warning mt-0.5">
               {formatCurrency(data.paid_unpaid_overview.unpaid.total)}
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               <Progress 
                 value={(data.summary.total_due / data.summary.total_amount * 100) || 0} 
-                className="h-2 bg-warning-light"
+                className="h-1.5 bg-warning-light"
                 indicatorClassName="bg-warning"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {((data.summary.total_due / data.summary.total_amount * 100) || 0).toFixed(1)}% pending
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-danger/10 to-danger/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
-            <div className="h-10 w-10 rounded-full bg-danger/20 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-danger" />
+            <div className="h-8 w-8 rounded-full bg-danger/20 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-danger" />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.summary.overdue_count}</div>
-            <p className="text-sm font-medium text-danger mt-1">
+            <p className="text-sm font-medium text-danger mt-0.5">
               {formatCurrency(data.summary.overdue_total)}
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               <Progress 
                 value={(data.summary.overdue_total / data.summary.total_amount * 100) || 0} 
-                className="h-2 bg-danger-light"
+                className="h-1.5 bg-danger-light"
                 indicatorClassName="bg-danger"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {((data.summary.overdue_total / data.summary.total_amount * 100) || 0).toFixed(1)}% of total amount
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-gradient-to-br from-muted/10 to-muted/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Draft</CardTitle>
-            <div className="h-10 w-10 rounded-full bg-muted/20 flex items-center justify-center">
-              <File className="h-5 w-5 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-muted/20 flex items-center justify-center">
+              <File className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.status_distribution.draft?.count || 0}</div>
-            <p className="text-sm font-medium text-muted-foreground mt-1">
+            <p className="text-sm font-medium text-muted-foreground mt-0.5">
               {formatCurrency(data.status_distribution.draft?.total || 0)}
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               <Progress 
                 value={((data.status_distribution.draft?.total || 0) / data.summary.total_amount * 100) || 0} 
-                className="h-2 bg-muted"
+                className="h-1.5 bg-muted"
                 indicatorClassName="bg-muted-foreground"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {(((data.status_distribution.draft?.total || 0) / data.summary.total_amount * 100) || 0).toFixed(1)}% of total amount
             </p>
           </CardContent>
