@@ -453,23 +453,23 @@ export default function InvoiceAnalyticsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-gradient-to-br from-muted/10 to-muted/5">
+        <Card className="border-none shadow-sm bg-gradient-to-br from-primary/10 to-primary/5">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Draft</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-muted/20 flex items-center justify-center">
-              <File className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-primary">Draft</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <File className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-2">
             <div className="text-3xl font-bold">{data.status_distribution.draft?.count || 0}</div>
-            <p className="text-sm font-medium text-muted-foreground mt-0.5">
+            <p className="text-sm font-medium text-primary mt-0.5">
               {formatCurrency(data.status_distribution.draft?.total || 0)}
             </p>
             <div className="mt-2">
               <Progress 
                 value={((data.status_distribution.draft?.total || 0) / data.summary.total_amount * 100) || 0} 
-                className="h-1.5 bg-muted"
-                indicatorClassName="bg-muted-foreground"
+                className="h-1.5 bg-primary/20"
+                indicatorClassName="bg-primary"
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
