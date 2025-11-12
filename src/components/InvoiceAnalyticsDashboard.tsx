@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { CalendarIcon, DollarSign, FileText, TrendingUp, AlertCircle, ArrowUp, ArrowDown, Minus, CheckCircle, Clock, AlertTriangle, File } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import moment from "moment-timezone";
 import {
   BarChart,
   Bar,
@@ -865,14 +866,15 @@ export default function InvoiceAnalyticsDashboard() {
                                   bgColor = 'hsl(var(--danger) / 0.8)';
                                 }
 
+                                const dayDate = moment.tz(day.date, 'America/Chicago').toDate();
                                 return (
                                   <div
                                     key={idx}
                                     className="flex-1 min-w-[60px] h-16 rounded-lg flex flex-col items-center justify-center text-xs font-medium border border-border transition-all hover:scale-105 cursor-pointer"
                                     style={{ backgroundColor: bgColor }}
-                                    title={`${format(new Date(day.date), "MMM dd")}: ${day.job_count} jobs, ${formatCurrency(day.sales_amount)}`}
+                                    title={`${format(dayDate, "MMM dd")}: ${day.job_count} jobs, ${formatCurrency(day.sales_amount)}`}
                                   >
-                                    <div className="text-[10px] text-muted-foreground">{format(new Date(day.date), "MMM dd")}</div>
+                                    <div className="text-[10px] text-muted-foreground">{format(dayDate, "MMM dd")}</div>
                                     {day.job_count > 0 && (
                                       <>
                                         <div className="font-bold text-sm">{day.job_count}</div>

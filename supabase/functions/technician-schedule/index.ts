@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import moment from 'https://esm.sh/moment-timezone@0.5.48';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -194,15 +195,20 @@ Deno.serve(async (req) => {
         : currentCount < previousCount ? 'down' 
         : 'same';
 
-      // Generate daily breakdown
+      // Generate daily breakdown in America/Chicago timezone
       const dailyBreakdown: Array<{ date: string; job_count: number; sales_amount: number }> = [];
       if (includeDailyBreakdown) {
+        const timezone = 'America/Chicago';
+        const startMoment = moment.tz(startDateTime, timezone);
+        
         for (let i = 0; i < 7; i++) {
-          const date = new Date(startDateTime.getTime() + i * 24 * 60 * 60 * 1000);
-          const dateStr = date.toISOString().split('T')[0];
-          const jobsOnDate = tech.jobs.filter(job => 
-            job.scheduled_date.split('T')[0] === dateStr
-          );
+          const dateMoment = startMoment.clone().add(i, 'days');
+          const dateStr = dateMoment.format('YYYY-MM-DD');
+          
+          const jobsOnDate = tech.jobs.filter(job => {
+            const jobDateStr = moment.tz(job.scheduled_date, timezone).format('YYYY-MM-DD');
+            return jobDateStr === dateStr;
+          });
           const salesOnDate = jobsOnDate.reduce((sum, job) => sum + job.price, 0);
           dailyBreakdown.push({
             date: dateStr,
