@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
           const dateStr = dateMoment.format('YYYY-MM-DD');
           
           const jobsOnDate = tech.jobs.filter(job => {
-            const jobDateStr = moment.tz(job.scheduled_date, timezone).format('YYYY-MM-DD');
+            const jobDateStr = moment.parseZone(job.scheduled_date).tz(timezone, true).format('YYYY-MM-DD');
             return jobDateStr === dateStr;
           });
           const salesOnDate = jobsOnDate.reduce((sum, job) => sum + job.price, 0);
