@@ -98,6 +98,7 @@ interface TechnicianScheduleData {
 const STATUS_COLORS: { [key: string]: string } = {
   paid: "hsl(142, 76%, 36%)",
   unpaid: "hsl(24, 95%, 53%)",
+  due: "hsl(45, 93%, 47%)",
   overdue: "hsl(0, 84%, 60%)",
   draft: "hsl(215, 14%, 34%)",
   sent: "hsl(217, 91%, 60%)",
@@ -363,7 +364,7 @@ export default function InvoiceAnalyticsDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-6">
         <Card className="border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
@@ -425,6 +426,31 @@ export default function InvoiceAnalyticsDashboard() {
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {((data.summary.total_due / data.summary.total_amount * 100) || 0).toFixed(1)}% pending
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-gradient-to-br from-amber-500/10 to-amber-500/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Due</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-2">
+            <div className="text-3xl font-bold">{data.status_distribution.due?.count || 0}</div>
+            <p className="text-sm font-medium text-amber-600 mt-0.5">
+              {formatCurrency(data.status_distribution.due?.total || 0)}
+            </p>
+            <div className="mt-2">
+              <Progress 
+                value={((data.status_distribution.due?.total || 0) / data.summary.total_amount * 100) || 0} 
+                className="h-1.5 bg-amber-500/20"
+                indicatorClassName="bg-amber-500"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(((data.status_distribution.due?.total || 0) / data.summary.total_amount * 100) || 0).toFixed(1)}% of total amount
             </p>
           </CardContent>
         </Card>
