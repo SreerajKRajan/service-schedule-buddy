@@ -656,7 +656,7 @@ export function JobCalendar({
                           onClick={(e) => {
                             e.preventDefault();
                             window.open(
-                              `https://app.gohighlevel.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`,
+                              `https://app.theservicepilot.com/v2/location/b8qvo7VooP3JD3dIZU42/contacts/detail/${selectedQuote.ghl_contact_id}`,
                               "_blank",
                               "noopener,noreferrer",
                             );
